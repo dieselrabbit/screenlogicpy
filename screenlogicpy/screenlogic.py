@@ -3,14 +3,13 @@ import time
 import json
 import socket
 import argparse
-from slgateway.discovery import discovery
+from slgateway.discovery import discover
 from slgateway.login import gateway_login
 from slgateway.request import request_gateway, request_pool_config, \
-                                request_pool_status, request_pool_button_press
+     request_pool_status, request_pool_button_press, request_set_heat_setpoint, \
+     request_set_heat_mode
 from slgateway.const import mapping
 
-
-# TODO: Rename project
 
 class slgateway:
     def __init__(self, verbose=False, ip=None, port=None):
@@ -23,10 +22,9 @@ class slgateway:
         # Try to discover gateway
         if (not self.__ip):
             self.__ip, self.__port, self.__type,\
-            self.__subtype, self.__name, okchk = discovery(verbose)
+            self.__subtype, self.__name, okchk = discover(verbose)
 
         if (self.__ip):
-            pass
             if (self._connect()):
                 self._get_config()
                 self._get_status()
@@ -51,7 +49,7 @@ class slgateway:
 
     def set_heat_temp(self, body, temp):
         if (self._is_valid_body(body) and
-            self._is_valid_heattemp(temp)):
+            self._is_valid_heattemp(body, temp)):
             if (self.__connected or self._connect()):
                 return request_set_heat_setpoint(self.__socket, body, temp)
         else:
@@ -128,50 +126,51 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     gateway = slgateway(args.verbose, args.ip, args.port)
+
     if ('config' not in gateway.get_data()):
         sys.exit(1)
 
     if (args.getcircuit):
-        print(
-            mapping.ON_OFF[
-                int(gateway.get_data()['circuits'][int(args.getcircuit)]['value'])
-                ]
-            )
+        print(mapping.ON_OFF[
+                int(gateway.get_data()['circuits']
+                    [int(args.getcircuit)]['value'])])
         sys.exit()
     elif (args.setcircuit):
         state = 0
-        if (len(args.setcircuit) > 1 and 
-            (args.setcircuit[1] == '1' or args.setcircuit[1].lower() == 'on')):
+        if (args.setcircuit[1] == '1' or args.setcircuit[1].lower() == 'on'):
             state = 1
         if (gateway.set_circuit(int(args.setcircuit[0]), state)):
             gateway.update()
-            print(
-                mapping.ON_OFF[
+            print(mapping.ON_OFF[
                     int(gateway.get_data()['circuits']
-                        [int(args.setcircuit[0])]['value'])
-                    ]
-                )
+                        [int(args.setcircuit[0])]['value'])])
             sys.exit()
         else:
             sys.exit(1)
     elif (args.heatmode):
-        if (len(args.heatmode) = 2 and
-            args.heatmode[0] in gateway.get_data()['bodies'] and
-            ( 0 <= args.heatmode[1] < len(mapping.HEAT_MODE))):
-            if (gateway.set_heat_mode(
-                int(args.heatmode[0]), int(args.heatmode[1])):
-                gateway.update()
-                print(mapping.BODY_TYPE
-                      [gateway.get_data()['bodies']
-                       [int(args.heatmode[0])]['body_type']['value']],
-                      mapping.HEAT_MODE
-                      [gateway.get_data()['bodies']
-                       [int(args.heatmode[0])]['heat_mode']['value']])
+        if (gateway.set_heat_mode(
+            int(args.heatmode[0]), int(args.heatmode[1]))):
+            gateway.update()
+            print(mapping.BODY_TYPE
+                  [gateway.get_data()['bodies']
+                   [int(args.heatmode[0])]['body_type']['value']],
+                  mapping.HEAT_MODE
+                  [gateway.get_data()['bodies']
+                   [int(args.heatmode[0])]['heat_mode']['value']])
             sys.exit()
         else:
             sys.exit(1)
     elif (args.heattemp):
-        
+        if (gateway.set_heat_temp(int(args.heattemp[0]), int(args.heattemp[1]))):
+            gateway.update()
+            print(mapping.BODY_TYPE
+                  [gateway.get_data()['bodies']
+                   [int(args.heattemp[0])]['body_type']['value']],
+                  gateway.get_data()['bodies']
+                   [int(args.heattemp[0])]['heat_set_point']['value'])
+            sys.exit()
+        else:
+            sys.exit(1)
     else:
         print(json.dumps(gateway.get_data(), indent=2))
         sys.exit()

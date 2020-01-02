@@ -4,7 +4,7 @@ import struct
 import ipaddress
 from slgateway.const import me
 
-def discovery(self, verbose=False):
+def discover(self, verbose=False):
     broadcast = "255.255.255.255"
     port  = 1444
     addressfamily = socket.AF_INET
