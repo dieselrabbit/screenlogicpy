@@ -1,5 +1,6 @@
+import sys
 import struct
-from slgateway.const import header, code
+from . const import me, header, code
 
 
 def makeMessageString(string):

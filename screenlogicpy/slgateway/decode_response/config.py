@@ -1,5 +1,5 @@
 import struct
-from slgateway.decode_response.datautil import *
+from . datautil import *
 
 def decode_pool_config_response(buff, data):
 

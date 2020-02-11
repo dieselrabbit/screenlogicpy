@@ -2,7 +2,7 @@ import sys
 import socket
 import struct
 import ipaddress
-from slgateway.const import me
+from . const import me
 
 def discover(self, verbose=False):
     broadcast = "255.255.255.255"
@@ -79,7 +79,7 @@ def discover(self, verbose=False):
         return False
         #sys.exit(9)
     except:
-        print("ERROR: {}: Couldn't get an IP address for the gateway.".format(me, err))
+        print("ERROR: {}: Couldn't get an IP address for the gateway.\n \"{}\"".format(me, err))
         return False
         #sys.exit(10)
   

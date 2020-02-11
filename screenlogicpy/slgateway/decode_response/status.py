@@ -1,5 +1,5 @@
-from slgateway.decode_response.datautil import *
-from slgateway.const import *
+from . datautil import getSome
+from .. const import mapping
 
 def decode_pool_status_response(buff, data):
 
@@ -24,10 +24,9 @@ def decode_pool_status_response(buff, data):
     ff2, offset = getSome("B", buff, offset)
     ff3, offset = getSome("B", buff, offset)
 
+    unittxt = '\xb0F'
     if(data['config']['is_celcius']['value']):
         unittxt = '\xb0C'
-    else:
-        unittxt = '\xb0F'
 
     airTemp, offset = getSome("i", buff, offset)
     data['sensors']['air_temperature'] = {

@@ -1,7 +1,9 @@
 import os
+import sys
+import struct
 import socket
-from slgateway.msgutil import *
-from slgateway.const import code
+from . msgutil import makeMessageString, makeMessage, takeMessage
+from . const import me, code
 
 def create_login_message():
   # these constants are only for this message. keep them here.
@@ -34,7 +36,7 @@ def gateway_login(gateway_ip, gateway_port):
 
     if tcpSock is None:
         sys.stderr.write("ERROR: {}: Could not open socket to gateway host.\n".format(me))
-        return false
+        return False
         #sys.exit(10)
 
     connectString = b'CONNECTSERVERHOST\r\n\r\n'  # as bytes, not string
@@ -47,8 +49,8 @@ def gateway_login(gateway_ip, gateway_port):
         sys.stderr.write("WARNING: {}: no {} data received.\n".format(me, "CHALLENGE_ANSWER"))
     rcvcode, data = takeMessage(data)
     if(rcvcode != code.CHALLENGE_ANSWER):
-        sys.stderr.write("WARNING: {}: rcvCode2({}) != {}.\n".format(me, CHALLENGE_ANSWER))
-        return false
+        sys.stderr.write("WARNING: {}: rcvCode2({}) != {}.\n".format(me, rcvcode, code.CHALLENGE_ANSWER))
+        return False
         #sys.exit(10)
 
 
@@ -62,7 +64,7 @@ def gateway_login(gateway_ip, gateway_port):
     rcvCode, data = takeMessage(data)
     if(rcvCode != code.LOCALLOGIN_ANSWER):
         sys.stderr.write("WARNING: {}: rcvCode({}) != {}.\n".format(me, rcvCode, code.LOCALLOGIN_ANSWER))
-        return false
+        return False
         #sys.exit(10)
     # response should be empty
     return tcpSock
