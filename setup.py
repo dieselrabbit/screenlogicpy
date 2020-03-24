@@ -20,4 +20,9 @@ setuptools.setup(
 	"Development Status :: 3 - Alpha",
     ],
     python_requires='>=3.6',
+    entry_points={
+            'console_scripts': [
+                  'screenlogicpy=screenlogicpy.cli:cli',
+            ],
+      },
 )

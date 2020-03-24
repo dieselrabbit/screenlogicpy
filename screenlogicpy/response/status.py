@@ -1,7 +1,8 @@
-from . datautil import getSome
-from .. const import mapping
+from .utility import getSome
+from ..const import BODY_TYPE
 
-def decode_pool_status_response(buff, data):
+#pylint: disable=unused-variable
+def decode(buff, data):
 
     #{ name="", value= }
     if('sensors' not in data):
@@ -19,7 +20,7 @@ def decode_pool_status_response(buff, data):
 
     cleanerDelay, offset = getSome("B", buff, offset)
 
-    # fast forward 3 bytes. why? because.
+    # fast forward 3 bytes. Unknown data.
     ff1, offset = getSome("B", buff, offset)
     ff2, offset = getSome("B", buff, offset)
     ff3, offset = getSome("B", buff, offset)
@@ -52,31 +53,31 @@ def decode_pool_status_response(buff, data):
             'value':bodyType}
 
         currentTemp, offset = getSome("i", buff, offset)
-        bodyName = "Current {} Temperature".format(mapping.BODY_TYPE[bodyType])
+        bodyName = "Current {} Temperature".format(BODY_TYPE.GetFriendlyName(bodyType))
         data['bodies'][i]['current_temperature'] = {
             'name':bodyName,
             'value':currentTemp}
 
         heatStatus, offset = getSome("i", buff, offset)
-        heaterName = "{} Heater".format(mapping.BODY_TYPE[bodyType])
+        heaterName = "{} Heater".format(BODY_TYPE.GetFriendlyName(bodyType))
         data['bodies'][i]['heat_status'] = {
             'name':heaterName,
             'value':heatStatus}
 
         heatSetPoint, offset = getSome("i", buff, offset)
-        hspName = "{} Heat Set Point".format(mapping.BODY_TYPE[bodyType])
+        hspName = "{} Heat Set Point".format(BODY_TYPE.GetFriendlyName(bodyType))
         data['bodies'][i]['heat_set_point'] = {
             'name':hspName,
             'value':heatSetPoint}
 
         coolSetPoint, offset = getSome("i", buff, offset)
-        cspName = "{} Cool Set Point".format(mapping.BODY_TYPE[bodyType])
+        cspName = "{} Cool Set Point".format(BODY_TYPE.GetFriendlyName(bodyType))
         data['bodies'][i]['cool_set_point'] = {
             'name':cspName,
             'value':coolSetPoint}
 
         heatMode, offset = getSome("i", buff, offset)
-        hmName = "{} Heater Mode".format(mapping.BODY_TYPE[bodyType])
+        hmName = "{} Heater Mode".format(BODY_TYPE.GetFriendlyName(bodyType))
         data['bodies'][i]['heat_mode'] = {
             'name':hmName,
             'value':heatMode}

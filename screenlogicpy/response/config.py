@@ -1,7 +1,7 @@
 import struct
-from . datautil import *
+from .utility import getSome, getString
 
-def decode_pool_config_response(buff, data):
+def decode(buff, data):
 
     #{ 'name':"", 'value': }
     if ('config' not in data):

@@ -2,22 +2,23 @@ import os
 import sys
 import struct
 import socket
-from . msgutil import makeMessageString, makeMessage, takeMessage
-from . const import me, code
+from .utility import encodeMessageString, decodeMessageString, makeMessage, takeMessage
+from ..const import me, code, ScreenLogicError
 
 def create_login_message():
   # these constants are only for this message. keep them here.
   schema = 348
   connectionType = 0
-  clientVersion = makeMessageString('Android')
+  clientVersion = encodeMessageString('Android')
   pid  = 2 #os.getpid() #random.randint(2,100)
   password = "0000000000000000" # passwd must be <= 16 chars. empty is not OK.
-  passwd = makeMessageString(password)
+  passwd = encodeMessageString(password)
   fmt = "<II" + str(len(clientVersion)) + "s" + str(len(passwd)) + "sxI"
   return struct.pack(fmt, schema, connectionType, clientVersion, passwd, pid)
 
 def gateway_login(gateway_ip, gateway_port):
     tcpSock = None
+    #pylint: disable=unused-variable
     for result in socket.getaddrinfo(gateway_ip, gateway_port, socket.AF_UNSPEC, socket.SOCK_STREAM):
         af, socktype, proto, canonname, sa = result
         try:
@@ -35,8 +36,9 @@ def gateway_login(gateway_ip, gateway_port):
         break
 
     if tcpSock is None:
-        sys.stderr.write("ERROR: {}: Could not open socket to gateway host.\n".format(me))
-        return False
+        raise ScreenLogicError("Could not open socket to gateway host.")
+        #sys.stderr.write("ERROR: {}: Could not open socket to gateway host.\n".format(me))
+        #return False
         #sys.exit(10)
 
     connectString = b'CONNECTSERVERHOST\r\n\r\n'  # as bytes, not string
@@ -52,6 +54,7 @@ def gateway_login(gateway_ip, gateway_port):
         sys.stderr.write("WARNING: {}: rcvCode2({}) != {}.\n".format(me, rcvcode, code.CHALLENGE_ANSWER))
         return False
         #sys.exit(10)
+    _mac = decodeMessageString(data)
 
 
     # now that we've "connected" and "challenged," we can "login." None of these things
