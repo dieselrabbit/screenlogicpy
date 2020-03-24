@@ -39,13 +39,13 @@ def cli():
         gateway = ScreenLogicGateway(_ip, _port, _type, _subtype, _name)
 
         if ('config' not in gateway.get_data()):
-            sys.exit(1)
+            return 1
 
         if (args.getcircuit):
             print(ON_OFF.GetFriendlyName(
                     int(gateway.get_data()['circuits']
                         [int(args.getcircuit)]['value'])))
-            sys.exit()
+            return 0
         elif (args.setcircuit):
             state = 0
             if (args.setcircuit[1] == '1' or args.setcircuit[1].lower() == 'on'):
