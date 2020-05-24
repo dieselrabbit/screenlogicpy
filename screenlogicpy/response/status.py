@@ -59,7 +59,7 @@ def decode(buff, data):
             'value':currentTemp}
 
         heatStatus, offset = getSome("i", buff, offset)
-        heaterName = "{} Heater".format(BODY_TYPE.GetFriendlyName(bodyType))
+        heaterName = "{} Heat".format(BODY_TYPE.GetFriendlyName(bodyType))
         data['bodies'][i]['heat_status'] = {
             'name':heaterName,
             'value':heatStatus}
@@ -77,7 +77,7 @@ def decode(buff, data):
             'value':coolSetPoint}
 
         heatMode, offset = getSome("i", buff, offset)
-        hmName = "{} Heater Mode".format(BODY_TYPE.GetFriendlyName(bodyType))
+        hmName = "{} Heat Mode".format(BODY_TYPE.GetFriendlyName(bodyType))
         data['bodies'][i]['heat_mode'] = {
             'name':hmName,
             'value':heatMode}

@@ -87,9 +87,9 @@ class HEAT_MODE:
     OFF = 0
     SOLAR = 1
     SOLAR_PREFERED = 2
-    HEAT = 3
+    HEATER = 3
     DONT_CHANGE = 4
-    _names  = ['Off', 'Solar', "Solar Prefered", 'Heat', "Don't Change"]
+    _names  = ['Off', 'Solar', "Solar Prefered", 'Heater', "Don't Change"]
 
     @classmethod
     def GetFriendlyName(cls, index):
