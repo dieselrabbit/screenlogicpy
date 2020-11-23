@@ -16,6 +16,10 @@ def vFormat(verbose, slElement, slClass=None):
 
 
 #parser functions
+def discover_action(args, gateway):
+    print("{}:{}".format(gateway.ip, gateway.port))
+    return 0
+
 def get_circuit(args, gateway):
     if (not int(args.circuit_num) in gateway.get_data()['circuits']):
         print(f'Invalid circuit number: {args.circuit_num}')
@@ -122,110 +126,64 @@ def cli():
     option_parser.add_argument('-i','--ip')
     option_parser.add_argument('-p','--port', default=80)
 
-    #command_parser = argparse.ArgumentParser()
     subparsers = option_parser.add_subparsers(dest='action')
 
+    # Discover command
     discover_parser = subparsers.add_parser('discover')
-
-    def discover_action(args, gateway):
-        print("{}:{}".format(gateway.ip, gateway.port))
-        return 0
-
     discover_parser.set_defaults(func=discover_action)
  
+    # Get options
     get_parser = subparsers.add_parser('get')
-
-    def get_action(args, gateway):
-        return get_parser.func(args, gateway)
-
-    #get_parser.set_defaults(func=get_action)
-    get_subparsers = get_parser.add_subparsers(dest='option')
+    get_subparsers = get_parser.add_subparsers(dest='get_option')
+    get_subparsers.required = True
 
     get_circuit_parser = get_subparsers.add_parser('circuit', aliases=['c'])
     get_circuit_parser.add_argument('circuit_num', metavar='CIRCUIT_NUM', type=int)
     get_circuit_parser.set_defaults(func=get_circuit)
 
     get_heat_mode_parser = get_subparsers.add_parser('heat-mode', aliases=['hm'])
-    get_heat_mode_parser.add_argument('body', metavar='BODY', choices=['0', '1', 'pool', 'spa'])
+    get_heat_mode_parser.add_argument('body', metavar='BODY', type=str, choices=['0', '1', 'pool', 'spa'])
     get_heat_mode_parser.set_defaults(func=get_heat_mode)
 
     get_heat_temp_parser = get_subparsers.add_parser('heat-temp', aliases=['ht'])
-    get_heat_temp_parser.add_argument('body', metavar='BODY', choices=['0', '1', 'pool', 'spa'])
+    get_heat_temp_parser.add_argument('body', metavar='BODY', type=str, choices=['0', '1', 'pool', 'spa'])
     get_heat_temp_parser.set_defaults(func=get_heat_temp)
 
     get_heat_state_parser = get_subparsers.add_parser('heat-state', aliases=['hs'])
-    get_heat_state_parser.add_argument('body', metavar='BODY', choices=['0', '1', 'pool', 'spa'])
+    get_heat_state_parser.add_argument('body', metavar='BODY', type=str, choices=['0', '1', 'pool', 'spa'])
     get_heat_state_parser.set_defaults(func=get_heat_state)
 
     get_current_temp_parser = get_subparsers.add_parser('current-temp', aliases=['t'])
-    get_current_temp_parser.add_argument('body', metavar='BODY', choices=['0', '1', 'pool', 'spa'])
+    get_current_temp_parser.add_argument('body', metavar='BODY', type=str, choices=['0', '1', 'pool', 'spa'])
     get_current_temp_parser.set_defaults(func=get_current_temp)
 
     get_json_parser = get_subparsers.add_parser('json', aliases=['j'])
     get_json_parser.set_defaults(func=get_json)
 
-
+    # Set options
     set_parser = subparsers.add_parser('set')
-
-    def set_action(args, gateway):
-        return set_parser.func(args, gateway)
-
-    #set_parser.set_defaults(func=set_action)
-    set_subparsers = set_parser.add_subparsers(dest='option')
+    set_subparsers = set_parser.add_subparsers(dest='set_option')
+    set_subparsers.required = True
 
     set_circuit_parser = set_subparsers.add_parser('circuit', aliases=['c'])
     set_circuit_parser.add_argument('circuit_num', metavar='CIRCUIT_NUM', type=int)
-    set_circuit_parser.add_argument('state', metavar='STATE', choices=['0', '1', 'off', 'on'])
+    set_circuit_parser.add_argument('state', metavar='STATE', type=str, choices=['0', '1', 'off', 'on'])
     set_circuit_parser.set_defaults(func=set_circuit)
 
     set_heat_mode_parser = set_subparsers.add_parser('heat-mode', aliases=['hm'])
-    set_heat_mode_parser.add_argument('body', metavar='BODY', choices=['0', '1', 'pool', 'spa'])
+    set_heat_mode_parser.add_argument('body', metavar='BODY', type=str, choices=['0', '1', 'pool', 'spa'])
     options = list(range(len(HEAT_MODE._names)))
     for mode in HEAT_MODE._names:
         options.append(mode.replace(' ', '_').replace('\'', '').lower())
-    set_heat_mode_parser.add_argument('mode', metavar='MODE', choices=options, default=options[0])
+    set_heat_mode_parser.add_argument('mode', metavar='MODE', type=str, choices=options, default=options[0])
     set_heat_mode_parser.set_defaults(func=set_heat_mode)
 
     set_heat_temp_parser = set_subparsers.add_parser('heat-temp', aliases=['ht'])
-    set_heat_temp_parser.add_argument('body', metavar='BODY', choices=['0', '1', 'pool', 'spa'])
+    set_heat_temp_parser.add_argument('body', metavar='BODY', type=str, choices=['0', '1', 'pool', 'spa'])
     set_heat_temp_parser.add_argument('temp', type=int, metavar='TEMP', default=None)
     set_heat_temp_parser.set_defaults(func=set_heat_temp)
 
-
-
-
-
-#    circuit_parser = subparsers.add_parser('circuit', aliases=['c'])
-#    circuit_parser.add_argument('circuit', metavar='CIRCUIT_NUM', type=int)
-#    circuit_parser.add_argument('state', nargs='?', metavar='STATE', choices=['0', '1', 'on', 'off'], default=None)
-#    circuit_parser.set_defaults(func=circuit_action)
-
-#    heat_mode_parser = subparsers.add_parser('heatmode', aliases=['hm'])
-#    heat_mode_parser.add_argument('body', metavar='BODY', choices=['0', '1', 'pool', 'spa'])
-#    options = list(range(len(HEAT_MODE._names)))
-#    for mode in HEAT_MODE._names:
-#        options.append(mode.replace(' ', '_').replace('\'', '').lower())
-#    heat_mode_parser.add_argument('mode', nargs='?', metavar='MODE', choices=options, default=None)
-#    heat_mode_parser.set_defaults(func=heatmode_action)
-
-#    heat_temp_parser = subparsers.add_parser('heattemp', aliases=['ht'])
-#    heat_temp_parser.add_argument('body', metavar='BODY', choices=['0', '1', 'pool', 'spa'])
-#    heat_temp_parser.add_argument('temp', nargs='?', type=int, metavar='TEMP', default=None)
-#    heat_temp_parser.set_defaults(func=heattemp_action)
-
-#    heat_state_parser = subparsers.add_parser('heatstate', aliases=['hs'])
-#    heat_state_parser.add_argument('body', metavar='BODY', choices=['0', '1', 'pool', 'spa'])
-#    heat_state_parser.set_defaults(func=heatstate_action)
-
-#    current_temp_parser = subparsers.add_parser('currenttemp', aliases=['t'])
-#    current_temp_parser.add_argument('body', type=int, metavar='BODY', choices=['0', '1', 'pool', 'spa'])
-#    current_temp_parser.set_defaults(func=currenttemp_action)
-
-#    json_parser = subparsers.add_parser('json', aliases=['j'])
-#    json_parser.set_defaults(func=json_action)
-
-    #(option_args, remaining_args) = option_parser.parse_known_args('-i 192.168.1.43'.split())
-    args = option_parser.parse_args() #remaining_args)
+    args = option_parser.parse_args()
     try:
         _ip = args.ip
         _port = args.port
@@ -296,16 +254,6 @@ def cli():
 
             
         return args.func(args, gateway)
-        #if (args.action == 'get'):
-        #    get_args = get_parser.parse_args()
-        #    if (get_args.option == 'circuit'):
-        #        return get_args.func(get_args, gateway)
-        #elif (args.action == 'set'):
-        #    set_args = set_parser.parse_args()
-        #    return set_args.func(set_args, gateway)
-        #else:
-        #    print_dashboard()
-        #    return 0
 
     except ScreenLogicError as err:
         print(err)
