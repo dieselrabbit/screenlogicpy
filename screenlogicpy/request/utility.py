@@ -1,16 +1,27 @@
+import socket
 import struct
-from slgateway.const import header, code
+from ..const import ScreenLogicError, header, code
+
+def sendRecieveMessage(gateway_socket, code, message=b''):
+    gateway_socket.sendall(makeMessage(code, message))
+    data = gateway_socket.recv(1024)
+    if not data:
+        raise ScreenLogicError("No data recieved from the gateway. Request code: {}".format(code))
+    rcvCode, buff = takeMessage(data)
+    if (rcvCode != (code + 1)):
+        raise ScreenLogicError("Unexpected response recieved from the gateway. Expected: {}. Recieved: {}.".format(code + 1, rcvCode))
+    return buff
 
 
-def makeMessageString(string):
+def encodeMessageString(string):
     data = string.encode()
     length = len(data)
     pad = 4 - (length % 4)  # pad 'x' to multiple of 4
     fmt = "<I" + str(length) + "s" + str(pad) + "x"
     return struct.pack(fmt, length, data)
 
-def getMessageString(data):
-    length = len(data)
+def decodeMessageString(data):
+    #length = len(data)
     size = struct.unpack_from("<I", data, 0)[0]
     return struct.unpack_from("<" + str(size) + "s", 
                               data, 
@@ -32,27 +43,13 @@ def makeMessage(msgCode2, messageData=b''):
 
 # takes the header off of the pool message and returns just the message part
 def takeMessage(message):
-    if not message:
-        sys.stderr.write(
-            "WARNING: {}: no data to decodeMessage()\n".format(
-                me
-                )
-            )
-        return
     messageBytes = len(message) - header.length
+    #pylint: disable=unused-variable
     rcvCode1, rcvCode2,\
         rcvLen, data = struct.unpack(header.fmt + str(messageBytes) + "s",
                                      message)
     if(rcvLen != messageBytes):
-        sys.stderr.write(
-            "WARNING: {}: rcvLen({}) != messageBytes({}).\n".format(
-                me, rcvLen, messageBytes
-                )
-            )
+        raise ScreenLogicError("rcvLen({}) != messageBytes({}).".format(rcvLen, messageBytes))
     if(rcvCode2 == code.UNKNOWN_ANSWER):
-        sys.stderr.write(
-            "WARNING: {}: rcvCode2({}) != expectCode2.\n".format(
-                me, rcvCode2
-                )
-            )
+        raise ScreenLogicError("Unexpected response recieved from the gateway. Recieved code_unknown.")
     return rcvCode2, data # return raw data
