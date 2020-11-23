@@ -15,3 +15,14 @@ def getString(buff, offset):
     fmt = "<{}{}".format(sLen, "s")
     newoffset = offsetLen + struct.calcsize(fmt)
     return struct.unpack_from(fmt, buff, offsetLen)[0], newoffset
+
+def getArray(buff, offset):
+    itemCount, offset = getSome("I", buff, offset)
+    items = [0 for x in range(itemCount)]
+    for i in range(itemCount):
+        items[i] , offset = getSome("B", buff, offset)
+    offsetPad = 0
+    if itemCount % 4 != 0:
+        offsetPad = (4 - itemCount % 4) % 4
+        offset += offsetPad
+    return items, offset

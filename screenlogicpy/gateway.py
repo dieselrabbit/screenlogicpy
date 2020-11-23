@@ -5,6 +5,7 @@ from .request.gateway import request_gateway_version
 from .request.config import request_pool_config
 from .request.status import request_pool_status
 from .request.button import request_pool_button_press
+from .request.pump  import request_pump_status
 from .request.heat import request_set_heat_setpoint, request_set_heat_mode
 from .const import HEAT_MODE, ScreenLogicError
 
@@ -25,6 +26,7 @@ class ScreenLogicGateway:
             if (self._connect()):
                 self._get_config()
                 self._get_status()
+                self._get_pumps()
                 self._disconnect()
         else:
             raise ValueError("Invalid ip or port")
@@ -44,6 +46,7 @@ class ScreenLogicGateway:
     def update(self):
         if ((self.is_connected or self._connect()) and self.__data):
             self._get_status()
+            self._get_pumps()
             self._disconnect()
 
     def get_data(self):
@@ -105,6 +108,12 @@ class ScreenLogicGateway:
     def _get_status(self):
         if (self.__connected or self._connect()):
             request_pool_status(self.__socket, self.__data)
+    
+    def _get_pumps(self):
+        if (self.__connected or self._connect()):
+            for pID in self.__data['config']['pumps']:
+                if (self.__data['config']['pumps'][pID]['data'] != 0):
+                    request_pump_status(self.__socket, self.__data, pID)
 
     def _is_valid_circuit(self, circuit):
         return (circuit in self.__data['circuits'])

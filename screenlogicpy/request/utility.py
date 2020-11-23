@@ -49,7 +49,7 @@ def takeMessage(message):
         rcvLen, data = struct.unpack(header.fmt + str(messageBytes) + "s",
                                      message)
     if(rcvLen != messageBytes):
-        raise ScreenLogicError("rcvLen({}) != messageBytes({}).".format(rcvLen, messageBytes))
+        raise ScreenLogicError("Invalid response recieved from host.")
     if(rcvCode2 == code.UNKNOWN_ANSWER):
         raise ScreenLogicError("Unexpected response recieved from the gateway. Recieved code_unknown.")
     return rcvCode2, data # return raw data

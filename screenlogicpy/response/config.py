@@ -1,5 +1,6 @@
 import struct
 from .utility import getSome, getString
+from ..const import BODY_TYPE
 
 def decode(buff, data):
 
@@ -12,21 +13,32 @@ def decode(buff, data):
         'name':"Controler ID",
         'value':controlerID}
 
-    minSetPoint0, offset = getSome("B", buff, offset)
-    maxSetPoint0, offset = getSome("B", buff, offset)
-    minSetPoint1, offset = getSome("B", buff, offset)
-    maxSetPoint1, offset = getSome("B", buff, offset)
+    if('bodies' not in data):
+        data['bodies'] = {}
 
-    #if('bodies' not in data):
-    #  data['bodies'] = {}
+    for i in range(2):
+        if i not in data['bodies']:
+            data['bodies'][i] = {}
     
-    data['config']['min_set_point'] = {
-        'name':"Minimum Temperature",
-        'value':[minSetPoint0, minSetPoint1]}
+        minSetPoint, offset = getSome("B", buff, offset)
+        MINspName = "{} Minimum Set Point".format(BODY_TYPE.GetFriendlyName(i))
+        data['bodies'][i]['min_set_point'] = {
+            'name':MINspName,
+            'value':minSetPoint}
+        maxSetPoint, offset = getSome("B", buff, offset)
+        MAXspName = "{} Minimum Set Point".format(BODY_TYPE.GetFriendlyName(i))
+        data['bodies'][i]['max_set_point'] = {
+            'name':MAXspName,
+            'value':maxSetPoint}
 
-    data['config']['max_set_point'] = {
-        'name':"Maximum Temperature",
-        'value':[maxSetPoint0, maxSetPoint1]}
+    
+    #data['config']['min_set_point'] = {
+    #    'name':"Minimum Temperature",
+    #    'value':[minSetPoint0, minSetPoint1]}
+
+    #data['config']['max_set_point'] = {
+    #    'name':"Maximum Temperature",
+    #    'value':[maxSetPoint0, maxSetPoint1]}
 
     degC, offset = getSome("B", buff, offset)
     data['config']['is_celcius'] = {

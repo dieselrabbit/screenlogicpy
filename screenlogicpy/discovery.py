@@ -45,5 +45,13 @@ def discover():
         raise ScreenLogicError("ScreenLogic Discovery: Received garbage from the gateway.") from err
     except Exception as err:
         raise ScreenLogicError("ScreenLogic Discovery: Couldn't get an IP address for the gateway.") from err
-  
-    return gatewayIP, gatewayPort, gatewayType, gatewaySubtype, gatewayName.decode("utf-8").strip('\0')
+    
+    host = {
+        'ip': gatewayIP,
+        'port': gatewayPort,
+        'type': gatewayType,
+        'subtype': gatewaySubtype,
+        'name': gatewayName.decode("utf-8").strip('\0')
+    }
+    
+    return host #gatewayIP, gatewayPort, gatewayType, gatewaySubtype, gatewayName.decode("utf-8").strip('\0')
