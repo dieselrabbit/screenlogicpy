@@ -2,7 +2,7 @@ from .utility import getSome
 
 #pylint: disable=unused-variable
 def decode(buff, data, pumpID):
-    pump = data['pumps'][pumpID]
+    pump = data['config']['pumps'][pumpID]
     pump['pumpType'], offset = getSome("I", buff, 0)
     pump['state'], offset = getSome("I", buff, offset)
     pump['currentWatts'], offset = getSome("I", buff, offset)
