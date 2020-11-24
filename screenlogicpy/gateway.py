@@ -111,8 +111,8 @@ class ScreenLogicGateway:
     
     def _get_pumps(self):
         if (self.__connected or self._connect()):
-            for pID in self.__data['config']['pumps']:
-                if (self.__data['config']['pumps'][pID]['data'] != 0):
+            for pID in self.__data['pumps']:
+                if (self.__data['pumps'][pID]['data'] != 0):
                     request_pump_status(self.__socket, self.__data, pID)
 
     def _is_valid_circuit(self, circuit):

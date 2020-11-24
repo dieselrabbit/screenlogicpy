@@ -133,15 +133,15 @@ def decode(buff, data):
             'value':[ rgbR, rgbG, rgbB]}
     
     pumpCircuitCount = 8
-    if ('pumps' not in data['config']):
-        data['config']['pumps'] = {}
+    if ('pumps' not in data):
+        data['pumps'] = {}
     
     for i in range(pumpCircuitCount):
-        if (i not in data['config']['pumps']):
-            data['config']['pumps'][i] = {}
+        if (i not in data['pumps']):
+            data['pumps'][i] = {}
       
         pumpData , offset = getSome("B", buff, offset)
-        data['config']['pumps'][i]['data'] = pumpData
+        data['pumps'][i]['data'] = pumpData
     
     interfaceTabFlags , offset = getSome("I", buff, offset)
     data['config']['interface_tab_flags'] = interfaceTabFlags
