@@ -54,7 +54,8 @@ def decode(buff, data):
     data['sensors']['air_temperature'] = {
         'name':"Air Temperature",
         'value':airTemp,
-        'unit':unittxt}
+        'unit':unittxt,
+        'hass_device_class': 'temperature'}
 
     bodiesCount, offset = getSome("I", buff, offset)
     # Should this default to 2?
@@ -82,7 +83,8 @@ def decode(buff, data):
         data['bodies'][i]['current_temperature'] = {
             'name':bodyName,
             'value':currentTemp,
-            'unit':unittxt}
+            'unit':unittxt,
+            'hass_device_class': 'temperature'}
 
         heatStatus, offset = getSome("i", buff, offset)
         heaterName = "{} Heat".format(BODY_TYPE.GetFriendlyName(bodyType))
@@ -95,7 +97,8 @@ def decode(buff, data):
         data['bodies'][i]['heat_set_point'] = {
             'name':hspName,
             'value':heatSetPoint,
-            'unit':unittxt}
+            'unit':unittxt,
+            'hass_device_class': 'temperature'}
 
         coolSetPoint, offset = getSome("i", buff, offset)
         cspName = "{} Cool Set Point".format(BODY_TYPE.GetFriendlyName(bodyType))
@@ -160,13 +163,13 @@ def decode(buff, data):
         'unit':'ppm'}
 
     pHTank, offset = getSome("i", buff, offset)
-    data['sensors']['ph_tank_level'] = {
-        'name':"pH Tank Level",
+    data['sensors']['ph_supply_level'] = {
+        'name':"pH Supply Level",
         'value':pHTank}
 
     orpTank, offset = getSome("i", buff, offset)
-    data['sensors']['orp_tank_level'] = {
-        'name':"ORP Tank Level",
+    data['sensors']['orp_supply_level'] = {
+        'name':"ORP Supply Level",
         'value':orpTank}
 
     alarm, offset = getSome("i", buff, offset)

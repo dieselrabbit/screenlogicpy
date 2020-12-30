@@ -7,6 +7,7 @@ from .request.status import request_pool_status
 from .request.button import request_pool_button_press
 from .request.pump  import request_pump_status
 from .request.heat import request_set_heat_setpoint, request_set_heat_mode
+from .request.lights import request_pool_lights_command
 from .const import HEAT_MODE, ScreenLogicError
 
 class GatewayInfo:
@@ -82,6 +83,13 @@ class ScreenLogicGateway:
         else:
             return False
 
+    def set_color_lights(self, light_command):
+        if (self.__connected or self._connect()):
+            if (request_pool_lights_command(self.__socket, light_command)):
+                self._disconnect()
+                return True
+        return False
+
     def is_connected(self):
         return self.__connected
 
@@ -128,6 +136,6 @@ class ScreenLogicGateway:
         return (0 <= heatmode < 5)
 
     def _is_valid_heattemp(self, body, temp):
-        return (self.__data['config']['min_set_point']['value'][int(body)] <=
+        return (self.__data['bodies'][int(body)]['min_set_point']['value'] <=
                 temp <=
-                self.__data['config']['max_set_point']['value'][int(body)])
+                self.__data['bodies'][int(body)]['max_set_point']['value'])
