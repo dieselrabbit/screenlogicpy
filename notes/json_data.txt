@@ -1,11 +1,11 @@
 {
   "config": {
-    "controler_id": {
+    "controler_id": {        
       "name": "Controler ID",
       "value": 100
     },
     "is_celcius": {
-      "name": "Is Celcius",
+      "name": "Is Celcius",  
       "value": 0
     },
     "controler_type": 13,
@@ -90,34 +90,12 @@
         ]
       }
     ],
-    "pumps": {
-      "0": {
-        "data": 70
-      },
-      "1": {
-        "data": 66
-      },
-      "2": {
-        "data": 0
-      },
-      "3": {
-        "data": 0
-      },
-      "4": {
-        "data": 0
-      },
-      "5": {
-        "data": 0
-      },
-      "6": {
-        "data": 0
-      },
-      "7": {
-        "data": 0
-      }
-    },
     "interface_tab_flags": 127,
     "show_alarms": 0,
+    "ok": {
+      "name": "OK Check",
+      "value": 1
+    },
     "freeze_mode": {
       "name": "Freeze Mode",
       "value": 0
@@ -157,8 +135,9 @@
       },
       "current_temperature": {
         "name": "Current Pool Temperature",
-        "value": 79,
-        "unit": "\u00b0F"
+        "value": 51,
+        "unit": "\u00b0F",
+        "hass_device_class": "temperature"
       },
       "heat_status": {
         "name": "Pool Heat",
@@ -167,7 +146,8 @@
       "heat_set_point": {
         "name": "Pool Heat Set Point",
         "value": 86,
-        "unit": "\u00b0F"
+        "unit": "\u00b0F",
+        "hass_device_class": "temperature"
       },
       "cool_set_point": {
         "name": "Pool Cool Set Point",
@@ -197,7 +177,8 @@
       "current_temperature": {
         "name": "Current Spa Temperature",
         "value": 97,
-        "unit": "\u00b0F"
+        "unit": "\u00b0F",
+        "hass_device_class": "temperature"
       },
       "heat_status": {
         "name": "Spa Heat",
@@ -205,17 +186,18 @@
       },
       "heat_set_point": {
         "name": "Spa Heat Set Point",
-        "value": 96,
-        "unit": "\u00b0F"
+        "value": 97,
+        "unit": "\u00b0F",
+        "hass_device_class": "temperature"
       },
       "cool_set_point": {
         "name": "Spa Cool Set Point",
-        "value": 68,
+        "value": 54,
         "unit": "\u00b0F"
       },
       "heat_mode": {
         "name": "Spa Heat Mode",
-        "value": 0
+        "value": 3
       }
     }
   },
@@ -255,7 +237,7 @@
       "function": 16,
       "interface": 3,
       "flags": 0,
-      "color_set": 0,
+      "color_set": 2,
       "color_position": 0,
       "color_stagger": 10,
       "device_id": 3,
@@ -269,7 +251,7 @@
       "function": 16,
       "interface": 3,
       "flags": 0,
-      "color_set": 0,
+      "color_set": 7,
       "color_position": 0,
       "color_stagger": 10,
       "device_id": 4,
@@ -302,7 +284,7 @@
       "color_stagger": 0,
       "device_id": 6,
       "default_rt": 720,
-      "value": 0
+      "value": 1
     },
     "506": {
       "id": 506,
@@ -344,7 +326,7 @@
       "color_stagger": 0,
       "device_id": 9,
       "default_rt": 720,
-      "value": 0
+      "value": 1
     },
     "510": {
       "id": 510,
@@ -473,25 +455,174 @@
       "value": 0
     }
   },
+  "pumps": {
+    "0": {
+      "data": 70,
+      "name": "Pool Low, Pool High, Spa Pump",
+      "pumpType": 3,
+      "state": 1,
+      "currentWatts": {
+        "name": "Pump 1 Watts",
+        "value": 1342,
+        "unit": "W",
+        "hass_device_class": "power"
+      },
+      "currentRPM": {
+        "name": "Pump 1 RPM",
+        "value": 2800,
+        "unit": "RPM"
+      },
+      "currentGPM": {
+        "name": "Pump 1 GPM",
+        "value": 62,
+        "unit": "GPM"
+      },
+      "presets": {
+        "0": {
+          "cid": 6,
+          "setPoint": 2500,
+          "isRPM": 1
+        },
+        "1": {
+          "cid": 9,
+          "setPoint": 2800,
+          "isRPM": 1
+        },
+        "2": {
+          "cid": 1,
+          "setPoint": 3450,
+          "isRPM": 1
+        },
+        "3": {
+          "cid": 0,
+          "setPoint": 30,
+          "isRPM": 0
+        },
+        "4": {
+          "cid": 0,
+          "setPoint": 30,
+          "isRPM": 0
+        },
+        "5": {
+          "cid": 0,
+          "setPoint": 30,
+          "isRPM": 0
+        },
+        "6": {
+          "cid": 0,
+          "setPoint": 30,
+          "isRPM": 0
+        },
+        "7": {
+          "cid": 0,
+          "setPoint": 30,
+          "isRPM": 0
+        }
+      }
+    },
+    "1": {
+      "data": 66,
+      "name": "Waterfall Pump",
+      "pumpType": 3,
+      "state": 0,
+      "currentWatts": {
+        "name": "Pump 2 Watts",
+        "value": 0,
+        "unit": "W",
+        "hass_device_class": "power"
+      },
+      "currentRPM": {
+        "name": "Pump 2 RPM",
+        "value": 0,
+        "unit": "RPM"
+      },
+      "currentGPM": {
+        "name": "Pump 2 GPM",
+        "value": 0,
+        "unit": "GPM"
+      },
+      "presets": {
+        "0": {
+          "cid": 2,
+          "setPoint": 2000,
+          "isRPM": 1
+        },
+        "1": {
+          "cid": 0,
+          "setPoint": 30,
+          "isRPM": 0
+        },
+        "2": {
+          "cid": 0,
+          "setPoint": 30,
+          "isRPM": 0
+        },
+        "3": {
+          "cid": 0,
+          "setPoint": 30,
+          "isRPM": 0
+        },
+        "4": {
+          "cid": 0,
+          "setPoint": 30,
+          "isRPM": 0
+        },
+        "5": {
+          "cid": 0,
+          "setPoint": 30,
+          "isRPM": 0
+        },
+        "6": {
+          "cid": 0,
+          "setPoint": 30,
+          "isRPM": 0
+        },
+        "7": {
+          "cid": 0,
+          "setPoint": 30,
+          "isRPM": 0
+        }
+      }
+    },
+    "2": {
+      "data": 0
+    },
+    "3": {
+      "data": 0
+    },
+    "4": {
+      "data": 0
+    },
+    "5": {
+      "data": 0
+    },
+    "6": {
+      "data": 0
+    },
+    "7": {
+      "data": 0
+    }
+  },
   "sensors": {
     "air_temperature": {
       "name": "Air Temperature",
-      "value": 68,
-      "unit": "\u00b0F"
+      "value": 54,
+      "unit": "\u00b0F",
+      "hass_device_class": "temperature"
     },
     "ph": {
       "name": "pH",
-      "value": 7.5,
+      "value": 7.24,
       "unit": "pH"
     },
     "orp": {
       "name": "ORP",
-      "value": 726,
+      "value": 740,
       "unit": "mV"
     },
     "saturation": {
       "name": "Saturation Index",
-      "value": 0.14,
+      "value": -0.48,
       "unit": "lsi"
     },
     "salt_ppm": {
@@ -499,17 +630,17 @@
       "value": 0,
       "unit": "ppm"
     },
-    "ph_tank_level": {
-      "name": "pH Tank Level",
-      "value": 2
+    "ph_supply_level": {
+      "name": "pH Supply Level",
+      "value": 6
     },
-    "orp_tank_level": {
-      "name": "ORP Tank Level",
-      "value": 3
+    "orp_supply_level": {
+      "name": "ORP Supply Level",
+      "value": 1
     },
     "chem_alarm": {
       "name": "Chemistry Alarm",
-      "value": 0
+      "value": 1
     }
   }
 }
