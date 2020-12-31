@@ -8,28 +8,14 @@ def decode(buff, data, pumpID):
     pump['state'], offset = getSome("I", buff, offset)
 
     curW, offset = getSome("I", buff, offset)
-    pump['currentWatts'] = {
-        'name': 'Pump ' + str(pumpID+1) + " Watts",
-        'value': curW,
-        'unit': 'W',
-        'hass_device_class': 'power'
-    }
-
+    pump['currentWatts'] = {}
     curR, offset = getSome("I", buff, offset)
-    pump['currentRPM'] = {
-        'name': 'Pump ' + str(pumpID+1) + " RPM",
-        'value': curR,
-        'unit': 'RPM'
-    }
-
+    pump['currentRPM'] = {}
+    
     unknown1, offset = getSome("I", buff, offset)
 
     curG, offset = getSome("I", buff, offset)
-    pump['currentGPM'] = {
-        'name': 'Pump ' + str(pumpID+1) + " GPM",
-        'value': curG,
-        'unit': 'GPM'
-    }
+    pump['currentGPM'] = {}
 
     unknown2, offset = getSome("I", buff, offset)
 
@@ -46,3 +32,22 @@ def decode(buff, data, pumpID):
 
     name = name.strip().strip(',') + ' Pump'
     pump['name'] = name
+
+    pump['currentWatts'] = {
+        'name': pump['name'] + " Current Watts",
+        'value': curW,
+        'unit': 'W',
+        'hass_device_class': 'power'
+    }
+
+    pump['currentRPM'] = {
+        'name': pump['name'] + " Current RPM",
+        'value': curR,
+        'unit': 'rpm'
+    }
+
+    pump['currentGPM'] = {
+        'name': pump['name'] + " Current GPM",
+        'value': curG,
+        'unit': 'gpm'
+    }
