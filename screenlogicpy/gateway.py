@@ -10,11 +10,8 @@ from .request.heat import request_set_heat_setpoint, request_set_heat_mode
 from .request.lights import request_pool_lights_command
 from .const import HEAT_MODE, ScreenLogicError
 
-class GatewayInfo:
-    pass
-
 class ScreenLogicGateway:
-    def __init__(self, ip, port=80, gtype=0, gsubtype=0, name=""):
+    def __init__(self, ip, port=80, gtype=0, gsubtype=0, name="Unnamed-Screenlogic-Gateway"):
         self.__ip = ip
         self.__port = port
         self.__type = gtype
@@ -22,6 +19,7 @@ class ScreenLogicGateway:
         self.__name = name
         self.__connected = False
         self.__data = {}
+
         
         if (self.__ip and self.__port):
             if (self._connect()):
@@ -139,3 +137,5 @@ class ScreenLogicGateway:
         return (self.__data['bodies'][int(body)]['min_set_point']['value'] <=
                 temp <=
                 self.__data['bodies'][int(body)]['max_set_point']['value'])
+
+

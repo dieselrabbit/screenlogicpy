@@ -117,7 +117,7 @@ def cli():
     _port = 80
     _type = 0
     _subtype = 0
-    _name = "Unnamed Gateway"
+    _name = ""
 
     option_parser = argparse.ArgumentParser(
         description="Interface for Pentair Screenlogic gateway")
@@ -191,7 +191,6 @@ def cli():
         if (not _ip):
             # Try to discover gateway
             host = discover()
-            #_ip, _port, _type, _subtype, _name = discover()
             if (host['ip']):
                 discovered = True
                 _ip = host['ip']
