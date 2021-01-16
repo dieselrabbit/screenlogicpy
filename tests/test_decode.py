@@ -1,4 +1,4 @@
-from screenlogicpy.response.utility import getSome
+from screenlogicpy.requests.utility import getSome
 
 #pylint: disable=unused-variable
 def decode(buff):

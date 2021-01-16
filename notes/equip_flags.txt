@@ -2,6 +2,9 @@ config	1111 1111 1111 1111 1000 0000 0011 1000
 solar	                                   0001
 sheatp	                                   0010
 chlor	                                   0100
+UNKNOWN                                    1000
+UNKNOWN                                  1 0000
+UNKNOWN                                 10 0000
 cooling	                         1000 0000 0000
 ichem	                    1000 0000 0000 0000
 

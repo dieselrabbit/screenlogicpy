@@ -1,7 +1,13 @@
-from .utility import getSome
+import struct
+from .utility import sendRecieveMessage, makeMessage, getSome
+from ..const import code
+
+def request_pump_status(gateway_socket, data, pumpID):
+    response = sendRecieveMessage(gateway_socket, code.PUMPSTATUS_QUERY, struct.pack("<II", 0, pumpID))
+    decode_pump_status(response, data, pumpID)
 
 #pylint: disable=unused-variable
-def decode(buff, data, pumpID):
+def decode_pump_status(buff, data, pumpID):
     pump = data['pumps'][pumpID]
     pump['name'] = ''
     pump['pumpType'], offset = getSome("I", buff, 0)

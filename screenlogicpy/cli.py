@@ -183,7 +183,7 @@ def cli():
     set_heat_temp_parser.add_argument('temp', type=int, metavar='TEMP', default=None)
     set_heat_temp_parser.set_defaults(func=set_heat_temp)
 
-    args = option_parser.parse_args()
+    args = option_parser.parse_args() # save for debugger: ['get', 'json']
     try:
         _ip = args.ip
         _port = args.port

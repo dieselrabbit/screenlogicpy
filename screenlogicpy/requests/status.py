@@ -1,40 +1,46 @@
-from .utility import getSome
-from ..const import BODY_TYPE
+import struct
+from .utility import sendRecieveMessage, makeMessage, getSome
+from ..const import code, BODY_TYPE
+
+def request_pool_status(gateway_socket, data):
+    response = sendRecieveMessage(gateway_socket, code.POOLSTATUS_QUERY, struct.pack("<I", 0))
+    decode_pool_status(response, data)
 
 #pylint: disable=unused-variable
-def decode(buff, data):
+def decode_pool_status(buff, data):
 
-    #data[""][""] = { 
+    #data[""] = { 
     #    'name':'', 
     #    'value': }
+    config = data["config"]
   
     ok, offset = getSome("I", buff, 0)
-    data["config"]["ok"] = {
+    config["ok"] = {
         'name': 'OK Check',
         'value': ok }
 
     freezeMode, offset = getSome("B", buff, offset)
-    data["config"]["freeze_mode"] = { 
+    config["freeze_mode"] = { 
         'name':'Freeze Mode', 
         'value':freezeMode }
 
     remotes, offset = getSome("B", buff, offset)
-    data["config"]["remotes"] = { 
+    config["remotes"] = { 
         'name':'Remotes', 
         'value':remotes }
 
     poolDelay, offset = getSome("B", buff, offset)
-    data["config"]["pool_delay"] = { 
+    config["pool_delay"] = { 
         'name':'Pool Delay', 
         'value':poolDelay }
 
     spaDelay, offset = getSome("B", buff, offset)
-    data["config"]["spa_delay"] = { 
+    config["spa_delay"] = { 
         'name':'Spa Delay', 
         'value':spaDelay }
 
     cleanerDelay, offset = getSome("B", buff, offset)
-    data["config"]["cleaner_delay"] = { 
+    config["cleaner_delay"] = { 
         'name':'Cleaner Delay', 
         'value':cleanerDelay }
 
@@ -44,14 +50,16 @@ def decode(buff, data):
     ff3, offset = getSome("B", buff, offset)
 
     unittxt = '\xb0F'
-    if(data['config']['is_celcius']['value']):
+    if(config['is_celcius']['value']):
         unittxt = '\xb0C'
 
     if('sensors' not in data):
         data['sensors'] = {}
 
+    sensors = data['sensors']
+
     airTemp, offset = getSome("i", buff, offset)
-    data['sensors']['air_temperature'] = {
+    sensors['air_temperature'] = {
         'name':"Air Temperature",
         'value':airTemp,
         'unit':unittxt,
@@ -64,23 +72,27 @@ def decode(buff, data):
     if('bodies' not in data):
         data['bodies'] = {} 
 
+    bodies = data['bodies']
+
     for i in range(bodiesCount):
         bodyType, offset = getSome("I", buff, offset)
         if(bodyType not in range(2)): bodyType = 0
 
-        if(i not in data['bodies']):
-            data['bodies'][i] = {}
+        if(i not in bodies):
+            bodies[i] = {}
 
-        data['bodies'][i]['min_set_point']['unit'] = unittxt
-        data['bodies'][i]['max_set_point']['unit'] = unittxt
+        currentBody = bodies[i]
+        
+        currentBody['min_set_point']['unit'] = unittxt
+        currentBody['max_set_point']['unit'] = unittxt
 
-        data['bodies'][i]['body_type'] = {
+        currentBody['body_type'] = {
             'name':"Type of body of water",
             'value':bodyType}
 
         currentTemp, offset = getSome("i", buff, offset)
         bodyName = "Current {} Temperature".format(BODY_TYPE.GetFriendlyName(bodyType))
-        data['bodies'][i]['current_temperature'] = {
+        currentBody['current_temperature'] = {
             'name':bodyName,
             'value':currentTemp,
             'unit':unittxt,
@@ -88,13 +100,13 @@ def decode(buff, data):
 
         heatStatus, offset = getSome("i", buff, offset)
         heaterName = "{} Heat".format(BODY_TYPE.GetFriendlyName(bodyType))
-        data['bodies'][i]['heat_status'] = {
+        currentBody['heat_status'] = {
             'name':heaterName,
             'value':heatStatus}
 
         heatSetPoint, offset = getSome("i", buff, offset)
         hspName = "{} Heat Set Point".format(BODY_TYPE.GetFriendlyName(bodyType))
-        data['bodies'][i]['heat_set_point'] = {
+        currentBody['heat_set_point'] = {
             'name':hspName,
             'value':heatSetPoint,
             'unit':unittxt,
@@ -102,14 +114,14 @@ def decode(buff, data):
 
         coolSetPoint, offset = getSome("i", buff, offset)
         cspName = "{} Cool Set Point".format(BODY_TYPE.GetFriendlyName(bodyType))
-        data['bodies'][i]['cool_set_point'] = {
+        currentBody['cool_set_point'] = {
             'name':cspName,
             'value':coolSetPoint,
             'unit':unittxt}
 
         heatMode, offset = getSome("i", buff, offset)
         hmName = "{} Heat Mode".format(BODY_TYPE.GetFriendlyName(bodyType))
-        data['bodies'][i]['heat_mode'] = {
+        currentBody['heat_mode'] = {
             'name':hmName,
             'value':heatMode}
   
@@ -118,62 +130,70 @@ def decode(buff, data):
     if('circuits' not in data):
         data['circuits'] = {}
 
+    circuits = data['circuits']
+
     for i in range(circuitCount):
         circuitID, offset = getSome("I", buff, offset)
 
-        if(circuitID not in data['circuits']):
-            data['circuits'][circuitID] = {}
+        if(circuitID not in circuits):
+            circuits[circuitID] = {}
 
-        if('id' not in data['circuits'][circuitID]):
-            data['circuits'][circuitID]['id'] = circuitID
+        currentCircuit = circuits[circuitID]
+
+        if('id' not in currentCircuit):
+            currentCircuit['id'] = circuitID
 
         circuitstate, offset = getSome("I", buff, offset)
-        data['circuits'][circuitID]['value'] = circuitstate
+        currentCircuit['value'] = circuitstate
 
-        circuitColorSet, offset = getSome("B", buff, offset)
-        circuitColorPos, offset = getSome("B", buff, offset)
-        circuitColorStagger, offset = getSome("B", buff, offset)
+        cColorSet, offset = getSome("B", buff, offset)
+        currentCircuit['color_set'] = cColorSet
+
+        cColorPos, offset = getSome("B", buff, offset)
+        currentCircuit['color_position'] = cColorPos
+
+        cColorStagger, offset = getSome("B", buff, offset)
+        currentCircuit['color_stagger'] = cColorStagger
+
         circuitDelay, offset = getSome("B", buff, offset)
+        currentCircuit['delay'] = circuitDelay
 
-    #if('chemistry' not in data):
-    #    data['chemistry'] = {}
-    
     pH, offset = getSome("i", buff, offset)
-    data['sensors']['ph'] = {
+    sensors['ph'] = {
         'name':"pH",
         'value':(pH / 100),
         'unit':'pH'}
   
     orp, offset = getSome("i", buff, offset)
-    data['sensors']['orp'] = {
+    sensors['orp'] = {
         'name':"ORP",
         'value':orp,
         'unit':'mV'}
 
     saturation, offset = getSome("i", buff, offset)
-    data['sensors']['saturation'] = {
+    sensors['saturation'] = {
         'name':"Saturation Index",
         'value':(saturation / 100),
         'unit':'lsi'}
 
     saltPPM, offset = getSome("i", buff, offset)
-    data['sensors']['salt_ppm'] = {
+    sensors['salt_ppm'] = {
         'name':"Salt",
         'value':(saltPPM * 50),
         'unit':'ppm'}
 
     pHTank, offset = getSome("i", buff, offset)
-    data['sensors']['ph_supply_level'] = {
+    sensors['ph_supply_level'] = {
         'name':"pH Supply Level",
         'value':pHTank}
 
     orpTank, offset = getSome("i", buff, offset)
-    data['sensors']['orp_supply_level'] = {
+    sensors['orp_supply_level'] = {
         'name':"ORP Supply Level",
         'value':orpTank}
 
     alarm, offset = getSome("i", buff, offset)
-    data['sensors']['chem_alarm'] = {
+    sensors['chem_alarm'] = {
         'name':"Chemistry Alarm",
         'value':alarm}
 

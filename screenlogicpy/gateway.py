@@ -1,13 +1,16 @@
 import time
 import socket
-from .request.login import gateway_login
-from .request.gateway import request_gateway_version
-from .request.config import request_pool_config
-from .request.status import request_pool_status
-from .request.button import request_pool_button_press
-from .request.pump  import request_pump_status
-from .request.heat import request_set_heat_setpoint, request_set_heat_mode
-from .request.lights import request_pool_lights_command
+from .requests import (
+    gateway_login,
+    request_gateway_version,
+    request_pool_button_press,
+    request_pool_config,
+    request_pool_lights_command,
+    request_pool_status,
+    request_pump_status,
+    request_set_heat_mode,
+    request_set_heat_setpoint,
+)
 from .const import HEAT_MODE, ScreenLogicError
 
 class ScreenLogicGateway:
