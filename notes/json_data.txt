@@ -1,16 +1,16 @@
 {
   "config": {
-    "controler_id": {        
-      "name": "Controler ID",
+    "controler_id": {
+      "name": "Controler ID",     
       "value": 100
     },
     "is_celcius": {
-      "name": "Is Celcius",  
+      "name": "Is Celcius",       
       "value": 0
     },
     "controler_type": 13,
     "hardware_type": 0,
-    "controler_buffer": 0,
+    "controler_buffer": 0,        
     "equipment_flags": 4294934584,
     "generic_circuit_name": {
       "name": "Default Circuit Name",
@@ -135,7 +135,7 @@
       },
       "current_temperature": {
         "name": "Current Pool Temperature",
-        "value": 51,
+        "value": 53,
         "unit": "\u00b0F",
         "hass_device_class": "temperature"
       },
@@ -214,7 +214,8 @@
       "color_stagger": 0,
       "device_id": 1,
       "default_rt": 720,
-      "value": 0
+      "value": 0,
+      "delay": 0
     },
     "501": {
       "id": 501,
@@ -228,7 +229,8 @@
       "color_stagger": 0,
       "device_id": 2,
       "default_rt": 720,
-      "value": 0
+      "value": 0,
+      "delay": 0
     },
     "502": {
       "id": 502,
@@ -242,7 +244,8 @@
       "color_stagger": 10,
       "device_id": 3,
       "default_rt": 720,
-      "value": 0
+      "value": 0,
+      "delay": 0
     },
     "503": {
       "id": 503,
@@ -256,7 +259,8 @@
       "color_stagger": 10,
       "device_id": 4,
       "default_rt": 720,
-      "value": 0
+      "value": 0,
+      "delay": 0
     },
     "504": {
       "id": 504,
@@ -270,7 +274,8 @@
       "color_stagger": 0,
       "device_id": 5,
       "default_rt": 720,
-      "value": 0
+      "value": 0,
+      "delay": 0
     },
     "505": {
       "id": 505,
@@ -284,7 +289,8 @@
       "color_stagger": 0,
       "device_id": 6,
       "default_rt": 720,
-      "value": 1
+      "value": 0,
+      "delay": 0
     },
     "506": {
       "id": 506,
@@ -298,7 +304,8 @@
       "color_stagger": 0,
       "device_id": 7,
       "default_rt": 720,
-      "value": 0
+      "value": 0,
+      "delay": 0
     },
     "507": {
       "id": 507,
@@ -312,7 +319,8 @@
       "color_stagger": 0,
       "device_id": 8,
       "default_rt": 720,
-      "value": 0
+      "value": 0,
+      "delay": 0
     },
     "508": {
       "id": 508,
@@ -326,7 +334,8 @@
       "color_stagger": 0,
       "device_id": 9,
       "default_rt": 720,
-      "value": 1
+      "value": 0,
+      "delay": 0
     },
     "510": {
       "id": 510,
@@ -340,7 +349,8 @@
       "color_stagger": 0,
       "device_id": 11,
       "default_rt": 720,
-      "value": 0
+      "value": 0,
+      "delay": 0
     },
     "511": {
       "id": 511,
@@ -354,7 +364,8 @@
       "color_stagger": 0,
       "device_id": 12,
       "default_rt": 720,
-      "value": 0
+      "value": 0,
+      "delay": 0
     },
     "512": {
       "id": 512,
@@ -368,7 +379,8 @@
       "color_stagger": 0,
       "device_id": 13,
       "default_rt": 720,
-      "value": 0
+      "value": 0,
+      "delay": 0
     },
     "513": {
       "id": 513,
@@ -382,7 +394,8 @@
       "color_stagger": 0,
       "device_id": 14,
       "default_rt": 720,
-      "value": 0
+      "value": 0,
+      "delay": 0
     },
     "514": {
       "id": 514,
@@ -396,7 +409,8 @@
       "color_stagger": 0,
       "device_id": 15,
       "default_rt": 720,
-      "value": 0
+      "value": 0,
+      "delay": 0
     },
     "515": {
       "id": 515,
@@ -410,7 +424,8 @@
       "color_stagger": 0,
       "device_id": 16,
       "default_rt": 720,
-      "value": 0
+      "value": 0,
+      "delay": 0
     },
     "516": {
       "id": 516,
@@ -424,7 +439,8 @@
       "color_stagger": 0,
       "device_id": 17,
       "default_rt": 720,
-      "value": 0
+      "value": 0,
+      "delay": 0
     },
     "517": {
       "id": 517,
@@ -438,7 +454,8 @@
       "color_stagger": 0,
       "device_id": 18,
       "default_rt": 720,
-      "value": 0
+      "value": 0,
+      "delay": 0
     },
     "519": {
       "id": 519,
@@ -452,30 +469,31 @@
       "color_stagger": 0,
       "device_id": 20,
       "default_rt": 720,
-      "value": 0
+      "value": 0,
+      "delay": 0
     }
   },
   "pumps": {
     "0": {
       "data": 70,
-      "name": "Pool Low, Pool High, Spa Pump",
+      "name": "Pool Low Pump",
       "pumpType": 3,
-      "state": 1,
+      "state": 0,
       "currentWatts": {
-        "name": "Pump 1 Watts",
-        "value": 1342,
+        "name": "Pool Low Pump Current Watts",
+        "value": 0,
         "unit": "W",
         "hass_device_class": "power"
       },
       "currentRPM": {
-        "name": "Pump 1 RPM",
-        "value": 2800,
-        "unit": "RPM"
+        "name": "Pool Low Pump Current RPM",
+        "value": 0,
+        "unit": "rpm"
       },
       "currentGPM": {
-        "name": "Pump 1 GPM",
-        "value": 62,
-        "unit": "GPM"
+        "name": "Pool Low Pump Current GPM",
+        "value": 0,
+        "unit": "gpm"
       },
       "presets": {
         "0": {
@@ -526,20 +544,20 @@
       "pumpType": 3,
       "state": 0,
       "currentWatts": {
-        "name": "Pump 2 Watts",
+        "name": "Waterfall Pump Current Watts",
         "value": 0,
         "unit": "W",
         "hass_device_class": "power"
       },
       "currentRPM": {
-        "name": "Pump 2 RPM",
+        "name": "Waterfall Pump Current RPM",
         "value": 0,
-        "unit": "RPM"
+        "unit": "rpm"
       },
       "currentGPM": {
-        "name": "Pump 2 GPM",
+        "name": "Waterfall Pump Current GPM",
         "value": 0,
-        "unit": "GPM"
+        "unit": "gpm"
       },
       "presets": {
         "0": {
@@ -612,17 +630,17 @@
     },
     "ph": {
       "name": "pH",
-      "value": 7.24,
+      "value": 7.5,
       "unit": "pH"
     },
     "orp": {
       "name": "ORP",
-      "value": 740,
+      "value": 733,
       "unit": "mV"
     },
     "saturation": {
       "name": "Saturation Index",
-      "value": -0.48,
+      "value": -0.19,
       "unit": "lsi"
     },
     "salt_ppm": {
@@ -636,11 +654,12 @@
     },
     "orp_supply_level": {
       "name": "ORP Supply Level",
-      "value": 1
+      "value": 2
     },
     "chem_alarm": {
       "name": "Chemistry Alarm",
-      "value": 1
+      "value": 0,
+      "hass_device_class": "problem"
     }
   }
 }

@@ -1,7 +1,7 @@
 import time
 import socket
 from .requests import (
-    gateway_login,
+    connect_to_gateway,
     request_gateway_version,
     request_pool_button_press,
     request_pool_config,
@@ -20,6 +20,7 @@ class ScreenLogicGateway:
         self.__type = gtype
         self.__subtype = gsubtype
         self.__name = name
+        self.__mac = ""
         self.__connected = False
         self.__data = {}
 
@@ -44,6 +45,10 @@ class ScreenLogicGateway:
     @property
     def name(self):
         return self.__name
+
+    @property
+    def mac(self):
+        return self.__mac
 
     def update(self):
         if ((self.is_connected or self._connect()) and self.__data):
@@ -96,8 +101,9 @@ class ScreenLogicGateway:
 
 
     def _connect(self):
-        self.__socket = gateway_login(self.__ip, self.__port)
-        if (self.__socket):
+        soc_mac = connect_to_gateway(self.__ip, self.__port)
+        if (soc_mac):
+            self.__socket, self.__mac = soc_mac
             self.__version = ""
             self.__version = request_gateway_version(self.__socket)
             if (self.__version):

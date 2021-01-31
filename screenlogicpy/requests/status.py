@@ -195,5 +195,6 @@ def decode_pool_status(buff, data):
     alarm, offset = getSome("i", buff, offset)
     sensors['chem_alarm'] = {
         'name':"Chemistry Alarm",
-        'value':alarm}
+        'value':alarm,
+        'hass_device_class': 'problem'}
 

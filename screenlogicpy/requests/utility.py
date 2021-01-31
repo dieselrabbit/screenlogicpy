@@ -3,15 +3,21 @@ import struct
 from ..const import ScreenLogicError, header, code
 
 def sendRecieveMessage(gateway_socket, code, message=b''):
-    gateway_socket.sendall(makeMessage(code, message))
-    data = gateway_socket.recv(1024)
-    if not data:
-        raise ScreenLogicError("No data recieved from the gateway. Request code: {}".format(code))
-    rcvCode, buff = takeMessage(data)
-    if (rcvCode != (code + 1)):
-        raise ScreenLogicError("Unexpected response recieved from the gateway. Expected: {}. Recieved: {}.".format(code + 1, rcvCode))
-    return buff
-
+    badCodes = []
+    try:
+        gateway_socket.sendall(makeMessage(code, message))
+        while len(badCodes) < 2:
+            data = gateway_socket.recv(1024)
+            if not data:
+                raise ScreenLogicError("No data recieved from the gateway. Request code: {}".format(code))
+            rcvCode, buff = takeMessage(data)
+            if (rcvCode == (code + 1)):
+                return buff
+            else:
+                badCodes.append(rcvCode)
+        raise ScreenLogicError("Failed to recieve the expected response from the gateway within 2 tries. Expected: {}. Recieved: {}.".format(code + 1, badCodes))
+    except socket.timeout:
+        raise ScreenLogicError("Failed to recieve the expected response from the gateway within timeout. Expected: {}. Recieved: {}.".format(code + 1, badCodes))
 
 def encodeMessageString(string):
     data = string.encode()
@@ -45,11 +51,9 @@ def makeMessage(msgCode2, messageData=b''):
 def takeMessage(message):
     messageBytes = len(message) - header.length
     #pylint: disable=unused-variable
-    rcvCode1, rcvCode2,\
-        rcvLen, data = struct.unpack(header.fmt + str(messageBytes) + "s",
-                                     message)
+    rcvCode1, rcvCode2, rcvLen, data = struct.unpack(header.fmt + str(messageBytes) + "s", message)
     if(rcvLen != messageBytes):
-        raise ScreenLogicError("Invalid response recieved from host.")
+        raise ScreenLogicError("Data recieved does not match expected length")
     if(rcvCode2 == code.UNKNOWN_ANSWER):
         raise ScreenLogicError("Unexpected response recieved from the gateway. Recieved code_unknown.")
     return rcvCode2, data # return raw data
