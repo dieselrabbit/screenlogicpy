@@ -47,12 +47,13 @@ def gateway_connect(connected_socket):
 
 def gateway_login(connected_socket):
     msg = create_login_message()
-    response = sendRecieveMessage(connected_socket, code.LOCALLOGIN_QUERY, msg)
-    if response == b'':
+    try:
+        response = sendRecieveMessage(connected_socket, code.LOCALLOGIN_QUERY, msg)
         return True
-    else:
+    except ScreenLogicError:
         return False
 
+    
 def connect_to_gateway(gateway_ip, gateway_port):
     connected_socket = create_socket(gateway_ip, gateway_port)
 
