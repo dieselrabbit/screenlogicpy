@@ -60,7 +60,7 @@ def takeMessage(message):
 
 
 def getSome(want, buff, offset):
-    fmt = "<" + want
+    fmt = want if want.startswith(">") else "<" + want
     newoffset = offset + struct.calcsize(fmt)
     return struct.unpack_from(fmt, buff, offset)[0], newoffset
 

@@ -12,7 +12,7 @@
     "hardware_type": 0,
     "controler_buffer": 0,        
     "equipment_flags": 4294934584,
-    "generic_circuit_name": {
+    "generic_circuit_name": {     
       "name": "Default Circuit Name",
       "value": "Water Features"
     },
@@ -135,7 +135,7 @@
       },
       "current_temperature": {
         "name": "Current Pool Temperature",
-        "value": 53,
+        "value": 54,
         "unit": "\u00b0F",
         "hass_device_class": "temperature"
       },
@@ -192,7 +192,7 @@
       },
       "cool_set_point": {
         "name": "Spa Cool Set Point",
-        "value": 54,
+        "value": 49,
         "unit": "\u00b0F"
       },
       "heat_mode": {
@@ -624,23 +624,23 @@
   "sensors": {
     "air_temperature": {
       "name": "Air Temperature",
-      "value": 54,
+      "value": 49,
       "unit": "\u00b0F",
       "hass_device_class": "temperature"
     },
     "ph": {
       "name": "pH",
-      "value": 7.5,
+      "value": 7.41,
       "unit": "pH"
     },
     "orp": {
       "name": "ORP",
-      "value": 733,
+      "value": 718,
       "unit": "mV"
     },
     "saturation": {
       "name": "Saturation Index",
-      "value": -0.19,
+      "value": -0.35,
       "unit": "lsi"
     },
     "salt_ppm": {
@@ -650,16 +650,101 @@
     },
     "ph_supply_level": {
       "name": "pH Supply Level",
-      "value": 6
+      "value": 5
     },
     "orp_supply_level": {
       "name": "ORP Supply Level",
-      "value": 2
+      "value": 1
     },
     "chem_alarm": {
       "name": "Chemistry Alarm",
-      "value": 0,
+      "value": 1,
       "hass_device_class": "problem"
+    }
+  },
+  "chemistry": {
+    "unknown": {
+      "unknown1": 0,
+      "skipped": [
+        0,
+        0,
+        0,
+        4,
+        0,
+        0,
+        0,
+        5,
+        0,
+        8,
+        0,
+        10
+      ],
+      "unknown2": 65,
+      "last1": 32,
+      "last2": 60
+    },
+    "ph": {
+      "name": "pH",
+      "value": 0.0,
+      "unit": "pH"
+    },
+    "orp": {
+      "name": "ORP",
+      "value": 0,
+      "unit": "mV"
+    },
+    "ph_setpoint": {
+      "name": "pH",
+      "value": 7.5,
+      "unit": "pH"
+    },
+    "orp_setpoint": {
+      "name": "ORP",
+      "value": 720,
+      "unit": "mV"
+    },
+    "ph_supply_level": {
+      "name": "pH Supply Level",
+      "value": 5
+    },
+    "orp_supply_level": {
+      "name": "ORP Supply Level",
+      "value": 1
+    },
+    "saturation": {
+      "name": "Saturation Index",
+      "value": -0.35,
+      "unit": "lsi"
+    },
+    "calcium_harness": {
+      "name": "Calcium Hardness",
+      "value": 740,
+      "unit": "ppm"
+    },
+    "cya": {
+      "name": "Cyanuric Acid",
+      "value": 36,
+      "unit": "ppm"
+    },
+    "total_alkalinity": {
+      "name": "Total Alkalinity",
+      "value": 55,
+      "unit": "ppm"
+    },
+    "salt_ppm": {
+      "name": "Salt",
+      "value": 1000,
+      "unit": "ppm"
+    },
+    "water_temperature": {
+      "name": "Water Temperature",
+      "value": 54,
+      "unit": "\u00b0F",
+      "hass_device_class": "temperature"
+    },
+    "corosivness": {
+      "name": "Corosiveness",
+      "value": 101
     }
   }
 }
