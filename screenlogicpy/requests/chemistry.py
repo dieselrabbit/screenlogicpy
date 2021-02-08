@@ -55,9 +55,18 @@ def decode_chemistry(buff, data):
     
     # fast forward 12 bytes
     unknown['skipped'] = []
-    for i in range(12):
-     skip, offset = getSome("B", buff, offset) #13-23
-     unknown['skipped'].append(skip)
+    #for i in range(12):
+    #    skip, offset = getSome("B", buff, offset) #13-23
+    #    unknown['skipped'].append(skip)
+    skip1, offset = getSome(">I", buff, offset)
+    unknown['skipped'].append(skip1)
+    skip2, offset = getSome(">I", buff, offset)
+    unknown['skipped'].append(skip2)
+    skip3, offset = getSome(">H", buff, offset)
+    unknown['skipped'].append(skip3)
+    skip4, offset = getSome(">H", buff, offset)
+    unknown['skipped'].append(skip4)
+    
 
     pHSupplyLevel, offset = getSome("B", buff, offset) #25
     chemistry['ph_supply_level'] = {
