@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="screenlogicpy",
-    version="0.0.1",
+    version="0.0.2",
     author="Kevin Worrel",
     author_email="kevinworrel@yahoo.com",
     description="A small example package",

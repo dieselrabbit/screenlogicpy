@@ -1,0 +1,750 @@
+{
+  "config": {
+    "controler_id": {
+      "name": "Controler ID",     
+      "value": 100
+    },
+    "is_celcius": {
+      "name": "Is Celcius",       
+      "value": 0
+    },
+    "controler_type": 13,
+    "hardware_type": 0,
+    "controler_buffer": 0,        
+    "equipment_flags": 4294934584,
+    "generic_circuit_name": {     
+      "name": "Default Circuit Name",
+      "value": "Water Features"
+    },
+    "circuit_count": {
+      "name": "Number of Circuits",
+      "value": 18
+    },
+    "color_count": {
+      "name": "Number of Colors",
+      "value": 8
+    },
+    "colors": [
+      {
+        "name": "White",
+        "value": [
+          255,
+          255,
+          255
+        ]
+      },
+      {
+        "name": "Light Green",
+        "value": [
+          160,
+          255,
+          160
+        ]
+      },
+      {
+        "name": "Green",
+        "value": [
+          0,
+          255,
+          80
+        ]
+      },
+      {
+        "name": "Cyan",
+        "value": [
+          0,
+          255,
+          200
+        ]
+      },
+      {
+        "name": "Blue",
+        "value": [
+          100,
+          140,
+          255
+        ]
+      },
+      {
+        "name": "Lavender",
+        "value": [
+          230,
+          130,
+          255
+        ]
+      },
+      {
+        "name": "Magenta",
+        "value": [
+          255,
+          0,
+          128
+        ]
+      },
+      {
+        "name": "Light Magenta",
+        "value": [
+          255,
+          180,
+          210
+        ]
+      }
+    ],
+    "interface_tab_flags": 127,
+    "show_alarms": 0,
+    "ok": {
+      "name": "OK Check",
+      "value": 1
+    },
+    "freeze_mode": {
+      "name": "Freeze Mode",
+      "value": 0
+    },
+    "remotes": {
+      "name": "Remotes",
+      "value": 0
+    },
+    "pool_delay": {
+      "name": "Pool Delay",
+      "value": 0
+    },
+    "spa_delay": {
+      "name": "Spa Delay",
+      "value": 0
+    },
+    "cleaner_delay": {
+      "name": "Cleaner Delay",
+      "value": 0
+    }
+  },
+  "bodies": {
+    "0": {
+      "min_set_point": {
+        "name": "Pool Minimum Set Point",
+        "value": 40,
+        "unit": "\u00b0F"
+      },
+      "max_set_point": {
+        "name": "Pool Minimum Set Point",
+        "value": 104,
+        "unit": "\u00b0F"
+      },
+      "body_type": {
+        "name": "Type of body of water",
+        "value": 0
+      },
+      "current_temperature": {
+        "name": "Current Pool Temperature",
+        "value": 54,
+        "unit": "\u00b0F",
+        "hass_device_class": "temperature"
+      },
+      "heat_status": {
+        "name": "Pool Heat",
+        "value": 0
+      },
+      "heat_set_point": {
+        "name": "Pool Heat Set Point",
+        "value": 86,
+        "unit": "\u00b0F",
+        "hass_device_class": "temperature"
+      },
+      "cool_set_point": {
+        "name": "Pool Cool Set Point",
+        "value": 100,
+        "unit": "\u00b0F"
+      },
+      "heat_mode": {
+        "name": "Pool Heat Mode",
+        "value": 0
+      }
+    },
+    "1": {
+      "min_set_point": {
+        "name": "Spa Minimum Set Point",
+        "value": 40,
+        "unit": "\u00b0F"
+      },
+      "max_set_point": {
+        "name": "Spa Minimum Set Point",
+        "value": 104,
+        "unit": "\u00b0F"
+      },
+      "body_type": {
+        "name": "Type of body of water",
+        "value": 1
+      },
+      "current_temperature": {
+        "name": "Current Spa Temperature",
+        "value": 97,
+        "unit": "\u00b0F",
+        "hass_device_class": "temperature"
+      },
+      "heat_status": {
+        "name": "Spa Heat",
+        "value": 0
+      },
+      "heat_set_point": {
+        "name": "Spa Heat Set Point",
+        "value": 97,
+        "unit": "\u00b0F",
+        "hass_device_class": "temperature"
+      },
+      "cool_set_point": {
+        "name": "Spa Cool Set Point",
+        "value": 49,
+        "unit": "\u00b0F"
+      },
+      "heat_mode": {
+        "name": "Spa Heat Mode",
+        "value": 3
+      }
+    }
+  },
+  "circuits": {
+    "500": {
+      "id": 500,
+      "name": "Spa",
+      "name_index": 71,
+      "function": 1,
+      "interface": 1,
+      "flags": 1,
+      "color_set": 0,
+      "color_position": 0,
+      "color_stagger": 0,
+      "device_id": 1,
+      "default_rt": 720,
+      "value": 0,
+      "delay": 0
+    },
+    "501": {
+      "id": 501,
+      "name": "Waterfall",
+      "name_index": 85,
+      "function": 0,
+      "interface": 2,
+      "flags": 0,
+      "color_set": 0,
+      "color_position": 0,
+      "color_stagger": 0,
+      "device_id": 2,
+      "default_rt": 720,
+      "value": 0,
+      "delay": 0
+    },
+    "502": {
+      "id": 502,
+      "name": "Pool Light",
+      "name_index": 62,
+      "function": 16,
+      "interface": 3,
+      "flags": 0,
+      "color_set": 2,
+      "color_position": 0,
+      "color_stagger": 10,
+      "device_id": 3,
+      "default_rt": 720,
+      "value": 0,
+      "delay": 0
+    },
+    "503": {
+      "id": 503,
+      "name": "Spa Light",
+      "name_index": 73,
+      "function": 16,
+      "interface": 3,
+      "flags": 0,
+      "color_set": 7,
+      "color_position": 0,
+      "color_stagger": 10,
+      "device_id": 4,
+      "default_rt": 720,
+      "value": 0,
+      "delay": 0
+    },
+    "504": {
+      "id": 504,
+      "name": "Cleaner",
+      "name_index": 21,
+      "function": 0,
+      "interface": 2,
+      "flags": 0,
+      "color_set": 0,
+      "color_position": 0,
+      "color_stagger": 0,
+      "device_id": 5,
+      "default_rt": 720,
+      "value": 0,
+      "delay": 0
+    },
+    "505": {
+      "id": 505,
+      "name": "Pool Low",
+      "name_index": 63,
+      "function": 2,
+      "interface": 0,
+      "flags": 1,
+      "color_set": 0,
+      "color_position": 0,
+      "color_stagger": 0,
+      "device_id": 6,
+      "default_rt": 720,
+      "value": 0,
+      "delay": 0
+    },
+    "506": {
+      "id": 506,
+      "name": "Yard Light",
+      "name_index": 91,
+      "function": 0,
+      "interface": 2,
+      "flags": 0,
+      "color_set": 0,
+      "color_position": 0,
+      "color_stagger": 0,
+      "device_id": 7,
+      "default_rt": 720,
+      "value": 0,
+      "delay": 0
+    },
+    "507": {
+      "id": 507,
+      "name": "Aux 6",
+      "name_index": 7,
+      "function": 0,
+      "interface": 2,
+      "flags": 0,
+      "color_set": 0,
+      "color_position": 0,
+      "color_stagger": 0,
+      "device_id": 8,
+      "default_rt": 720,
+      "value": 0,
+      "delay": 0
+    },
+    "508": {
+      "id": 508,
+      "name": "Pool High",
+      "name_index": 61,
+      "function": 5,
+      "interface": 2,
+      "flags": 0,
+      "color_set": 0,
+      "color_position": 0,
+      "color_stagger": 0,
+      "device_id": 9,
+      "default_rt": 720,
+      "value": 0,
+      "delay": 0
+    },
+    "510": {
+      "id": 510,
+      "name": "Feature 1",
+      "name_index": 93,
+      "function": 0,
+      "interface": 2,
+      "flags": 0,
+      "color_set": 0,
+      "color_position": 0,
+      "color_stagger": 0,
+      "device_id": 11,
+      "default_rt": 720,
+      "value": 0,
+      "delay": 0
+    },
+    "511": {
+      "id": 511,
+      "name": "Feature 2",
+      "name_index": 94,
+      "function": 0,
+      "interface": 2,
+      "flags": 0,
+      "color_set": 0,
+      "color_position": 0,
+      "color_stagger": 0,
+      "device_id": 12,
+      "default_rt": 720,
+      "value": 0,
+      "delay": 0
+    },
+    "512": {
+      "id": 512,
+      "name": "Feature 3",
+      "name_index": 95,
+      "function": 0,
+      "interface": 2,
+      "flags": 0,
+      "color_set": 0,
+      "color_position": 0,
+      "color_stagger": 0,
+      "device_id": 13,
+      "default_rt": 720,
+      "value": 0,
+      "delay": 0
+    },
+    "513": {
+      "id": 513,
+      "name": "Feature 4",
+      "name_index": 96,
+      "function": 0,
+      "interface": 2,
+      "flags": 0,
+      "color_set": 0,
+      "color_position": 0,
+      "color_stagger": 0,
+      "device_id": 14,
+      "default_rt": 720,
+      "value": 0,
+      "delay": 0
+    },
+    "514": {
+      "id": 514,
+      "name": "Feature 5",
+      "name_index": 97,
+      "function": 0,
+      "interface": 2,
+      "flags": 0,
+      "color_set": 0,
+      "color_position": 0,
+      "color_stagger": 0,
+      "device_id": 15,
+      "default_rt": 720,
+      "value": 0,
+      "delay": 0
+    },
+    "515": {
+      "id": 515,
+      "name": "Feature 6",
+      "name_index": 98,
+      "function": 0,
+      "interface": 2,
+      "flags": 0,
+      "color_set": 0,
+      "color_position": 0,
+      "color_stagger": 0,
+      "device_id": 16,
+      "default_rt": 720,
+      "value": 0,
+      "delay": 0
+    },
+    "516": {
+      "id": 516,
+      "name": "Feature 7",
+      "name_index": 99,
+      "function": 0,
+      "interface": 2,
+      "flags": 0,
+      "color_set": 0,
+      "color_position": 0,
+      "color_stagger": 0,
+      "device_id": 17,
+      "default_rt": 720,
+      "value": 0,
+      "delay": 0
+    },
+    "517": {
+      "id": 517,
+      "name": "Feature 8",
+      "name_index": 100,
+      "function": 0,
+      "interface": 2,
+      "flags": 0,
+      "color_set": 0,
+      "color_position": 0,
+      "color_stagger": 0,
+      "device_id": 18,
+      "default_rt": 720,
+      "value": 0,
+      "delay": 0
+    },
+    "519": {
+      "id": 519,
+      "name": "AuxEx",
+      "name_index": 92,
+      "function": 0,
+      "interface": 2,
+      "flags": 0,
+      "color_set": 0,
+      "color_position": 0,
+      "color_stagger": 0,
+      "device_id": 20,
+      "default_rt": 720,
+      "value": 0,
+      "delay": 0
+    }
+  },
+  "pumps": {
+    "0": {
+      "data": 70,
+      "name": "Pool Low Pump",
+      "pumpType": 3,
+      "state": 0,
+      "currentWatts": {
+        "name": "Pool Low Pump Current Watts",
+        "value": 0,
+        "unit": "W",
+        "hass_device_class": "power"
+      },
+      "currentRPM": {
+        "name": "Pool Low Pump Current RPM",
+        "value": 0,
+        "unit": "rpm"
+      },
+      "currentGPM": {
+        "name": "Pool Low Pump Current GPM",
+        "value": 0,
+        "unit": "gpm"
+      },
+      "presets": {
+        "0": {
+          "cid": 6,
+          "setPoint": 2500,
+          "isRPM": 1
+        },
+        "1": {
+          "cid": 9,
+          "setPoint": 2800,
+          "isRPM": 1
+        },
+        "2": {
+          "cid": 1,
+          "setPoint": 3450,
+          "isRPM": 1
+        },
+        "3": {
+          "cid": 0,
+          "setPoint": 30,
+          "isRPM": 0
+        },
+        "4": {
+          "cid": 0,
+          "setPoint": 30,
+          "isRPM": 0
+        },
+        "5": {
+          "cid": 0,
+          "setPoint": 30,
+          "isRPM": 0
+        },
+        "6": {
+          "cid": 0,
+          "setPoint": 30,
+          "isRPM": 0
+        },
+        "7": {
+          "cid": 0,
+          "setPoint": 30,
+          "isRPM": 0
+        }
+      }
+    },
+    "1": {
+      "data": 66,
+      "name": "Waterfall Pump",
+      "pumpType": 3,
+      "state": 0,
+      "currentWatts": {
+        "name": "Waterfall Pump Current Watts",
+        "value": 0,
+        "unit": "W",
+        "hass_device_class": "power"
+      },
+      "currentRPM": {
+        "name": "Waterfall Pump Current RPM",
+        "value": 0,
+        "unit": "rpm"
+      },
+      "currentGPM": {
+        "name": "Waterfall Pump Current GPM",
+        "value": 0,
+        "unit": "gpm"
+      },
+      "presets": {
+        "0": {
+          "cid": 2,
+          "setPoint": 2000,
+          "isRPM": 1
+        },
+        "1": {
+          "cid": 0,
+          "setPoint": 30,
+          "isRPM": 0
+        },
+        "2": {
+          "cid": 0,
+          "setPoint": 30,
+          "isRPM": 0
+        },
+        "3": {
+          "cid": 0,
+          "setPoint": 30,
+          "isRPM": 0
+        },
+        "4": {
+          "cid": 0,
+          "setPoint": 30,
+          "isRPM": 0
+        },
+        "5": {
+          "cid": 0,
+          "setPoint": 30,
+          "isRPM": 0
+        },
+        "6": {
+          "cid": 0,
+          "setPoint": 30,
+          "isRPM": 0
+        },
+        "7": {
+          "cid": 0,
+          "setPoint": 30,
+          "isRPM": 0
+        }
+      }
+    },
+    "2": {
+      "data": 0
+    },
+    "3": {
+      "data": 0
+    },
+    "4": {
+      "data": 0
+    },
+    "5": {
+      "data": 0
+    },
+    "6": {
+      "data": 0
+    },
+    "7": {
+      "data": 0
+    }
+  },
+  "sensors": {
+    "air_temperature": {
+      "name": "Air Temperature",
+      "value": 49,
+      "unit": "\u00b0F",
+      "hass_device_class": "temperature"
+    },
+    "ph": {
+      "name": "pH",
+      "value": 7.41,
+      "unit": "pH"
+    },
+    "orp": {
+      "name": "ORP",
+      "value": 718,
+      "unit": "mV"
+    },
+    "saturation": {
+      "name": "Saturation Index",
+      "value": -0.35,
+      "unit": "lsi"
+    },
+    "salt_ppm": {
+      "name": "Salt",
+      "value": 0,
+      "unit": "ppm"
+    },
+    "ph_supply_level": {
+      "name": "pH Supply Level",
+      "value": 5
+    },
+    "orp_supply_level": {
+      "name": "ORP Supply Level",
+      "value": 1
+    },
+    "chem_alarm": {
+      "name": "Chemistry Alarm",
+      "value": 1,
+      "hass_device_class": "problem"
+    }
+  },
+  "chemistry": {
+    "unknown": {
+      "unknown1": 0,
+      "skipped": [
+        0,
+        0,
+        0,
+        4,
+        0,
+        0,
+        0,
+        5,
+        0,
+        8,
+        0,
+        10
+      ],
+      "unknown2": 65,
+      "last1": 32,
+      "last2": 60
+    },
+    "ph": {
+      "name": "pH",
+      "value": 0.0,
+      "unit": "pH"
+    },
+    "orp": {
+      "name": "ORP",
+      "value": 0,
+      "unit": "mV"
+    },
+    "ph_setpoint": {
+      "name": "pH",
+      "value": 7.5,
+      "unit": "pH"
+    },
+    "orp_setpoint": {
+      "name": "ORP",
+      "value": 720,
+      "unit": "mV"
+    },
+    "ph_supply_level": {
+      "name": "pH Supply Level",
+      "value": 5
+    },
+    "orp_supply_level": {
+      "name": "ORP Supply Level",
+      "value": 1
+    },
+    "saturation": {
+      "name": "Saturation Index",
+      "value": -0.35,
+      "unit": "lsi"
+    },
+    "calcium_harness": {
+      "name": "Calcium Hardness",
+      "value": 740,
+      "unit": "ppm"
+    },
+    "cya": {
+      "name": "Cyanuric Acid",
+      "value": 36,
+      "unit": "ppm"
+    },
+    "total_alkalinity": {
+      "name": "Total Alkalinity",
+      "value": 55,
+      "unit": "ppm"
+    },
+    "salt_ppm": {
+      "name": "Salt",
+      "value": 1000,
+      "unit": "ppm"
+    },
+    "water_temperature": {
+      "name": "Water Temperature",
+      "value": 54,
+      "unit": "\u00b0F",
+      "hass_device_class": "temperature"
+    },
+    "corosivness": {
+      "name": "Corosiveness",
+      "value": 101
+    }
+  }
+}

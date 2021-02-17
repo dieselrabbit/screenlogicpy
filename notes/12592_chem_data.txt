@@ -1,0 +1,88 @@
+off  *\x00\x00\x00\x00\x00\x00\x00\x00\x02\xee\x02\xee\x00\x00\x00\x04\x00\x00\x00\x0e\x00\x08\x00\x1e\x06\x03\xf2\x02\x12\x00'\x00P\x14\x00<\x01\x00U <\x01\x00\x00\x00\x00\x00
+on   *\x00\x00\x00\x00\x02\xec\x02\xfd\x02\xee\x02\xee\x00\x00\x00\x04\x00\x00\x00\x0e\x00\x08\x00\x1e\x06\x03\xee\x02\x12\x00'\x00P\x14\x00:\x00\x00\xa5 <\x01\x00\x00\x00\x00\x00
+
+unknowns:
+
+Normal, running, flow:
+    "unknown": {
+      "unknown1": 0,
+      "skipped": [
+        0,
+        0,
+        0,
+        4, 0000 0100
+        0,
+        0,
+        0,
+        5, 0000 0101
+        0,
+        8, 0000 1000
+        0,
+        10 0000 1010
+      ],
+      "unknown2": 64,
+      "last1": 32,
+      "last2": 60
+
+Normal, off:
+    "unknown": {
+      "unknown1": 0,
+      "skipped": [
+        0,
+        0,
+        0,
+        4, 0000 0100
+        0,
+        0,
+        0,
+        5, 0000 0101
+        0,
+        8, 0000 1000
+        0,
+        10 0000 1010
+      ],
+      "unknown2": 65,
+      "last1": 32,
+      "last2": 60
+
+low orp, off, normal corosivness
+    "unknown": {
+      "unknown1": 0,
+      "skipped": [
+        0,
+        0,
+        0,
+        4, 0000 0100
+        0,
+        0,
+        0,
+        13,0000 1101
+        0,
+        8, 0000 1000
+        0,
+        28 0001 1100
+      ],
+      "unknown2": 65, 0100 0001 <-flow error?
+      "last1": 32,
+      "last2": 60     0011 1100
+
+low orp, on, Corosive
+    "unknown": {
+      "unknown1": 0,
+      "skipped": [
+        0,
+        0,
+        0,
+        4,
+        0,
+        0,
+        0,
+        16,0001 0000
+        0,
+        8,
+        0,
+        35 0010 0011
+      ],
+      "unknown2": 64, 0100 0000
+      "last1": 32,
+      "last2": 60

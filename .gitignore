@@ -123,3 +123,5 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+notes/notes.txt
+notes/circuit_names.txt

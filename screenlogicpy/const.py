@@ -36,10 +36,18 @@ class code:
     SETHEATMODE_ANSWER    = SETHEATMODE_QUERY + 1
     SETCOOLTEMP_QUERY     = 12590
     SETCOOLTEMP_ANSWER    = SETCOOLTEMP_QUERY + 1
-#    GATEWAYDATA_QUERY     = 18003
-#    GATEWAYDATA_ANSWER    = GATEWAYDATA_QUERY + 1
+    GATEWAYDATA_QUERY     = 18003
+    GATEWAYDATA_ANSWER    = GATEWAYDATA_QUERY + 1
+    CONTROLLER_QUERRY     = 12532
+    CONTROLLER_ANSWER     = CONTROLLER_QUERRY + 1
     EQUIPMENT_QUERY       = 12566
     EQUIPMENT_ANSWER      = EQUIPMENT_QUERY + 1
+    PUMPSTATUS_QUERY      = 12584
+    PUMPSTATUS_ANSWER     = PUMPSTATUS_QUERY + 1
+    LIGHTCOMMAND_QUERY    = 12556
+    LIGHTCOMMAND_ANSWER   = LIGHTCOMMAND_QUERY + 1
+    CHEMISTRY_QUERY       = 12592
+    CHEMISTRY_ANSWER      = CHEMISTRY_QUERY + 1
 
 #class mapping:
 #    BODY_TYPE  = ['Pool', 'Spa']
@@ -134,3 +142,34 @@ class COLOR_MODE:
 
     def GetFriendlyName(self, index):
         return self._names[index]
+
+CONTROLLER_HARDWARE = {
+    0: {0:'IntelliTouch i5+3S'},
+    1: {0:'IntelliTouch i7+3'},
+    2: {0:'IntelliTouch i9+3'},
+    3: {0:'IntelliTouch i5+3S'},
+    4: {0:'IntelliTouch i9+3S'},
+    5: {0:'IntelliTouch i10+3D'},
+    11: {0:'Suntouch/Intellicom'},
+    13: {
+        0:'EasyTouch2 8',
+        1:'EasyTouch2 8P',
+        2:'EasyTouch2 4',
+        3:'EasyTouch2 4P',
+        5:'EasyTouch2 PL4',
+        6:'EasyTouch2 PSL4'
+        },
+    14: {
+        0:'EasyTouch1 8',
+        1:'EasyTouch1 8P',
+        2:'EasyTouch1 4',
+        3:'EasyTouch1 4P',
+        },
+}
+
+PUMP_TYPE = {
+    0: 'None',
+    1: 'Intelliflow VF',
+    2: 'Intelliflow VS',
+    3: 'Intelliflow VSF'
+}
