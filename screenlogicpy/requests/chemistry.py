@@ -20,53 +20,44 @@ def decode_chemistry(buff, data):
 
     size, offset = getSome("I", buff, 0) #0
 
-    if 'unknown' not in chemistry:
-        chemistry['unknown'] = {}
+    #if 'unknown' not in chemistry:
+    #    chemistry['unknown'] = {}
 
-    unknown = chemistry['unknown']
+    #unknown = chemistry['unknown']
 
+    # skip an unknown value
     unknown1, offset = getSome("B", buff, offset) #4
-    unknown['unknown1'] = unknown1
-
+    #unknown['unknown1'] = unknown1
+    
+    
     pH, offset = getSome(">H", buff, offset) #5
-    chemistry['ph'] = {
-        'name':"pH",
+    chemistry['current_ph'] = {
+        'name':"Current pH",
         'value':(pH / 100),
         'unit':'pH'}
 
     orp, offset = getSome(">H", buff, offset) #7
-    chemistry['orp'] = {
-        'name':"ORP",
+    chemistry['current_orp'] = {
+        'name':"Current ORP",
         'value':orp,
         'unit':'mV'}
 
     pHSetpoint, offset = getSome(">H", buff, offset) #9
     chemistry['ph_setpoint'] = {
-        'name':"pH",
+        'name':"pH Setpoint",
         'value':(pHSetpoint / 100),
         'unit':'pH'}
 
     orpSetpoint, offset = getSome(">H", buff, offset) #11
     chemistry['orp_setpoint'] = {
-        'name':"ORP",
+        'name':"ORP Setpoint",
         'value':orpSetpoint,
         'unit':'mV'}
 
-    
     # fast forward 12 bytes
-    unknown['skipped'] = []
-    #for i in range(12):
-    #    skip, offset = getSome("B", buff, offset) #13-23
-    #    unknown['skipped'].append(skip)
-    skip1, offset = getSome(">I", buff, offset)
-    unknown['skipped'].append(skip1)
-    skip2, offset = getSome(">I", buff, offset)
-    unknown['skipped'].append(skip2)
-    skip3, offset = getSome(">H", buff, offset)
-    unknown['skipped'].append(skip3)
-    skip4, offset = getSome(">H", buff, offset)
-    unknown['skipped'].append(skip4)
-    
+    # Seems to be '>I' x2 and '>H' x2 
+    # Values change when pH and ORP dosing but I was unable to decode
+    offset += 12    
 
     pHSupplyLevel, offset = getSome("B", buff, offset) #25
     chemistry['ph_supply_level'] = {
@@ -110,22 +101,29 @@ def decode_chemistry(buff, data):
         'unit':'ppm'}
 
     waterTemp, offset = getSome("B", buff, offset) #36
-    chemistry['water_temperature'] = {
-        'name':"Water Temperature",
+    chemistry['current_water_temperature'] = {
+        'name':"Current Water Temperature",
         'value':waterTemp,
         'unit':unittxt,
         'hass_device_class': 'temperature'}
 
-    unknown2, offset = getSome("H", buff, offset) #37
-    unknown['unknown2'] = unknown2
+    flow, offset = getSome("B", buff, offset) #37
+    chemistry['flow_alarm'] = {
+        'name': 'Flow Alarm',
+        'value': flow & 1}
+    #unknown['flow?'] = flow & 1
+
+    unknown3, offset = getSome("B", buff, offset) #37
+    #unknown['unknown3'] = unknown3
 
 
-    corosivness, offset = getSome("B", buff, offset) #39
-    chemistry['corosivness'] = {
-        'name':"Corosiveness",
-        'value': corosivness}
+    corosive, offset = getSome("B", buff, offset) #39
+    #unknown['corosive?'] = corosivness
+    chemistry['corosive'] = {
+        'name':"Corosive",
+        'value': corosive & 1}
 
     last1, offset = getSome("B", buff, offset) #40
-    unknown['last1'] = last1
+    #unknown['last1'] = last1
     last2, offset = getSome("B", buff, offset) #41
-    unknown['last2'] = last2
+    #unknown['last2'] = last2

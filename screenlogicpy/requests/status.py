@@ -90,11 +90,11 @@ def decode_pool_status(buff, data):
             'name':"Type of body of water",
             'value':bodyType}
 
-        currentTemp, offset = getSome("i", buff, offset)
-        bodyName = "Current {} Temperature".format(BODY_TYPE.GetFriendlyName(bodyType))
-        currentBody['current_temperature'] = {
+        lastTemp, offset = getSome("i", buff, offset)
+        bodyName = "Last {} Temperature".format(BODY_TYPE.GetFriendlyName(bodyType))
+        currentBody['last_temperature'] = {
             'name':bodyName,
-            'value':currentTemp,
+            'value':lastTemp,
             'unit':unittxt,
             'hass_device_class': 'temperature'}
 
