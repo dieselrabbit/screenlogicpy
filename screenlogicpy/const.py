@@ -173,3 +173,9 @@ PUMP_TYPE = {
     2: 'Intelliflow VS',
     3: 'Intelliflow VSF'
 }
+
+SL_GATEWAY_IP = "ip"
+SL_GATEWAY_PORT = "port"
+SL_GATEWAY_TYPE = "gtype"
+SL_GATEWAY_SUBTYPE = "gsubtype"
+SL_GATEWAY_NAME = "name"

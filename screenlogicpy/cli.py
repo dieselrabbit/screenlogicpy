@@ -16,10 +16,6 @@ def vFormat(verbose, slElement, slClass=None):
 
 
 #parser functions
-def discover_action(args, gateway):
-    print("{}:{}".format(gateway.ip, gateway.port))
-    return 0
-
 def get_circuit(args, gateway):
     if (not int(args.circuit_num) in gateway.get_data()['circuits']):
         print(f'Invalid circuit number: {args.circuit_num}')
@@ -130,7 +126,7 @@ def cli():
 
     # Discover command
     discover_parser = subparsers.add_parser('discover')
-    discover_parser.set_defaults(func=discover_action)
+    #discover_parser.set_defaults(func=discover_action)
  
     # Get options
     get_parser = subparsers.add_parser('get')
@@ -183,27 +179,37 @@ def cli():
     set_heat_temp_parser.add_argument('temp', type=int, metavar='TEMP', default=None)
     set_heat_temp_parser.set_defaults(func=set_heat_temp)
 
-    args = option_parser.parse_args() # save for debugger: ['-i', 'xx', 'get', 'json']
+    args = option_parser.parse_args(['get', 'json']) # save for debugger: ['-i', 'xx', 'get', 'json']
     try:
-        _ip = args.ip
-        _port = args.port
+        host = {
+            'ip': args.ip,
+            'port': args.port
+        }
         discovered = False
-        if (not _ip):
+        if (not host['ip']):
             # Try to discover gateway
-            host = discover()
-            if (host['ip']):
-                discovered = True
-                _ip = host['ip']
-                _port = host['port']
-                _type = host['type']
-                _subtype = host['subtype']
-                _name = host['name']
-                if (args.verbose):
-                    print("Found '{}' at {}:{}".format(_name, _ip, _port))
-            # discover() will error if gateway not found
-                
+            hosts = discover()
+            # Host(s) found
+            if len(hosts) > 0:
 
-        gateway = ScreenLogicGateway(_ip, _port, _type, _subtype, _name)
+                if args.action == 'discover':
+                    if args.verbose: print('Discovered:')
+                    for host in hosts:
+                        if args.verbose:
+                            print("'{}' at {}:{}".format(host['name'], host['ip'], host['port']))
+                        else:
+                            print("{}:{} '{}'".format(host['ip'], host['port'], host['name']))
+                    return 0
+
+                # For CLI commands that don't specifiy an ip address, auto use the first one discovered
+                # Good for most cases where only one exists on the network
+                host = hosts[0]
+
+            else:
+                print('No ScreenLogic gateways found.')
+                return 1
+
+        gateway = ScreenLogicGateway(**host)
 
         if ('config' not in gateway.get_data()):
             return 1
@@ -251,6 +257,8 @@ def cli():
             print_dashboard()
             return 0
 
+        if (args.verbose):
+            print_gateway()
             
         return args.func(args, gateway)
 

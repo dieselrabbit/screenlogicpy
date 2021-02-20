@@ -48,7 +48,8 @@ def gateway_connect(connected_socket):
 def gateway_login(connected_socket):
     msg = create_login_message()
     try:
-        response = sendRecieveMessage(connected_socket, code.LOCALLOGIN_QUERY, msg)
+        # Gateway will respond with the response code and that's all.
+        _ = sendRecieveMessage(connected_socket, code.LOCALLOGIN_QUERY, msg)
         return True
     except ScreenLogicError:
         return False
