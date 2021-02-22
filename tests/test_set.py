@@ -1,8 +1,16 @@
+import time
 import screenlogicpy
 from screenlogicpy import const
 
-_ip, _port, _type, _subtype, _name = screenlogicpy.discovery.discover()
-print(_name)
-gateway = screenlogicpy.ScreenLogicGateway(_ip, _port, _type, _subtype, _name)
-print(gateway.set_circuit(508, const.ON_OFF.ON))
-print(gateway.set_heat_mode(const.BODY_TYPE.POOL, const.HEAT_MODE.HEATER))
+# Choose a 'safe' circuit like a light
+cir_num = 508
+
+hosts = screenlogicpy.discovery.discover()
+if len(hosts) > 0:
+    gateway = screenlogicpy.ScreenLogicGateway(**hosts[0])
+    print(f"{gateway.ip}:{gateway.port} {gateway.name}")
+    print(gateway.set_circuit(cir_num, const.ON_OFF.ON))
+    time.sleep(10)
+    print(gateway.set_circuit(cir_num, const.ON_OFF.OFF))
+else:
+    print("No gateways found")

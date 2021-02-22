@@ -1,4 +1,8 @@
+import struct
+import screenlogicpy
+from screenlogicpy.const import code
 from screenlogicpy.requests.utility import getSome
+from screenlogicpy.requests.utility import sendRecieveMessage, getSome
 
 #pylint: disable=unused-variable
 def decode(buff):
@@ -75,3 +79,18 @@ def decodePump(buff):
         pump['presets'][i]['isRPM'], offset = getSome("I", buff, offset)
 
     print(pump)
+
+
+#host = screenlogicpy.discovery.discover()
+host = {'ip': 'xxx.xxx.xxx.xxx', 'port':'80'}
+try:
+    gateway_socket, gateway_mac = screenlogicpy.requests.login.connect_to_gateway(host['ip'], host['port'])
+    _version = screenlogicpy.requests.gateway.request_gateway_version(gateway_socket)
+    response = sendRecieveMessage(gateway_socket, code.CHEMISTRY_QUERY, struct.pack("<I", 0))
+    print(response)
+except screenlogicpy.ScreenLogicError as error:
+    print(error)
+finally:
+    gateway_socket.close()
+
+decode(response)

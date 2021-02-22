@@ -2,17 +2,8 @@ import os
 import sys
 import platform
 
-command = "screenlogicpy.cli get json"
+args = "get json"
 
-python = ""
-plat = platform.system()
-if plat == "Windows":
-    python = "C:/Users/Kevin/AppData/Local/Programs/Python/Python36-32/python.exe"
-elif plat == "Linux":
-    python = "/usr/bin/python3.6"
-else:
-    print("Unknown system")
-    sys.exit(1)
-
-return_code = os.system("{} -m {}".format(python, command))
-#print(return_code)
+return_code = os.system(f"{sys.executable} -m screenlogicpy.cli {args}")
+if return_code != 0:
+    print(return_code)
