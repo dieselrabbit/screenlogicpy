@@ -1,13 +1,12 @@
 import time
-import screenlogicpy
-from screenlogicpy import const
+from screenlogicpy import ScreenLogicGateway, discovery, const
 
 # Choose a 'safe' circuit like a light
 cir_num = 508
 
-hosts = screenlogicpy.discovery.discover()
+hosts = discovery.discover()
 if len(hosts) > 0:
-    gateway = screenlogicpy.ScreenLogicGateway(**hosts[0])
+    gateway = ScreenLogicGateway(**hosts[0])
     print(f"{gateway.ip}:{gateway.port} {gateway.name}")
     print(gateway.set_circuit(cir_num, const.ON_OFF.ON))
     time.sleep(10)

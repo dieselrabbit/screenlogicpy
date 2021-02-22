@@ -125,6 +125,7 @@ def cli():
     subparsers = option_parser.add_subparsers(dest='action')
 
     # Discover command
+    #pylint: disable=unused-variable
     discover_parser = subparsers.add_parser('discover')
     #discover_parser.set_defaults(func=discover_action)
  
