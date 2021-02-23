@@ -144,26 +144,26 @@ class COLOR_MODE:
         return self._names[index]
 
 CONTROLLER_HARDWARE = {
-    0: {0:'IntelliTouch i5+3S'},
-    1: {0:'IntelliTouch i7+3'},
-    2: {0:'IntelliTouch i9+3'},
-    3: {0:'IntelliTouch i5+3S'},
-    4: {0:'IntelliTouch i9+3S'},
-    5: {0:'IntelliTouch i10+3D'},
-    11: {0:'Suntouch/Intellicom'},
+    0: {0: 'IntelliTouch i5+3S'},
+    1: {0: 'IntelliTouch i7+3'},
+    2: {0: 'IntelliTouch i9+3'},
+    3: {0: 'IntelliTouch i5+3S'},
+    4: {0: 'IntelliTouch i9+3S'},
+    5: {0: 'IntelliTouch i10+3D'},
+    11: {0: 'Suntouch/Intellicom'},
     13: {
-        0:'EasyTouch2 8',
-        1:'EasyTouch2 8P',
-        2:'EasyTouch2 4',
-        3:'EasyTouch2 4P',
-        5:'EasyTouch2 PL4',
-        6:'EasyTouch2 PSL4'
+        0: 'EasyTouch2 8',
+        1: 'EasyTouch2 8P',
+        2: 'EasyTouch2 4',
+        3: 'EasyTouch2 4P',
+        5: 'EasyTouch2 PL4',
+        6: 'EasyTouch2 PSL4'
         },
     14: {
-        0:'EasyTouch1 8',
-        1:'EasyTouch1 8P',
-        2:'EasyTouch1 4',
-        3:'EasyTouch1 4P',
+        0: 'EasyTouch1 8',
+        1: 'EasyTouch1 8P',
+        2: 'EasyTouch1 4',
+        3: 'EasyTouch1 4P',
         },
 }
 

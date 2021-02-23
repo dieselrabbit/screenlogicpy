@@ -1,6 +1,5 @@
 import os
 import sys
-import platform
 
 args = "get json"
 

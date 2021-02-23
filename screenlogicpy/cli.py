@@ -8,9 +8,9 @@ from screenlogicpy.const import BODY_TYPE, ON_OFF, HEAT_MODE, ScreenLogicError
 def vFormat(verbose, slElement, slClass=None):
     if (verbose):
         if (slClass):
-            return "{}: {}".format(slElement['name'], slClass.GetFriendlyName(slElement['value']))
+            return f"{slElement['name']}: {slClass.GetFriendlyName(slElement['value'])}"
         else:
-            return "{}: {}".format(slElement['name'], slElement['value'])
+            return f"{slElement['name']}: {slElement['value']}"
     else:
         return slElement['value']
 
@@ -25,6 +25,7 @@ def get_circuit(args, gateway):
         ON_OFF))
     return 0
 
+
 def set_circuit(args, gateway):
     state = 0
     if (args.state == '1' or args.state.lower() == 'on'):
@@ -36,19 +37,25 @@ def set_circuit(args, gateway):
         gateway.update()
     else:
         return 4
-    print(vFormat(args.verbose, 
+    print(vFormat(
+        args.verbose,
         gateway.get_data()['circuits'][int(args.circuit_num)],
-        ON_OFF))
+        ON_OFF)
+        )
     return 0
+
 
 def get_heat_mode(args, gateway):
     body = 0
     if (args.body == '1' or args.body.lower() == 'spa'):
         body = 1
-    print(vFormat(args.verbose, 
+    print(vFormat(
+        args.verbose,
         gateway.get_data()['bodies'][int(body)]['heat_mode'],
-        HEAT_MODE))
+        HEAT_MODE)
+        )
     return 0
+
 
 def set_heat_mode(args, gateway):
     body = 0
@@ -58,18 +65,24 @@ def set_heat_mode(args, gateway):
         gateway.update()
     else:
         return 8
-    print(vFormat(args.verbose, 
+    print(vFormat(
+        args.verbose,
         gateway.get_data()['bodies'][int(body)]['heat_mode'],
-        HEAT_MODE))
+        HEAT_MODE)
+        )
     return 0
+
 
 def get_heat_temp(args, gateway):
     body = 0
     if (args.body == '1' or args.body.lower() == 'spa'):
         body = 1
-    print(vFormat(args.verbose, 
-        gateway.get_data()['bodies'][int(body)]['heat_set_point']))
+    print(vFormat(
+        args.verbose,
+        gateway.get_data()['bodies'][int(body)]['heat_set_point'])
+        )
     return 0
+
 
 def set_heat_temp(args, gateway):
     body = 0
@@ -80,55 +93,57 @@ def set_heat_temp(args, gateway):
             gateway.update()
         else:
             return 16
-    print(vFormat(args.verbose, 
-        gateway.get_data()['bodies'][int(body)]['heat_set_point']))
+    print(vFormat(
+        args.verbose,
+        gateway.get_data()['bodies'][int(body)]['heat_set_point'])
+        )
     return 0
+
 
 def get_heat_state(args, gateway):
     body = 0
     if (args.body == '1' or args.body.lower() == 'spa'):
         body = 1
-    print(vFormat(args.verbose, 
-        gateway.get_data()['bodies'][int(body)]['heat_status'],
-        ON_OFF))
+    print(vFormat(
+        args.verbose,
+        gateway.get_data()['bodies'][int(body)]['heat_status'], ON_OFF)
+        )
     return 0
+
 
 def get_current_temp(args, gateway):
     body = 0
     if (args.body == '1' or args.body.lower() == 'spa'):
         body = 1
-    print(vFormat(args.verbose, 
-        gateway.get_data()['bodies'][int(body)]['current_temperature']))
+    print(vFormat(
+        args.verbose,
+        gateway.get_data()['bodies'][int(body)]['current_temperature'])
+        )
     return 0
+
 
 def get_json(args, gateway):
     print(json.dumps(gateway.get_data(), indent=2))
     return 0
 
 
-#entry function
+# Entry function
 def cli():
-    
-    _ip = None
-    _port = 80
-    _type = 0
-    _subtype = 0
-    _name = ""
+    """Handle command line args"""
 
     option_parser = argparse.ArgumentParser(
         description="Interface for Pentair Screenlogic gateway")
 
-    option_parser.add_argument('-v','--verbose', action='store_true')
-    option_parser.add_argument('-i','--ip')
-    option_parser.add_argument('-p','--port', default=80)
+    option_parser.add_argument('-v', '--verbose', action='store_true')
+    option_parser.add_argument('-i', '--ip')
+    option_parser.add_argument('-p', '--port', default=80)
 
     subparsers = option_parser.add_subparsers(dest='action')
 
     # Discover command
     #pylint: disable=unused-variable
     discover_parser = subparsers.add_parser('discover')
-    #discover_parser.set_defaults(func=discover_action)
- 
+
     # Get options
     get_parser = subparsers.add_parser('get')
     get_subparsers = get_parser.add_subparsers(dest='get_option')
@@ -180,7 +195,8 @@ def cli():
     set_heat_temp_parser.add_argument('temp', type=int, metavar='TEMP', default=None)
     set_heat_temp_parser.set_defaults(func=set_heat_temp)
 
-    args = option_parser.parse_args(['get', 'json']) # save for debugger: ['-i', 'xx', 'get', 'json']
+    args = option_parser.parse_args(['get', 'json'])  # save for debugger: ['-i', 'xx', 'get', 'json']
+
     try:
         host = {
             'ip': args.ip,
@@ -194,7 +210,8 @@ def cli():
             if len(hosts) > 0:
 
                 if args.action == 'discover':
-                    if args.verbose: print('Discovered:')
+                    if args.verbose:
+                        print('Discovered:')
                     for host in hosts:
                         if args.verbose:
                             print("'{}' at {}:{}".format(host['name'], host['ip'], host['port']))
@@ -235,7 +252,7 @@ def cli():
                 print("{} temperature is last {}{}".format(
                     BODY_TYPE.GetFriendlyName(body['body_type']['value']),
                     body['current_temperature']['value'],
-                    body['current_temperature']['unit'] ))
+                    body['current_temperature']['unit']))
                 print("{}: {}".format(
                     body['heat_set_point']['name'], body['heat_set_point']['value']))
                 print("{}: {}".format(
@@ -243,7 +260,6 @@ def cli():
                 print("{}: {}".format(
                     body['heat_mode']['name'], HEAT_MODE.GetFriendlyName(body['heat_mode']['value'])))
                 print("--------------------------")
-
 
         def print_dashboard():
             print_gateway()
@@ -253,19 +269,19 @@ def cli():
             print_circuits()
             print("**************************")
 
-
         if (args.action is None):
             print_dashboard()
             return 0
 
         if (args.verbose):
             print_gateway()
-            
+
         return args.func(args, gateway)
 
     except ScreenLogicError as err:
         print(err)
         return 32
+
 
 if __name__ == "__main__":
     sys.exit(cli())

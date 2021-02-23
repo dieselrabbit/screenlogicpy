@@ -1,5 +1,3 @@
-import time
-import socket
 from .requests import (
     connect_to_gateway,
     request_gateway_version,
@@ -12,7 +10,7 @@ from .requests import (
     request_set_heat_setpoint,
     request_chemistry
 )
-from .const import HEAT_MODE, ScreenLogicError
+
 
 class ScreenLogicGateway:
     def __init__(self, ip, port=80, gtype=0, gsubtype=0, name="Unnamed-Screenlogic-Gateway"):
@@ -25,7 +23,6 @@ class ScreenLogicGateway:
         self.__connected = False
         self.__data = {}
 
-        
         if (self.__ip and self.__port):
             if (self._connect()):
                 self._get_config()
@@ -35,7 +32,7 @@ class ScreenLogicGateway:
                 self._disconnect()
         else:
             raise ValueError("Invalid ip or port")
-    
+
     @property
     def ip(self):
         return self.__ip
@@ -63,8 +60,7 @@ class ScreenLogicGateway:
         return self.__data
 
     def set_circuit(self, circuitID, circuitState):
-        if (self._is_valid_circuit(circuitID) and
-            self._is_valid_circuit_state(circuitState)):
+        if (self._is_valid_circuit(circuitID) and self._is_valid_circuit_state(circuitState)):
             if (self.__connected or self._connect()):
                 if (request_pool_button_press(self.__socket, circuitID, circuitState)):
                     self._disconnect()
@@ -73,8 +69,7 @@ class ScreenLogicGateway:
             return False
 
     def set_heat_temp(self, body, temp):
-        if (self._is_valid_body(body) and
-            self._is_valid_heattemp(body, temp)):
+        if (self._is_valid_body(body) and self._is_valid_heattemp(body, temp)):
             if (self.__connected or self._connect()):
                 if (request_set_heat_setpoint(self.__socket, body, temp)):
                     self._disconnect()
@@ -83,8 +78,7 @@ class ScreenLogicGateway:
             return False
 
     def set_heat_mode(self, body, mode):
-        if (self._is_valid_body(body) and
-            self._is_valid_heatmode(mode)):
+        if (self._is_valid_body(body) and self._is_valid_heatmode(mode)):
             if (self.__connected or self._connect()):
                 if (request_set_heat_mode(self.__socket, body, mode)):
                     self._disconnect()
@@ -101,7 +95,6 @@ class ScreenLogicGateway:
 
     def is_connected(self):
         return self.__connected
-
 
     def _connect(self):
         soc_mac = connect_to_gateway(self.__ip, self.__port)
@@ -153,5 +146,3 @@ class ScreenLogicGateway:
         return (self.__data['bodies'][int(body)]['min_set_point']['value'] <=
                 temp <=
                 self.__data['bodies'][int(body)]['max_set_point']['value'])
-
-
