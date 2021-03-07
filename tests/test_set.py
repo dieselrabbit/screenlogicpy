@@ -1,7 +1,9 @@
 import time
 from screenlogicpy import ScreenLogicGateway, discovery, const
 
-# Choose a 'safe' circuit like a light
+# TODO: Rewrite as an actual test
+
+# # Choose a 'safe' circuit like a light
 cir_num = 508
 
 hosts = discovery.discover()

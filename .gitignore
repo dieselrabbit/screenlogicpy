@@ -125,4 +125,4 @@ dmypy.json
 .pyre/
 notes/notes.txt
 notes/circuit_names.txt
-scratchpad/local_scratch_ref.py
+scratchpad/local_*

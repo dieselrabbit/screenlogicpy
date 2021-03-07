@@ -6,14 +6,14 @@ from screenlogicpy.requests.login import create_socket, gateway_connect, gateway
 from screenlogicpy.requests.utility import takeMessage, makeMessage
 from screenlogicpy.const import code
 
-soc = create_socket('192.168.1.43', '80')
+soc = create_socket("xxx.xxx.xxx.xxx", "80")
 mac = gateway_connect(soc)
 gateway_login(soc)
 code = code.POOLSTATUS_QUERY
 message = struct.pack("<I", 0)
 while True:
     try:
-        print(datetime.now().strftime('%H:%M:%S'))
+        print(datetime.now().strftime("%H:%M:%S"))
         soc.sendall(makeMessage(code, message))
         while True:
             data = soc.recv(1024)
@@ -21,11 +21,11 @@ while True:
                 print("No data recieved from socket")
                 break
             rcvCode, buff = takeMessage(data)
-            if (rcvCode == (code + 1)):
-                print('.')
+            if rcvCode == (code + 1):
+                print(".")
                 break
             else:
-                print('Recieved unexpected reply: {}'.format(rcvCode))
+                print("Recieved unexpected reply: {}".format(rcvCode))
                 print(buff)
     except socket.timeout:
         break
