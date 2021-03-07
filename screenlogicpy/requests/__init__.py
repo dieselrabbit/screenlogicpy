@@ -1,3 +1,4 @@
+# flake8: noqa F401
 from .button import request_pool_button_press
 from .config import request_pool_config
 from .equipment import request_equipment_config

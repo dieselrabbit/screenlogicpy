@@ -1,10 +1,25 @@
-import socket
-import screenlogicpy
+from screenlogicpy import ScreenLogicGateway, discovery, const
+from tests.fake_gateway import fake_ScreenLogicGateway
 
-host = screenlogicpy.discovery.discover()
-name = host['name'] if host['name'] else socket.gethostbyaddr(host['ip'])[0].split('.')[0]
-gateway = screenlogicpy.ScreenLogicGateway(host['ip'], name=name)
-print("{}:{}".format(gateway.ip, gateway.port), gateway.name)
-data =  gateway.get_data()
-print(screenlogicpy.const.CONTROLLER_HARDWARE[data['config']['controler_type']][data['config']['hardware_type']])
 
+def test_gateway():
+    _ = fake_ScreenLogicGateway()
+
+    hosts = discovery.discover()
+    if len(hosts) > 0:
+        gateway = ScreenLogicGateway(**hosts[0])
+        print(f"{gateway.ip}:{gateway.port} {gateway.name}")
+        data = gateway.get_data()
+        print(
+            const.CONTROLLER_HARDWARE[data["config"]["controler_type"]][
+                data["config"]["hardware_type"]
+            ]
+        )
+        return 0
+    else:
+        print("No gateways found")
+        return 1
+
+
+if __name__ == "__main__":
+    test_gateway()
