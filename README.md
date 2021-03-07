@@ -2,7 +2,7 @@
 
 `screenlogicpy` is an interface for Pentair ScreenLogic connected pool controllers over IP via python.
 
-# Installation
+# Installation **Coming soon***
 The `screenlogicpy` package can be installed from PyPI via the `pip` command.
 
     $ pip install screenlogicpy
