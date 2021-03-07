@@ -8,7 +8,7 @@ def test_gateway_login():
 
     time.sleep(1)
 
-    soc, mac = connect_to_gateway("127.0.0.1", "80")
+    soc, mac = connect_to_gateway("127.0.0.1", "6448")
 
     assert soc
 

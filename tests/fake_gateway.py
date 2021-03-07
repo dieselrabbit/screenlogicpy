@@ -18,7 +18,7 @@ class fake_ScreenLogicGateway:
         self._broadcast_address = ""
         self._gateway_address = "127.0.0.1"
         self._discover_port = 1444
-        self._gateway_port = 80
+        self._gateway_port = 6448
         self._gateway_type = 2
         self._gateway_subtype = 12
         self._gateway_name = b"Fake: 00-00-00"
