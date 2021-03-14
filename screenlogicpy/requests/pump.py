@@ -44,7 +44,10 @@ def decode_pump_status(buff, data, pumpID):
         pump["presets"][i]["cid"], offset = getSome("I", buff, offset)
         if "circuits" in data:
             for num, circuit in data["circuits"].items():
-                if pump["presets"][i]["cid"] == circuit["device_id"] and name == "":
+                if (
+                    pump["presets"][i]["cid"] == circuit["device_id"]
+                    and name == "Default"
+                ):
                     name = circuit["name"]
                     break
         pump["presets"][i]["setPoint"], offset = getSome("I", buff, offset)
