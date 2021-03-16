@@ -213,8 +213,8 @@ def cli():
     set_heat_mode_parser.add_argument(
         "body", metavar="BODY", type=str, choices=["0", "1", "pool", "spa"]
     )
-    options = list(range(len(HEAT_MODE._names)))
-    for mode in HEAT_MODE._names:
+    options = list(range(len(HEAT_MODE.Names)))
+    for mode in HEAT_MODE.Names:
         options.append(mode.replace(" ", "_").replace("'", "").lower())
     set_heat_mode_parser.add_argument(
         "mode", metavar="MODE", type=str, choices=options, default=options[0]
@@ -257,7 +257,7 @@ def cli():
                             )
                     return 0
 
-                # For CLI commands that don't specifiy an ip address, auto use the first one discovered
+                # For CLI commands that don't specifiy an ip address, auto use the first gateway discovered
                 # Good for most cases where only one exists on the network
                 host = hosts[0]
 

@@ -81,21 +81,21 @@ class code:
 class BODY_TYPE:
     POOL = 0
     SPA = 1
-    _names = ["Pool", "Spa"]
+    Names = ["Pool", "Spa"]
 
     @classmethod
     def GetFriendlyName(cls, index):
-        return cls._names[index]
+        return cls.Names[index]
 
 
 class ON_OFF:
     OFF = 0
     ON = 1
-    _names = ["Off", "On"]
+    Names = ["Off", "On"]
 
     @classmethod
     def GetFriendlyName(cls, index):
-        return cls._names[index]
+        return cls.Names[index]
 
 
 class HEAT_MODE:
@@ -104,11 +104,11 @@ class HEAT_MODE:
     SOLAR_PREFERED = 2
     HEATER = 3
     DONT_CHANGE = 4
-    _names = ["Off", "Solar", "Solar Prefered", "Heater", "Don't Change"]
+    Names = ["Off", "Solar", "Solar Prefered", "Heater", "Don't Change"]
 
     @classmethod
     def GetFriendlyName(cls, index):
-        return cls._names[index]
+        return cls.Names[index]
 
 
 class COLOR_MODE:
@@ -135,7 +135,7 @@ class COLOR_MODE:
     RESET = 20
     HOLD = 21
 
-    _names = [
+    Names = [
         "Off",
         "On",
         "Set",
@@ -160,8 +160,9 @@ class COLOR_MODE:
         "Hold",
     ]
 
-    def GetFriendlyName(self, index):
-        return self._names[index]
+    @classmethod
+    def GetFriendlyName(cls, index):
+        return cls.Names[index]
 
 
 CONTROLLER_HARDWARE = {
