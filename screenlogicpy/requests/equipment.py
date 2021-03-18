@@ -17,12 +17,12 @@ def decode_equipment_config(buff, data):
 
     equip = data["equipment"]
 
-    equip["controlerType"], offset = getSome("B", buff, 0)
+    equip["controllerType"], offset = getSome("B", buff, 0)
     equip["hardwareType"], offset = getSome("B", buff, offset)
 
     skip1, offset = getSome("B", buff, offset)
     skip2, offset = getSome("B", buff, offset)
-    equip["controlerData"], offset = getSome("I", buff, offset)
+    equip["controllerData"], offset = getSome("I", buff, offset)
 
     equip["versionDataArray"], offset = getArray(buff, offset)
     equip["speedDataArray"], offset = getArray(buff, offset)

@@ -19,8 +19,8 @@ def decode_pool_config(buff, data):
 
     config = data["config"]
 
-    controlerID, offset = getSome("I", buff, 0)
-    config["controler_id"] = {"name": "Controler ID", "value": controlerID}
+    controllerID, offset = getSome("I", buff, 0)
+    config["controller_id"] = {"name": "Controller ID", "value": controllerID}
 
     if "bodies" not in data:
         data["bodies"] = {}
@@ -34,23 +34,23 @@ def decode_pool_config(buff, data):
         currentBody = bodies[i]
 
         minSetPoint, offset = getSome("B", buff, offset)
-        MINspName = "{} Minimum Set Point".format(BODY_TYPE.GetFriendlyName(i))
+        MINspName = "{} Minimum Set Point".format(BODY_TYPE.NAME_FOR_NUM[i])
         currentBody["min_set_point"] = {"name": MINspName, "value": minSetPoint}
         maxSetPoint, offset = getSome("B", buff, offset)
-        MAXspName = "{} Minimum Set Point".format(BODY_TYPE.GetFriendlyName(i))
+        MAXspName = "{} Minimum Set Point".format(BODY_TYPE.NAME_FOR_NUM[i])
         currentBody["max_set_point"] = {"name": MAXspName, "value": maxSetPoint}
 
     degC, offset = getSome("B", buff, offset)
     config["is_celcius"] = {"name": "Is Celcius", "value": degC}
 
     controllerType, offset = getSome("B", buff, offset)
-    config["controler_type"] = controllerType
+    config["controller_type"] = controllerType
 
     hwType, offset = getSome("B", buff, offset)
     config["hardware_type"] = hwType
 
     controllerbuff, offset = getSome("B", buff, offset)
-    config["controler_buffer"] = controllerbuff
+    config["controller_buffer"] = controllerbuff
 
     equipFlags, offset = getSome("I", buff, offset)
     config["equipment_flags"] = equipFlags

@@ -5,11 +5,11 @@ FAKE_CHEMISTRY_RESPONSE = b"*\x00\x00\x00\x00\x00\x00\x00\x00\x02\xee\x02\xbc\x0
 
 EXPECTED_CONFIG_DATA = {
     "config": {
-        "controler_id": {"name": "Controler ID", "value": 100},
+        "controller_id": {"name": "Controller ID", "value": 100},
         "is_celcius": {"name": "Is Celcius", "value": 0},
-        "controler_type": 13,
+        "controller_type": 13,
         "hardware_type": 0,
-        "controler_buffer": 0,
+        "controller_buffer": 0,
         "equipment_flags": 4294934584,
         "generic_circuit_name": {
             "name": "Default Circuit Name",
@@ -302,7 +302,7 @@ EXPECTED_STATUS_DATA = {
             "name": "Air Temperature",
             "value": 57,
             "unit": "\u00b0F",
-            "hass_device_class": "temperature",
+            "device_type": "temperature",
         },
         "ph": {"name": "pH", "value": 7.48, "unit": "pH"},
         "orp": {"name": "ORP", "value": 701, "unit": "mV"},
@@ -310,11 +310,7 @@ EXPECTED_STATUS_DATA = {
         "salt_ppm": {"name": "Salt", "value": 0, "unit": "ppm"},
         "ph_supply_level": {"name": "pH Supply Level", "value": 3},
         "orp_supply_level": {"name": "ORP Supply Level", "value": 4},
-        "chem_alarm": {
-            "name": "Chemistry Alarm",
-            "value": 1,
-            "hass_device_class": "problem",
-        },
+        "chem_alarm": {"name": "Chemistry Alarm", "value": 1, "device_type": "alarm"},
     },
     "bodies": {
         0: {
@@ -325,14 +321,14 @@ EXPECTED_STATUS_DATA = {
                 "name": "Last Pool Temperature",
                 "value": 56,
                 "unit": "\u00b0F",
-                "hass_device_class": "temperature",
+                "device_type": "temperature",
             },
             "heat_status": {"name": "Pool Heat", "value": 0},
             "heat_set_point": {
                 "name": "Pool Heat Set Point",
                 "value": 86,
                 "unit": "\u00b0F",
-                "hass_device_class": "temperature",
+                "device_type": "temperature",
             },
             "cool_set_point": {
                 "name": "Pool Cool Set Point",
@@ -349,14 +345,14 @@ EXPECTED_STATUS_DATA = {
                 "name": "Last Spa Temperature",
                 "value": 97,
                 "unit": "\u00b0F",
-                "hass_device_class": "temperature",
+                "device_type": "temperature",
             },
             "heat_status": {"name": "Spa Heat", "value": 0},
             "heat_set_point": {
                 "name": "Spa Heat Set Point",
                 "value": 97,
                 "unit": "\u00b0F",
-                "hass_device_class": "temperature",
+                "device_type": "temperature",
             },
             "cool_set_point": {
                 "name": "Spa Cool Set Point",
@@ -524,7 +520,7 @@ EXPECTED_PUMP_DATA = {
                 "name": "Default Pump Current Watts",
                 "value": 0,
                 "unit": "W",
-                "hass_device_class": "power",
+                "device_type": "energy",
             },
             "currentRPM": {
                 "name": "Default Pump Current RPM",
@@ -567,7 +563,7 @@ EXPECTED_CHEMISTRY_DATA = {
             "name": "Current Water Temperature",
             "value": 56,
             "unit": "\u00b0F",
-            "hass_device_class": "temperature",
+            "device_type": "temperature",
         },
         "flow_alarm": {"name": "Flow Alarm", "value": 1},
         "corosive": {"name": "Corosive", "value": 1},

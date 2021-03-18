@@ -2,6 +2,12 @@ import sys
 import os
 import struct
 
+SL_GATEWAY_IP = "ip"
+SL_GATEWAY_PORT = "port"
+SL_GATEWAY_TYPE = "gtype"
+SL_GATEWAY_SUBTYPE = "gsubtype"
+SL_GATEWAY_NAME = "name"
+
 
 def me():
     return os.path.basename(sys.argv[0])
@@ -81,34 +87,37 @@ class code:
 class BODY_TYPE:
     POOL = 0
     SPA = 1
-    Names = ["Pool", "Spa"]
 
-    @classmethod
-    def GetFriendlyName(cls, index):
-        return cls.Names[index]
+    NAME_FOR_NUM = {POOL: "Pool", SPA: "Spa"}
+
+    NUM_FOR_NAME = {name: num for num, name in NAME_FOR_NUM.items()}
 
 
 class ON_OFF:
     OFF = 0
     ON = 1
-    Names = ["Off", "On"]
 
-    @classmethod
-    def GetFriendlyName(cls, index):
-        return cls.Names[index]
+    NAME_FOR_NUM = {OFF: "Off", ON: "On"}
+
+    NUM_FOR_NAME = {name: num for num, name in NAME_FOR_NUM.items()}
 
 
 class HEAT_MODE:
     OFF = 0
     SOLAR = 1
-    SOLAR_PREFERED = 2
+    SOLAR_PREFERRED = 2
     HEATER = 3
     DONT_CHANGE = 4
-    Names = ["Off", "Solar", "Solar Prefered", "Heater", "Don't Change"]
 
-    @classmethod
-    def GetFriendlyName(cls, index):
-        return cls.Names[index]
+    NAME_FOR_NUM = {
+        OFF: "Off",
+        SOLAR: "Solar",
+        SOLAR_PREFERRED: "Solar Preferred",
+        HEATER: "Heater",
+        DONT_CHANGE: "Don't Change",
+    }
+
+    NUM_FOR_NAME = {name: num for num, name in NAME_FOR_NUM.items()}
 
 
 class COLOR_MODE:
@@ -135,59 +144,72 @@ class COLOR_MODE:
     RESET = 20
     HOLD = 21
 
-    Names = [
-        "Off",
-        "On",
-        "Set",
-        "Sync",
-        "Swim",
-        "Party",
-        "Romantic",
-        "Caribbean",
-        "American",
-        "Sunset",
-        "Royal",
-        "Save",
-        "Recall",
-        "Blue",
-        "Green",
-        "Red",
-        "White",
-        "Magenta",
-        "Thumper",
-        "Next",
-        "Reset",
-        "Hold",
-    ]
+    NAME_FOR_NUM = {
+        OFF: "Off",
+        ON: "On",
+        SET: "Color Set",
+        SYNC: "Sync",
+        SWIM: "Color Swim",
+        PARTY: "Party",
+        ROMANTIC: "Romantic",
+        CARIBBEAN: "Caribbean",
+        AMERICAN: "American",
+        SUNSET: "Sunset",
+        ROYAL: "Royal",
+        SAVE: "Save",
+        RECALL: "Recall",
+        BLUE: "Blue",
+        GREEN: "Green",
+        RED: "Red",
+        WHITE: "White",
+        MAGENTA: "Magenta",
+        THUMPER: "Thumper",
+        NEXT: "Next",
+        RESET: "Reset",
+        HOLD: "Hold",
+    }
 
-    @classmethod
-    def GetFriendlyName(cls, index):
-        return cls.Names[index]
+    NUM_FOR_NAME = {name: num for num, name in NAME_FOR_NUM.items()}
 
 
-CONTROLLER_HARDWARE = {
-    0: {0: "IntelliTouch i5+3S"},
-    1: {0: "IntelliTouch i7+3"},
-    2: {0: "IntelliTouch i9+3"},
-    3: {0: "IntelliTouch i5+3S"},
-    4: {0: "IntelliTouch i9+3S"},
-    5: {0: "IntelliTouch i10+3D"},
-    11: {0: "Suntouch/Intellicom"},
-    13: {
-        0: "EasyTouch2 8",
-        1: "EasyTouch2 8P",
-        2: "EasyTouch2 4",
-        3: "EasyTouch2 4P",
-        5: "EasyTouch2 PL4",
-        6: "EasyTouch2 PSL4",
-    },
-    14: {0: "EasyTouch1 8", 1: "EasyTouch1 8P", 2: "EasyTouch1 4", 3: "EasyTouch1 4P"},
-}
+class EQUIPMENT:
+    CONTROLLER_HARDWARE = {
+        0: {0: "IntelliTouch i5+3S"},
+        1: {0: "IntelliTouch i7+3"},
+        2: {0: "IntelliTouch i9+3"},
+        3: {0: "IntelliTouch i5+3S"},
+        4: {0: "IntelliTouch i9+3S"},
+        5: {0: "IntelliTouch i10+3D"},
+        11: {0: "Suntouch/Intellicom"},
+        13: {
+            0: "EasyTouch2 8",
+            1: "EasyTouch2 8P",
+            2: "EasyTouch2 4",
+            3: "EasyTouch2 4P",
+            5: "EasyTouch2 PL4",
+            6: "EasyTouch2 PSL4",
+        },
+        14: {
+            0: "EasyTouch1 8",
+            1: "EasyTouch1 8P",
+            2: "EasyTouch1 4",
+            3: "EasyTouch1 4P",
+        },
+    }
 
-PUMP_TYPE = {0: "None", 1: "Intelliflow VF", 2: "Intelliflow VS", 3: "Intelliflow VSF"}
+    PUMP_TYPE = {
+        0: "None",
+        1: "Intelliflow VF",
+        2: "Intelliflow VS",
+        3: "Intelliflow VSF",
+    }
 
-SL_GATEWAY_IP = "ip"
-SL_GATEWAY_PORT = "port"
-SL_GATEWAY_TYPE = "gtype"
-SL_GATEWAY_SUBTYPE = "gsubtype"
-SL_GATEWAY_NAME = "name"
+
+class CIRCUIT_FUNCTION:
+    GENERIC = 0
+    SPA = 1
+    POOL = 2
+    MASTER_CLEANER = 5
+    LIGHT = 7
+    SPILLWAY = 14
+    INTELLIBRITE = 16

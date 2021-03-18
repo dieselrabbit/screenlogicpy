@@ -60,7 +60,7 @@ def decode_pool_status(buff, data):
         "name": "Air Temperature",
         "value": airTemp,
         "unit": unittxt,
-        "hass_device_class": "temperature",
+        "device_type": "temperature",
     }
 
     bodiesCount, offset = getSome("I", buff, offset)
@@ -95,29 +95,29 @@ def decode_pool_status(buff, data):
         currentBody["body_type"] = {"name": "Type of body of water", "value": bodyType}
 
         lastTemp, offset = getSome("i", buff, offset)
-        bodyName = "Last {} Temperature".format(BODY_TYPE.GetFriendlyName(bodyType))
+        bodyName = "Last {} Temperature".format(BODY_TYPE.NAME_FOR_NUM[bodyType])
         currentBody["last_temperature"] = {
             "name": bodyName,
             "value": lastTemp,
             "unit": unittxt,
-            "hass_device_class": "temperature",
+            "device_type": "temperature",
         }
 
         heatStatus, offset = getSome("i", buff, offset)
-        heaterName = "{} Heat".format(BODY_TYPE.GetFriendlyName(bodyType))
+        heaterName = "{} Heat".format(BODY_TYPE.NAME_FOR_NUM[bodyType])
         currentBody["heat_status"] = {"name": heaterName, "value": heatStatus}
 
         heatSetPoint, offset = getSome("i", buff, offset)
-        hspName = "{} Heat Set Point".format(BODY_TYPE.GetFriendlyName(bodyType))
+        hspName = "{} Heat Set Point".format(BODY_TYPE.NAME_FOR_NUM[bodyType])
         currentBody["heat_set_point"] = {
             "name": hspName,
             "value": heatSetPoint,
             "unit": unittxt,
-            "hass_device_class": "temperature",
+            "device_type": "temperature",
         }
 
         coolSetPoint, offset = getSome("i", buff, offset)
-        cspName = "{} Cool Set Point".format(BODY_TYPE.GetFriendlyName(bodyType))
+        cspName = "{} Cool Set Point".format(BODY_TYPE.NAME_FOR_NUM[bodyType])
         currentBody["cool_set_point"] = {
             "name": cspName,
             "value": coolSetPoint,
@@ -125,7 +125,7 @@ def decode_pool_status(buff, data):
         }
 
         heatMode, offset = getSome("i", buff, offset)
-        hmName = "{} Heat Mode".format(BODY_TYPE.GetFriendlyName(bodyType))
+        hmName = "{} Heat Mode".format(BODY_TYPE.NAME_FOR_NUM[bodyType])
         currentBody["heat_mode"] = {"name": hmName, "value": heatMode}
 
     circuitCount, offset = getSome("I", buff, offset)
@@ -187,6 +187,6 @@ def decode_pool_status(buff, data):
     sensors["chem_alarm"] = {
         "name": "Chemistry Alarm",
         "value": alarm,
-        "hass_device_class": "problem",
+        "device_type": "alarm",
     }
     # print(json.dumps(data, indent=4))

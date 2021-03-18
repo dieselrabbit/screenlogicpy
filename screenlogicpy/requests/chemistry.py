@@ -106,7 +106,7 @@ def decode_chemistry(buff, data):
         "name": "Current Water Temperature",
         "value": waterTemp,
         "unit": unittxt,
-        "hass_device_class": "temperature",
+        "device_type": "temperature",
     }
 
     flow, offset = getSome("B", buff, offset)  # 37

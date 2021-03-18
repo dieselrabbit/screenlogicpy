@@ -60,7 +60,7 @@ def decode_pump_status(buff, data, pumpID):
         "name": pump["name"] + " Current Watts",
         "value": curW,
         "unit": "W",
-        "hass_device_class": "power",
+        "device_type": "energy",
     }
 
     pump["currentRPM"] = {

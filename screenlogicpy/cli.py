@@ -1,4 +1,5 @@
 import sys
+import string
 import json
 import argparse
 from screenlogicpy.discovery import discover
@@ -7,9 +8,32 @@ from screenlogicpy.const import (
     BODY_TYPE,
     ON_OFF,
     HEAT_MODE,
-    CONTROLLER_HARDWARE,
+    EQUIPMENT,
     ScreenLogicError,
 )
+
+
+def cliFormat(name: str):
+    table = str.maketrans(" ", "_", string.punctuation)
+    return name.translate(table).lower()
+
+
+def cliFormatDict(mapping: dict):
+    return {
+        cliFormat(key)
+        if isinstance(key, str)
+        else key: cliFormat(value)
+        if isinstance(value, str)
+        else value
+        for key, value in mapping.items()
+    }
+
+
+def optionsFromDict(mapping: dict):
+    options = []
+    for key, value in cliFormatDict(mapping).items():
+        options.extend((str(key), str(value)))
+    return options
 
 
 def vFormat(verbose, slElement, slClass=None):
@@ -73,9 +97,14 @@ def get_heat_mode(args, gateway):
 
 def set_heat_mode(args, gateway):
     body = 0
+    mode = 0
     if args.body == "1" or args.body.lower() == "spa":
         body = 1
-    if gateway.set_heat_mode(int(body), int(args.mode)):
+    if args.mode in cliFormatDict(HEAT_MODE.NUM_FOR_NAME):
+        mode = cliFormatDict(HEAT_MODE.NUM_FOR_NAME)[args.mode]
+    else:
+        mode = int(args.mode)
+    if gateway.set_heat_mode(int(body), mode):
         gateway.update()
     else:
         return 8
@@ -170,27 +199,28 @@ def cli():
     get_circuit_parser.add_argument("circuit_num", metavar="CIRCUIT_NUM", type=int)
     get_circuit_parser.set_defaults(func=get_circuit)
 
+    body_options = optionsFromDict(BODY_TYPE.NAME_FOR_NUM)
     get_heat_mode_parser = get_subparsers.add_parser("heat-mode", aliases=["hm"])
     get_heat_mode_parser.add_argument(
-        "body", metavar="BODY", type=str, choices=["0", "1", "pool", "spa"]
+        "body", metavar="BODY", type=str, choices=body_options
     )
     get_heat_mode_parser.set_defaults(func=get_heat_mode)
 
     get_heat_temp_parser = get_subparsers.add_parser("heat-temp", aliases=["ht"])
     get_heat_temp_parser.add_argument(
-        "body", metavar="BODY", type=str, choices=["0", "1", "pool", "spa"]
+        "body", metavar="BODY", type=str, choices=body_options
     )
     get_heat_temp_parser.set_defaults(func=get_heat_temp)
 
     get_heat_state_parser = get_subparsers.add_parser("heat-state", aliases=["hs"])
     get_heat_state_parser.add_argument(
-        "body", metavar="BODY", type=str, choices=["0", "1", "pool", "spa"]
+        "body", metavar="BODY", type=str, choices=body_options
     )
     get_heat_state_parser.set_defaults(func=get_heat_state)
 
     get_current_temp_parser = get_subparsers.add_parser("current-temp", aliases=["t"])
     get_current_temp_parser.add_argument(
-        "body", metavar="BODY", type=str, choices=["0", "1", "pool", "spa"]
+        "body", metavar="BODY", type=str, choices=body_options
     )
     get_current_temp_parser.set_defaults(func=get_current_temp)
 
@@ -202,28 +232,27 @@ def cli():
     set_subparsers = set_parser.add_subparsers(dest="set_option")
     set_subparsers.required = True
 
+    on_off_options = optionsFromDict(ON_OFF.NAME_FOR_NUM)
     set_circuit_parser = set_subparsers.add_parser("circuit", aliases=["c"])
     set_circuit_parser.add_argument("circuit_num", metavar="CIRCUIT_NUM", type=int)
     set_circuit_parser.add_argument(
-        "state", metavar="STATE", type=str, choices=["0", "1", "off", "on"]
+        "state", metavar="STATE", type=str, choices=on_off_options
     )
     set_circuit_parser.set_defaults(func=set_circuit)
 
     set_heat_mode_parser = set_subparsers.add_parser("heat-mode", aliases=["hm"])
     set_heat_mode_parser.add_argument(
-        "body", metavar="BODY", type=str, choices=["0", "1", "pool", "spa"]
+        "body", metavar="BODY", type=str, choices=body_options
     )
-    options = list(range(len(HEAT_MODE.Names)))
-    for mode in HEAT_MODE.Names:
-        options.append(mode.replace(" ", "_").replace("'", "").lower())
+    hm_options = optionsFromDict(HEAT_MODE.NAME_FOR_NUM)
     set_heat_mode_parser.add_argument(
-        "mode", metavar="MODE", type=str, choices=options, default=options[0]
+        "mode", metavar="MODE", type=str, choices=hm_options, default=hm_options[0]
     )
     set_heat_mode_parser.set_defaults(func=set_heat_mode)
 
     set_heat_temp_parser = set_subparsers.add_parser("heat-temp", aliases=["ht"])
     set_heat_temp_parser.add_argument(
-        "body", metavar="BODY", type=str, choices=["0", "1", "pool", "spa"]
+        "body", metavar="BODY", type=str, choices=body_options
     )
     set_heat_temp_parser.add_argument("temp", type=int, metavar="TEMP", default=None)
     set_heat_temp_parser.set_defaults(func=set_heat_temp)
@@ -278,9 +307,9 @@ def cli():
                 "{} '{}' at {}:{}".format(verb, gateway.name, gateway.ip, gateway.port)
             )
             print(
-                CONTROLLER_HARDWARE[gateway.get_data()["config"]["controler_type"]][
-                    gateway.get_data()["config"]["hardware_type"]
-                ]
+                EQUIPMENT.CONTROLLER_HARDWARE[
+                    gateway.get_data()["config"]["controller_type"]
+                ][gateway.get_data()["config"]["hardware_type"]]
             )
 
         def print_circuits():
@@ -291,7 +320,7 @@ def cli():
                 print(
                     "{}  {}  {}".format(
                         circuit["id"],
-                        ON_OFF.GetFriendlyName(circuit["value"]).rjust(5),
+                        ON_OFF.NAME_FOR_NUM[circuit["value"]].rjust(5),
                         circuit["name"],
                     )
                 )
@@ -301,7 +330,7 @@ def cli():
                 body = gateway.get_data()["bodies"][int(id)]
                 print(
                     "{} temperature is last {}{}".format(
-                        BODY_TYPE.GetFriendlyName(body["body_type"]["value"]),
+                        BODY_TYPE.NAME_FOR_NUM[body["body_type"]["value"]],
                         body["last_temperature"]["value"],
                         body["last_temperature"]["unit"],
                     )
@@ -316,13 +345,13 @@ def cli():
                 print(
                     "{}: {}".format(
                         body["heat_status"]["name"],
-                        HEAT_MODE.GetFriendlyName(body["heat_status"]["value"]),
+                        HEAT_MODE.NAME_FOR_NUM[body["heat_status"]["value"]],
                     )
                 )
                 print(
                     "{}: {}".format(
                         body["heat_mode"]["name"],
-                        HEAT_MODE.GetFriendlyName(body["heat_mode"]["value"]),
+                        HEAT_MODE.NAME_FOR_NUM[body["heat_mode"]["value"]],
                     )
                 )
                 print("--------------------------")

@@ -36,6 +36,9 @@ def create_socket(ip, port):
             continue
         break
 
+    if not tcpSock:
+        raise ScreenLogicError(f"Unable to connect to {ip}:{port}")
+
     return tcpSock
 
 
