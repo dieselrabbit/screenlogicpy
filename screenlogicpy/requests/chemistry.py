@@ -1,6 +1,6 @@
 # import json
 import struct
-from ..const import code
+from ..const import code, DEVICE_TYPE, UNIT
 from .utility import sendRecieveMessage, getSome
 
 
@@ -20,13 +20,13 @@ def decode_chemistry(buff, data):
 
     chemistry = data["chemistry"]
 
-    unittxt = "\xb0F"
-    if (
-        "config" in data
+    unittxt = (
+        UNIT.CELSIUS
+        if "config" in data
         and "is_celcius" in data["config"]
         and data["config"]["is_celcius"]["value"]
-    ):
-        unittxt = "\xb0C"
+        else UNIT.FAHRENHEIHT
+    )
 
     size, offset = getSome("I", buff, 0)  # 0
 
@@ -106,7 +106,7 @@ def decode_chemistry(buff, data):
         "name": "Current Water Temperature",
         "value": waterTemp,
         "unit": unittxt,
-        "device_type": "temperature",
+        "device_type": DEVICE_TYPE.TEMPERATURE,
     }
 
     flow, offset = getSome("B", buff, offset)  # 37

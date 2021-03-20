@@ -1,7 +1,7 @@
 # import json
 import struct
 from .utility import sendRecieveMessage, getSome
-from ..const import code
+from ..const import code, DEVICE_TYPE
 
 
 def request_pump_status(gateway_socket, data, pumpID):
@@ -60,7 +60,7 @@ def decode_pump_status(buff, data, pumpID):
         "name": pump["name"] + " Current Watts",
         "value": curW,
         "unit": "W",
-        "device_type": "energy",
+        "device_type": DEVICE_TYPE.ENERGY,
     }
 
     pump["currentRPM"] = {

@@ -172,6 +172,17 @@ class COLOR_MODE:
     NUM_FOR_NAME = {name: num for num, name in NAME_FOR_NUM.items()}
 
 
+class DEVICE_TYPE:
+    ALARM = "alarm"
+    ENERGY = "energy"
+    TEMPERATURE = "temperature"
+
+
+class UNIT:
+    CELSIUS = "\xb0C"
+    FAHRENHEIHT = "\xb0F"
+
+
 class EQUIPMENT:
     CONTROLLER_HARDWARE = {
         0: {0: "IntelliTouch i5+3S"},
@@ -203,6 +214,12 @@ class EQUIPMENT:
         2: "Intelliflow VS",
         3: "Intelliflow VSF",
     }
+
+    FLAG_SOLAR = 0x1
+    FLAG_SOLAR_AS_HEAT_PUMP = 0x2
+    FLAG_CHLORINATOR = 0x4
+    FLAG_COOLING = 0x800
+    FLAG_INTELLICHEM = 0x8000
 
 
 class CIRCUIT_FUNCTION:

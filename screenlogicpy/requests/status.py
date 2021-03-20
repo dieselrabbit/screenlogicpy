@@ -1,7 +1,7 @@
 # import json
 import struct
 from .utility import sendRecieveMessage, getSome
-from ..const import code, BODY_TYPE
+from ..const import code, BODY_TYPE, DEVICE_TYPE, UNIT
 
 
 def request_pool_status(gateway_socket, data):
@@ -14,9 +14,6 @@ def request_pool_status(gateway_socket, data):
 # pylint: disable=unused-variable
 def decode_pool_status(buff, data):
     # print(buff)
-    # data[""] = {
-    #    'name':'',
-    #    'value': }
 
     if "config" not in data:
         data["config"] = {}
@@ -46,9 +43,11 @@ def decode_pool_status(buff, data):
     ff2, offset = getSome("B", buff, offset)
     ff3, offset = getSome("B", buff, offset)
 
-    unittxt = "\xb0F"
-    if "is_celcius" in config and config["is_celcius"]["value"]:
-        unittxt = "\xb0C"
+    unittxt = (
+        UNIT.CELSIUS
+        if "is_celcius" in config and config["is_celcius"]["value"]
+        else UNIT.FAHRENHEIHT
+    )
 
     if "sensors" not in data:
         data["sensors"] = {}
@@ -60,7 +59,7 @@ def decode_pool_status(buff, data):
         "name": "Air Temperature",
         "value": airTemp,
         "unit": unittxt,
-        "device_type": "temperature",
+        "device_type": DEVICE_TYPE.TEMPERATURE,
     }
 
     bodiesCount, offset = getSome("I", buff, offset)
@@ -100,7 +99,7 @@ def decode_pool_status(buff, data):
             "name": bodyName,
             "value": lastTemp,
             "unit": unittxt,
-            "device_type": "temperature",
+            "device_type": DEVICE_TYPE.TEMPERATURE,
         }
 
         heatStatus, offset = getSome("i", buff, offset)
@@ -113,7 +112,7 @@ def decode_pool_status(buff, data):
             "name": hspName,
             "value": heatSetPoint,
             "unit": unittxt,
-            "device_type": "temperature",
+            "device_type": DEVICE_TYPE.TEMPERATURE,
         }
 
         coolSetPoint, offset = getSome("i", buff, offset)
@@ -187,6 +186,6 @@ def decode_pool_status(buff, data):
     sensors["chem_alarm"] = {
         "name": "Chemistry Alarm",
         "value": alarm,
-        "device_type": "alarm",
+        "device_type": DEVICE_TYPE.ALARM,
     }
     # print(json.dumps(data, indent=4))
