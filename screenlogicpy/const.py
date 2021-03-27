@@ -127,7 +127,7 @@ class COLOR_MODE:
     SYNC = 3
     SWIM = 4
     PARTY = 5
-    ROMANTIC = 6
+    ROMANCE = 6
     CARIBBEAN = 7
     AMERICAN = 8
     SUNSET = 9
@@ -145,13 +145,13 @@ class COLOR_MODE:
     HOLD = 21
 
     NAME_FOR_NUM = {
-        OFF: "Off",
-        ON: "On",
+        OFF: "All Off",
+        ON: "All On",
         SET: "Color Set",
-        SYNC: "Sync",
+        SYNC: "Color Sync",
         SWIM: "Color Swim",
         PARTY: "Party",
-        ROMANTIC: "Romantic",
+        ROMANCE: "Romance",
         CARIBBEAN: "Caribbean",
         AMERICAN: "American",
         SUNSET: "Sunset",
@@ -164,7 +164,7 @@ class COLOR_MODE:
         WHITE: "White",
         MAGENTA: "Magenta",
         THUMPER: "Thumper",
-        NEXT: "Next",
+        NEXT: "Next Mode",
         RESET: "Reset",
         HOLD: "Hold",
     }
@@ -218,6 +218,7 @@ class EQUIPMENT:
     FLAG_SOLAR = 0x1
     FLAG_SOLAR_AS_HEAT_PUMP = 0x2
     FLAG_CHLORINATOR = 0x4
+    FLAG_SPA_SIDE_REMOTE = 0x20
     FLAG_COOLING = 0x800
     FLAG_INTELLICHEM = 0x8000
 
@@ -230,3 +231,19 @@ class CIRCUIT_FUNCTION:
     LIGHT = 7
     SPILLWAY = 14
     INTELLIBRITE = 16
+
+
+class INTERFACE_GROUP:
+    POOL = 0
+    SPA = 1
+    FEATURES = 2
+    LIGHTS = 3
+
+
+GENERIC_CIRCUIT_NAMES = [
+    *[f"Aux {num}" for num in range(1, 8)],  # Last number is 7
+    "AuxEx",
+    *[f"Feature {num}" for num in range(1, 9)],  # Last number is 8
+]
+
+DEFAULT_CIRCUIT_NAMES = ["Spa", "Pool", *GENERIC_CIRCUIT_NAMES]
