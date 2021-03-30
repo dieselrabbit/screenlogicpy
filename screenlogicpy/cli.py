@@ -8,6 +8,7 @@ from screenlogicpy.const import (
     BODY_TYPE,
     ON_OFF,
     HEAT_MODE,
+    COLOR_MODE,
     EQUIPMENT,
     ScreenLogicError,
 )
@@ -36,13 +37,10 @@ def optionsFromDict(mapping: dict):
     return options
 
 
-def vFormat(verbose, slElement, slClass=None):
+def vFormat(verbose: bool, slElement: dict, slClass=None):
     if verbose:
         if slClass:
-            return (
-                f"{slElement['name']}: "
-                f"{slClass.GetFriendlyName(slElement['value'])}"
-            )
+            return f"{slElement['name']}: {slClass.NAME_FOR_NUM(slElement['value'])}"
         else:
             return f"{slElement['name']}: {slElement['value']}"
     else:
@@ -50,7 +48,7 @@ def vFormat(verbose, slElement, slClass=None):
 
 
 # Parser functions
-def get_circuit(args, gateway):
+def get_circuit(args, gateway: ScreenLogicGateway):
     if not int(args.circuit_num) in gateway.get_data()["circuits"]:
         print(f"Invalid circuit number: {args.circuit_num}")
         return 4
@@ -62,7 +60,7 @@ def get_circuit(args, gateway):
     return 0
 
 
-def set_circuit(args, gateway):
+def set_circuit(args, gateway: ScreenLogicGateway):
     state = 0
     if args.state == "1" or args.state.lower() == "on":
         state = 1
@@ -81,7 +79,7 @@ def set_circuit(args, gateway):
     return 0
 
 
-def get_heat_mode(args, gateway):
+def get_heat_mode(args, gateway: ScreenLogicGateway):
     body = 0
     if args.body == "1" or args.body.lower() == "spa":
         body = 1
@@ -95,7 +93,7 @@ def get_heat_mode(args, gateway):
     return 0
 
 
-def set_heat_mode(args, gateway):
+def set_heat_mode(args, gateway: ScreenLogicGateway):
     body = 0
     mode = 0
     if args.body == "1" or args.body.lower() == "spa":
@@ -118,7 +116,7 @@ def set_heat_mode(args, gateway):
     return 0
 
 
-def get_heat_temp(args, gateway):
+def get_heat_temp(args, gateway: ScreenLogicGateway):
     body = 0
     if args.body == "1" or args.body.lower() == "spa":
         body = 1
@@ -128,7 +126,7 @@ def get_heat_temp(args, gateway):
     return 0
 
 
-def set_heat_temp(args, gateway):
+def set_heat_temp(args, gateway: ScreenLogicGateway):
     body = 0
     if args.body == "1" or args.body.lower() == "spa":
         body = 1
@@ -143,7 +141,7 @@ def set_heat_temp(args, gateway):
     return 0
 
 
-def get_heat_state(args, gateway):
+def get_heat_state(args, gateway: ScreenLogicGateway):
     body = 0
     if args.body == "1" or args.body.lower() == "spa":
         body = 1
@@ -155,7 +153,7 @@ def get_heat_state(args, gateway):
     return 0
 
 
-def get_current_temp(args, gateway):
+def get_current_temp(args, gateway: ScreenLogicGateway):
     body = 0
     if args.body == "1" or args.body.lower() == "spa":
         body = 1
@@ -165,6 +163,20 @@ def get_current_temp(args, gateway):
         )
     )
     return 0
+
+
+def set_color_light(args, gateway: ScreenLogicGateway):
+    mode = cliFormatDict(COLOR_MODE.NUM_FOR_NAME).get(args.mode)
+    if mode is None:
+        mode = int(args.mode)
+    if gateway.set_color_lights(mode):
+        print(
+            f"Set color mode to {COLOR_MODE.NAME_FOR_NUM[mode]}"
+            if args.verbose
+            else mode
+        )
+        return 0
+    return 32
 
 
 def get_json(args, gateway):
@@ -188,40 +200,47 @@ def cli():
 
     # Discover command
     # pylint: disable=unused-variable
-    discover_parser = subparsers.add_parser("discover")  # noqa F841
+    discover_parser = subparsers.add_parser(  # noqa F841
+        "discover", help="Attempt to discover all availbe ScreenLogic gateways"
+    )
 
     # Get options
-    get_parser = subparsers.add_parser("get")
+    get_parser = subparsers.add_parser("get", help="Gets the option specified")
     get_subparsers = get_parser.add_subparsers(dest="get_option")
     get_subparsers.required = True
 
+    ARGUMENT_CIRCUIT_NUM = {
+        "dest": "circuit_num",
+        "metavar": "CIRCUIT_NUM",
+        "type": int,
+        "help": "Circuit number",
+    }
     get_circuit_parser = get_subparsers.add_parser("circuit", aliases=["c"])
-    get_circuit_parser.add_argument("circuit_num", metavar="CIRCUIT_NUM", type=int)
+    get_circuit_parser.add_argument(**ARGUMENT_CIRCUIT_NUM)
     get_circuit_parser.set_defaults(func=get_circuit)
 
     body_options = optionsFromDict(BODY_TYPE.NAME_FOR_NUM)
+    ARGUMENT_BODY = {
+        "dest": "body",
+        "metavar": "BODY",
+        "type": str,
+        "choices": body_options,
+        "help": f"Body of water. One of: {body_options}",
+    }
     get_heat_mode_parser = get_subparsers.add_parser("heat-mode", aliases=["hm"])
-    get_heat_mode_parser.add_argument(
-        "body", metavar="BODY", type=str, choices=body_options
-    )
+    get_heat_mode_parser.add_argument(**ARGUMENT_BODY)
     get_heat_mode_parser.set_defaults(func=get_heat_mode)
 
     get_heat_temp_parser = get_subparsers.add_parser("heat-temp", aliases=["ht"])
-    get_heat_temp_parser.add_argument(
-        "body", metavar="BODY", type=str, choices=body_options
-    )
+    get_heat_temp_parser.add_argument(**ARGUMENT_BODY)
     get_heat_temp_parser.set_defaults(func=get_heat_temp)
 
     get_heat_state_parser = get_subparsers.add_parser("heat-state", aliases=["hs"])
-    get_heat_state_parser.add_argument(
-        "body", metavar="BODY", type=str, choices=body_options
-    )
+    get_heat_state_parser.add_argument(**ARGUMENT_BODY)
     get_heat_state_parser.set_defaults(func=get_heat_state)
 
     get_current_temp_parser = get_subparsers.add_parser("current-temp", aliases=["t"])
-    get_current_temp_parser.add_argument(
-        "body", metavar="BODY", type=str, choices=body_options
-    )
+    get_current_temp_parser.add_argument(**ARGUMENT_BODY)
     get_current_temp_parser.set_defaults(func=get_current_temp)
 
     get_json_parser = get_subparsers.add_parser("json", aliases=["j"])
@@ -234,27 +253,49 @@ def cli():
 
     on_off_options = optionsFromDict(ON_OFF.NAME_FOR_NUM)
     set_circuit_parser = set_subparsers.add_parser("circuit", aliases=["c"])
-    set_circuit_parser.add_argument("circuit_num", metavar="CIRCUIT_NUM", type=int)
+    set_circuit_parser.add_argument(**ARGUMENT_CIRCUIT_NUM)
     set_circuit_parser.add_argument(
-        "state", metavar="STATE", type=str, choices=on_off_options
+        "state",
+        metavar="STATE",
+        type=str,
+        choices=on_off_options,
+        help=f"State to set. One of {on_off_options}",
     )
+
+    cl_options = optionsFromDict(COLOR_MODE.NAME_FOR_NUM)
     set_circuit_parser.set_defaults(func=set_circuit)
+    set_color_light_parser = set_subparsers.add_parser("color-lights", aliases=["cl"])
+    set_color_light_parser.add_argument(
+        "mode",
+        metavar="MODE",
+        type=str,
+        choices=cl_options,
+        help=f"Color lights command, color or show. One of :{cl_options}",
+    )
+    set_color_light_parser.set_defaults(func=set_color_light)
 
     set_heat_mode_parser = set_subparsers.add_parser("heat-mode", aliases=["hm"])
-    set_heat_mode_parser.add_argument(
-        "body", metavar="BODY", type=str, choices=body_options
-    )
+    set_heat_mode_parser.add_argument(**ARGUMENT_BODY)
     hm_options = optionsFromDict(HEAT_MODE.NAME_FOR_NUM)
     set_heat_mode_parser.add_argument(
-        "mode", metavar="MODE", type=str, choices=hm_options, default=hm_options[0]
+        "mode",
+        metavar="MODE",
+        type=str,
+        choices=hm_options,
+        default=hm_options[0],
+        help=f"Heat mode to set. One of: {hm_options}",
     )
     set_heat_mode_parser.set_defaults(func=set_heat_mode)
 
     set_heat_temp_parser = set_subparsers.add_parser("heat-temp", aliases=["ht"])
+    set_heat_temp_parser.add_argument(**ARGUMENT_BODY)
     set_heat_temp_parser.add_argument(
-        "body", metavar="BODY", type=str, choices=body_options
+        "temp",
+        type=int,
+        metavar="TEMP",
+        default=None,
+        help="Temperature to set in same unit of measurement as controller settings",
     )
-    set_heat_temp_parser.add_argument("temp", type=int, metavar="TEMP", default=None)
     set_heat_temp_parser.set_defaults(func=set_heat_temp)
 
     args = option_parser.parse_args()  # save for debugger: ['-i', 'xx', 'get', 'json']
@@ -375,7 +416,7 @@ def cli():
 
     except ScreenLogicError as err:
         print(err)
-        return 32
+        return 64
 
 
 if __name__ == "__main__":

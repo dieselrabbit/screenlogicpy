@@ -1,4 +1,3 @@
-import threading
 from .requests import (
     connect_to_gateway,
     request_gateway_version,
@@ -25,7 +24,6 @@ class ScreenLogicGateway:
         self.__mac = ""
         self.__connected = False
         self.__data = {}
-        self.__lock = threading.Lock()
 
         if self.__ip and self.__port:
             if self._connect():
@@ -54,12 +52,11 @@ class ScreenLogicGateway:
         return self.__mac
 
     def update(self):
-        with self.__lock:
-            if (self.is_connected or self._connect()) and self.__data:
-                self._get_status()
-                self._get_pumps()
-                self._get_chemistry()
-                self._disconnect()
+        if (self.is_connected or self._connect()) and self.__data:
+            self._get_status()
+            self._get_pumps()
+            self._get_chemistry()
+            self._disconnect()
 
     def get_data(self):
         return self.__data
@@ -68,43 +65,34 @@ class ScreenLogicGateway:
         if self._is_valid_circuit(circuitID) and self._is_valid_circuit_state(
             circuitState
         ):
-            with self.__lock:
-                if self.__connected or self._connect():
-                    if request_pool_button_press(
-                        self.__socket, circuitID, circuitState
-                    ):
-                        self._disconnect()
-                        return True
-        else:
-            return False
+            if self.__connected or self._connect():
+                if request_pool_button_press(self.__socket, circuitID, circuitState):
+                    self._disconnect()
+                    return True
+        return False
 
     def set_heat_temp(self, body, temp):
         if self._is_valid_body(body) and self._is_valid_heattemp(body, temp):
-            with self.__lock:
-                if self.__connected or self._connect():
-                    if request_set_heat_setpoint(self.__socket, body, temp):
-                        self._disconnect()
-                        return True
-        else:
-            return False
+            if self.__connected or self._connect():
+                if request_set_heat_setpoint(self.__socket, body, temp):
+                    self._disconnect()
+                    return True
+        return False
 
     def set_heat_mode(self, body, mode):
         if self._is_valid_body(body) and self._is_valid_heatmode(mode):
-            with self.__lock:
-                if self.__connected or self._connect():
-                    if request_set_heat_mode(self.__socket, body, mode):
-                        self._disconnect()
-                        return True
-        else:
-            return False
-
-    def set_color_lights(self, light_command):
-        with self.__lock:
             if self.__connected or self._connect():
-                if request_pool_lights_command(self.__socket, light_command):
+                if request_set_heat_mode(self.__socket, body, mode):
                     self._disconnect()
                     return True
-            return False
+        return False
+
+    def set_color_lights(self, light_command):
+        if self.__connected or self._connect():
+            if request_pool_lights_command(self.__socket, light_command):
+                self._disconnect()
+                return True
+        return False
 
     def is_connected(self):
         return self.__connected
