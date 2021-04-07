@@ -9,6 +9,7 @@ setuptools.setup(
     author="Kevin Worrel",
     author_email="kevinworrel@yahoo.com",
     description="Interface for Pentair ScreenLogic connected pool controllers over IP via Python",
+    license="GPLv3",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/dieselrabbit/screenlogicpy",
