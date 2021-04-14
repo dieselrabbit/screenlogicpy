@@ -1,12 +1,12 @@
 import struct
 
 # import json
-from .utility import sendRecieveMessage, getSome, getString
-from ..const import code, BODY_TYPE
+from .utility import sendReceiveMessage, getSome, getString
+from ..const import code, BODY_TYPE, DATA
 
 
 def request_pool_config(gateway_socket, data):
-    response = sendRecieveMessage(
+    response = sendReceiveMessage(
         gateway_socket, code.CTRLCONFIG_QUERY, struct.pack("<2I", 0, 0)
     )
     decode_pool_config(response, data)
@@ -14,18 +14,18 @@ def request_pool_config(gateway_socket, data):
 
 def decode_pool_config(buff, data):
     # print(buff)
-    if "config" not in data:
-        data["config"] = {}
+    if DATA.KEY_CONFIG not in data:
+        data[DATA.KEY_CONFIG] = {}
 
-    config = data["config"]
+    config = data[DATA.KEY_CONFIG]
 
     controllerID, offset = getSome("I", buff, 0)
     config["controller_id"] = {"name": "Controller ID", "value": controllerID}
 
-    if "bodies" not in data:
-        data["bodies"] = {}
+    if DATA.KEY_BODIES not in data:
+        data[DATA.KEY_BODIES] = {}
 
-    bodies = data["bodies"]
+    bodies = data[DATA.KEY_BODIES]
 
     for i in range(2):
         if i not in bodies:
@@ -41,7 +41,7 @@ def decode_pool_config(buff, data):
         currentBody["max_set_point"] = {"name": MAXspName, "value": maxSetPoint}
 
     degC, offset = getSome("B", buff, offset)
-    config["is_celcius"] = {"name": "Is Celcius", "value": degC}
+    config["is_celsius"] = {"name": "Is Celsius", "value": degC}
 
     controllerType, offset = getSome("B", buff, offset)
     config["controller_type"] = controllerType
@@ -65,16 +65,16 @@ def decode_pool_config(buff, data):
     circuitCount, offset = getSome("I", buff, offset)
     config["circuit_count"] = {"name": "Number of Circuits", "value": circuitCount}
 
-    if "circuits" not in data:
-        data["circuits"] = {}
+    if DATA.KEY_CIRCUITS not in data:
+        data[DATA.KEY_CIRCUITS] = {}
 
-    circuits = data["circuits"]
+    circuits = data[DATA.KEY_CIRCUITS]
 
     for i in range(circuitCount):
 
         circuitID, offset = getSome("i", buff, offset)
 
-        if circuitID not in data["circuits"]:
+        if circuitID not in data[DATA.KEY_CIRCUITS]:
             circuits[circuitID] = {}
 
         currentCircuit = circuits[circuitID]
@@ -117,8 +117,11 @@ def decode_pool_config(buff, data):
     colorCount, offset = getSome("I", buff, offset)
     config["color_count"] = {"name": "Number of Colors", "value": colorCount}
 
-    if "colors" not in data["config"] or len(config["colors"]) != colorCount:
-        config["colors"] = [{} for x in range(colorCount)]
+    if (
+        DATA.KEY_COLORS not in data[DATA.KEY_CONFIG]
+        or len(config[DATA.KEY_COLORS]) != colorCount
+    ):
+        config[DATA.KEY_COLORS] = [{} for x in range(colorCount)]
 
     for i in range(colorCount):
         paddedColorName, offset = getString(buff, offset)
@@ -126,13 +129,13 @@ def decode_pool_config(buff, data):
         rgbR, offset = getSome("I", buff, offset)
         rgbG, offset = getSome("I", buff, offset)
         rgbB, offset = getSome("I", buff, offset)
-        config["colors"][i] = {"name": colorName, "value": (rgbR, rgbG, rgbB)}
+        config[DATA.KEY_COLORS][i] = {"name": colorName, "value": (rgbR, rgbG, rgbB)}
 
     pumpCircuitCount = 8
-    if "pumps" not in data:
-        data["pumps"] = {}
+    if DATA.KEY_PUMPS not in data:
+        data[DATA.KEY_PUMPS] = {}
 
-    pumps = data["pumps"]
+    pumps = data[DATA.KEY_PUMPS]
 
     for i in range(pumpCircuitCount):
         if i not in pumps:

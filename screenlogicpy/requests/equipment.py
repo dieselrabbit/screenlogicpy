@@ -1,10 +1,10 @@
 import struct
-from .utility import sendRecieveMessage, getSome, getArray
+from .utility import sendReceiveMessage, getSome, getArray
 from ..const import code
 
 
 def request_equipment_config(gateway_socket, data):
-    response = sendRecieveMessage(
+    response = sendReceiveMessage(
         gateway_socket, code.EQUIPMENT_QUERY, struct.pack("<2I", 0, 0)
     )
     decode_equipment_config(response, data)

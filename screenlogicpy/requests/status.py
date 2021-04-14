@@ -1,11 +1,11 @@
 # import json
 import struct
-from .utility import sendRecieveMessage, getSome
-from ..const import code, BODY_TYPE, DEVICE_TYPE, UNIT
+from .utility import sendReceiveMessage, getSome
+from ..const import code, BODY_TYPE, DATA, DEVICE_TYPE, UNIT
 
 
 def request_pool_status(gateway_socket, data):
-    response = sendRecieveMessage(
+    response = sendReceiveMessage(
         gateway_socket, code.POOLSTATUS_QUERY, struct.pack("<I", 0)
     )
     decode_pool_status(response, data)
@@ -15,10 +15,10 @@ def request_pool_status(gateway_socket, data):
 def decode_pool_status(buff, data):
     # print(buff)
 
-    if "config" not in data:
-        data["config"] = {}
+    if DATA.KEY_CONFIG not in data:
+        data[DATA.KEY_CONFIG] = {}
 
-    config = data["config"]
+    config = data[DATA.KEY_CONFIG]
 
     ok, offset = getSome("I", buff, 0)
     config["ok"] = {"name": "OK Check", "value": ok}
@@ -43,22 +43,22 @@ def decode_pool_status(buff, data):
     ff2, offset = getSome("B", buff, offset)
     ff3, offset = getSome("B", buff, offset)
 
-    unittxt = (
+    unit_txt = (
         UNIT.CELSIUS
-        if "is_celcius" in config and config["is_celcius"]["value"]
-        else UNIT.FAHRENHEIHT
+        if "is_celsius" in config and config["is_celsius"]["value"]
+        else UNIT.FAHRENHEIT
     )
 
-    if "sensors" not in data:
-        data["sensors"] = {}
+    if DATA.KEY_SENSORS not in data:
+        data[DATA.KEY_SENSORS] = {}
 
-    sensors = data["sensors"]
+    sensors = data[DATA.KEY_SENSORS]
 
     airTemp, offset = getSome("i", buff, offset)
     sensors["air_temperature"] = {
         "name": "Air Temperature",
         "value": airTemp,
-        "unit": unittxt,
+        "unit": unit_txt,
         "device_type": DEVICE_TYPE.TEMPERATURE,
     }
 
@@ -66,10 +66,10 @@ def decode_pool_status(buff, data):
     # Should this default to 2?
     bodiesCount = min(bodiesCount, 2)
 
-    if "bodies" not in data:
-        data["bodies"] = {}
+    if DATA.KEY_BODIES not in data:
+        data[DATA.KEY_BODIES] = {}
 
-    bodies = data["bodies"]
+    bodies = data[DATA.KEY_BODIES]
 
     for i in range(bodiesCount):
         bodyType, offset = getSome("I", buff, offset)
@@ -84,12 +84,12 @@ def decode_pool_status(buff, data):
         if "min_set_point" not in currentBody:
             currentBody["min_set_point"] = {}
 
-        currentBody["min_set_point"]["unit"] = unittxt
+        currentBody["min_set_point"]["unit"] = unit_txt
 
         if "max_set_point" not in currentBody:
             currentBody["max_set_point"] = {}
 
-        currentBody["max_set_point"]["unit"] = unittxt
+        currentBody["max_set_point"]["unit"] = unit_txt
 
         currentBody["body_type"] = {"name": "Type of body of water", "value": bodyType}
 
@@ -98,7 +98,7 @@ def decode_pool_status(buff, data):
         currentBody["last_temperature"] = {
             "name": bodyName,
             "value": lastTemp,
-            "unit": unittxt,
+            "unit": unit_txt,
             "device_type": DEVICE_TYPE.TEMPERATURE,
         }
 
@@ -111,7 +111,7 @@ def decode_pool_status(buff, data):
         currentBody["heat_set_point"] = {
             "name": hspName,
             "value": heatSetPoint,
-            "unit": unittxt,
+            "unit": unit_txt,
             "device_type": DEVICE_TYPE.TEMPERATURE,
         }
 
@@ -120,7 +120,7 @@ def decode_pool_status(buff, data):
         currentBody["cool_set_point"] = {
             "name": cspName,
             "value": coolSetPoint,
-            "unit": unittxt,
+            "unit": unit_txt,
         }
 
         heatMode, offset = getSome("i", buff, offset)
@@ -129,10 +129,10 @@ def decode_pool_status(buff, data):
 
     circuitCount, offset = getSome("I", buff, offset)
 
-    if "circuits" not in data:
-        data["circuits"] = {}
+    if DATA.KEY_CIRCUITS not in data:
+        data[DATA.KEY_CIRCUITS] = {}
 
-    circuits = data["circuits"]
+    circuits = data[DATA.KEY_CIRCUITS]
 
     for i in range(circuitCount):
         circuitID, offset = getSome("I", buff, offset)

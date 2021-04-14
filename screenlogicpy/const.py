@@ -1,5 +1,3 @@
-import sys
-import os
 import struct
 
 SL_GATEWAY_IP = "ip"
@@ -7,10 +5,6 @@ SL_GATEWAY_PORT = "port"
 SL_GATEWAY_TYPE = "gtype"
 SL_GATEWAY_SUBTYPE = "gsubtype"
 SL_GATEWAY_NAME = "name"
-
-
-def me():
-    return os.path.basename(sys.argv[0])
 
 
 class ScreenLogicError(Exception):
@@ -50,8 +44,8 @@ class code:
     SETCOOLTEMP_ANSWER = SETCOOLTEMP_QUERY + 1
     GATEWAYDATA_QUERY = 18003
     GATEWAYDATA_ANSWER = GATEWAYDATA_QUERY + 1
-    CONTROLLER_QUERRY = 12532
-    CONTROLLER_ANSWER = CONTROLLER_QUERRY + 1
+    CONTROLLER_QUERY = 12532
+    CONTROLLER_ANSWER = CONTROLLER_QUERY + 1
     EQUIPMENT_QUERY = 12566
     EQUIPMENT_ANSWER = EQUIPMENT_QUERY + 1
     PUMPSTATUS_QUERY = 12584
@@ -60,13 +54,27 @@ class code:
     LIGHTCOMMAND_ANSWER = LIGHTCOMMAND_QUERY + 1
     CHEMISTRY_QUERY = 12592
     CHEMISTRY_ANSWER = CHEMISTRY_QUERY + 1
+    SCGCONFIG_QUERY = 12572
+    SCGCONFIG_ANSWER = SCGCONFIG_QUERY + 1
+
+
+class DATA:
+    KEY_ALERTS = "alerts"
+    KEY_BODIES = "bodies"
+    KEY_CHEMISTRY = "chemistry"
+    KEY_CIRCUITS = "circuits"
+    KEY_COLORS = "colors"
+    KEY_CONFIG = "config"
+    KEY_NOTIFICATIONS = "notifications"
+    KEY_PUMPS = "pumps"
+    KEY_SENSORS = "sensors"
 
 
 # class mapping:
 #    BODY_TYPE  = ['Pool', 'Spa']
 
 #    HEAT_MODE  = ['Off', 'Solar',
-#                  "Solar Prefered",
+#                  "Solar Preferred",
 #                  'Heat', "Don't Change"]
 
 #    ON_OFF     = ['Off', 'On']
@@ -100,6 +108,10 @@ class ON_OFF:
     NAME_FOR_NUM = {OFF: "Off", ON: "On"}
 
     NUM_FOR_NAME = {name: num for num, name in NAME_FOR_NUM.items()}
+
+    @classmethod
+    def from_bool(cls, expresson: bool):
+        return cls.ON if expresson else cls.OFF
 
 
 class HEAT_MODE:
@@ -180,7 +192,7 @@ class DEVICE_TYPE:
 
 class UNIT:
     CELSIUS = "\xb0C"
-    FAHRENHEIHT = "\xb0F"
+    FAHRENHEIT = "\xb0F"
 
 
 class EQUIPMENT:
@@ -224,20 +236,41 @@ class EQUIPMENT:
 
 
 class CIRCUIT_FUNCTION:
+    # Known circuit functions.
     GENERIC = 0
     SPA = 1
     POOL = 2
     MASTER_CLEANER = 5
     LIGHT = 7
+    MAGICSTREAM = 8  # ?
     SPILLWAY = 14
     INTELLIBRITE = 16
 
 
 class INTERFACE_GROUP:
+    # Known interface groups
     POOL = 0
     SPA = 1
     FEATURES = 2
     LIGHTS = 3
+
+
+class CHEMISTRY:
+    FLAG_ALARM_FLOW = 0x01
+    FLAG_ALARM_PH = 0x06
+    FLAG_ALARM_ORP = 0x18
+    FLAG_ALARM_PH_SUPPLY = 0x20
+    FLAG_ALARM_ORP_SUPPLY = 0x40
+    FLAG_ALARM_PROBE_FAULT = 0x80
+
+    FLAG_STATUS_CORROSIVE = 0x01
+    FLAG_STATUS_SCALING = 0x02
+    FLAG_STATUS_PH_DOSING = 0x30
+    FLAG_STATUS_ORP_DOSING = 0xC0
+
+    FLAG_WARNING_PH_LOCKOUT = 0x01
+    FLAG_WARNING_PH_LIMIT = 0x02
+    FLAG_WARNING_ORP_LIMIT = 0x04
 
 
 GENERIC_CIRCUIT_NAMES = [
@@ -247,3 +280,27 @@ GENERIC_CIRCUIT_NAMES = [
 ]
 
 DEFAULT_CIRCUIT_NAMES = ["Spa", "Pool", *GENERIC_CIRCUIT_NAMES]
+
+
+# COLOR_MODES_* may not be complete
+COLOR_MODES_GENERIC = {num: COLOR_MODE.NAME_FOR_NUM[num] for num in [0, 1]}
+
+COLOR_MODES_COLORS = {num: COLOR_MODE.NAME_FOR_NUM[num] for num in [13, 14, 15, 16, 17]}
+
+COLOR_MODES_SAM = {
+    **COLOR_MODES_GENERIC,
+    **{num: COLOR_MODE.NAME_FOR_NUM[num] for num in [2, 3, 4]},
+    **COLOR_MODES_COLORS,
+}
+
+COLOR_MODES_INTELLIBRITE = {
+    **COLOR_MODES_GENERIC,
+    **COLOR_MODES_SAM,
+    **{num: COLOR_MODE.NAME_FOR_NUM[num] for num in [5, 6, 7, 8, 9, 10, 11, 12]},
+    **COLOR_MODES_COLORS,
+}
+
+COLOR_MODES_MAGICSTREAM = {
+    **COLOR_MODES_GENERIC,
+    **{num: COLOR_MODE.NAME_FOR_NUM[num] for num in [18, 19, 20, 21]},
+}

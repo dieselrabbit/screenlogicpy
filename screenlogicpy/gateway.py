@@ -1,3 +1,4 @@
+from .const import DATA
 from .requests import (
     connect_to_gateway,
     request_gateway_version,
@@ -123,8 +124,8 @@ class ScreenLogicGateway:
 
     def _get_pumps(self):
         if self.__connected or self._connect():
-            for pID in self.__data["pumps"]:
-                if self.__data["pumps"][pID]["data"] != 0:
+            for pID in self.__data[DATA.KEY_PUMPS]:
+                if self.__data[DATA.KEY_PUMPS][pID]["data"] != 0:
                     request_pump_status(self.__socket, self.__data, pID)
 
     def _get_chemistry(self):
@@ -132,18 +133,18 @@ class ScreenLogicGateway:
             request_chemistry(self.__socket, self.__data)
 
     def _is_valid_circuit(self, circuit):
-        return circuit in self.__data["circuits"]
+        return circuit in self.__data[DATA.KEY_CIRCUITS]
 
     def _is_valid_circuit_state(self, state):
         return state == 0 or state == 1
 
     def _is_valid_body(self, body):
-        return body in self.__data["bodies"]
+        return body in self.__data[DATA.KEY_BODIES]
 
     def _is_valid_heatmode(self, heatmode):
         return 0 <= heatmode < 5
 
     def _is_valid_heattemp(self, body, temp):
-        min_temp = self.__data["bodies"][int(body)]["min_set_point"]["value"]
-        max_temp = self.__data["bodies"][int(body)]["max_set_point"]["value"]
+        min_temp = self.__data[DATA.KEY_BODIES][int(body)]["min_set_point"]["value"]
+        max_temp = self.__data[DATA.KEY_BODIES][int(body)]["max_set_point"]["value"]
         return min_temp <= temp <= max_temp

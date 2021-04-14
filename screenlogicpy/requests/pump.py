@@ -1,11 +1,11 @@
 # import json
 import struct
-from .utility import sendRecieveMessage, getSome
-from ..const import code, DEVICE_TYPE
+from .utility import sendReceiveMessage, getSome
+from ..const import code, DATA, DEVICE_TYPE
 
 
 def request_pump_status(gateway_socket, data, pumpID):
-    response = sendRecieveMessage(
+    response = sendReceiveMessage(
         gateway_socket, code.PUMPSTATUS_QUERY, struct.pack("<II", 0, pumpID)
     )
     decode_pump_status(response, data, pumpID)
@@ -14,13 +14,13 @@ def request_pump_status(gateway_socket, data, pumpID):
 # pylint: disable=unused-variable
 def decode_pump_status(buff, data, pumpID):
     # print(buff)
-    if "pumps" not in data:
-        data["pumps"] = {}
+    if DATA.KEY_PUMPS not in data:
+        data[DATA.KEY_PUMPS] = {}
 
-    if pumpID not in data["pumps"]:
-        data["pumps"][pumpID] = {}
+    if pumpID not in data[DATA.KEY_PUMPS]:
+        data[DATA.KEY_PUMPS][pumpID] = {}
 
-    pump = data["pumps"][pumpID]
+    pump = data[DATA.KEY_PUMPS][pumpID]
     pump["name"] = ""
     pump["pumpType"], offset = getSome("I", buff, 0)
     pump["state"], offset = getSome("I", buff, offset)
@@ -42,8 +42,8 @@ def decode_pump_status(buff, data, pumpID):
     for i in range(8):
         pump["presets"][i] = {}
         pump["presets"][i]["cid"], offset = getSome("I", buff, offset)
-        if "circuits" in data:
-            for num, circuit in data["circuits"].items():
+        if DATA.KEY_CIRCUITS in data:
+            for num, circuit in data[DATA.KEY_CIRCUITS].items():
                 if (
                     pump["presets"][i]["cid"] == circuit["device_id"]
                     and name == "Default"

@@ -3,7 +3,7 @@ import struct
 from ..const import ScreenLogicError, header, code
 
 
-def sendRecieveMessage(gateway_socket, code, message=b""):
+def sendReceiveMessage(gateway_socket, code, message=b""):
     badCodes = []
     try:
         gateway_socket.sendall(makeMessage(code, message))
@@ -11,7 +11,7 @@ def sendRecieveMessage(gateway_socket, code, message=b""):
             data = gateway_socket.recv(1024)
             if not data:
                 raise ScreenLogicError(
-                    "No data recieved from the gateway. Request code: {}".format(code)
+                    "No data received from the gateway. Request code: {}".format(code)
                 )
             rcvCode, buff = takeMessage(data)
             if rcvCode == (code + 1):
@@ -19,13 +19,13 @@ def sendRecieveMessage(gateway_socket, code, message=b""):
             else:
                 badCodes.append(rcvCode)
         raise ScreenLogicError(
-            "Failed to recieve the expected response from the gateway within 2 tries. Expected: {}. Recieved: {}.".format(
+            "Failed to receive the expected response from the gateway within 2 tries. Expected: {}. Received: {}.".format(
                 code + 1, badCodes
             )
         )
     except socket.timeout:
         raise ScreenLogicError(
-            "Failed to recieve the expected response from the gateway within timeout. Expected: {}. Recieved: {}.".format(
+            "Failed to receive the expected response from the gateway within timeout. Expected: {}. Received: {}.".format(
                 code + 1, badCodes
             )
         )
@@ -72,10 +72,10 @@ def takeMessage(message):
         header.fmt + str(messageBytes) + "s", message
     )
     if rcvLen != messageBytes:
-        raise ScreenLogicError("Data recieved does not match expected length")
+        raise ScreenLogicError("Data received does not match expected length")
     if rcvCode2 == code.UNKNOWN_ANSWER:
         raise ScreenLogicError(
-            "Unexpected response recieved from the gateway. Recieved code_unknown."
+            "Unexpected response received from the gateway. Received code_unknown."
         )
     return rcvCode2, data  # return raw data
 

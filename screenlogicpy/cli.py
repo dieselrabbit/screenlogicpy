@@ -6,10 +6,11 @@ from screenlogicpy.discovery import discover
 from screenlogicpy.gateway import ScreenLogicGateway
 from screenlogicpy.const import (
     BODY_TYPE,
-    ON_OFF,
-    HEAT_MODE,
     COLOR_MODE,
+    DATA,
     EQUIPMENT,
+    HEAT_MODE,
+    ON_OFF,
     ScreenLogicError,
 )
 
@@ -40,7 +41,7 @@ def optionsFromDict(mapping: dict):
 def vFormat(verbose: bool, slElement: dict, slClass=None):
     if verbose:
         if slClass:
-            return f"{slElement['name']}: {slClass.NAME_FOR_NUM(slElement['value'])}"
+            return f"{slElement['name']}: {slClass.NAME_FOR_NUM[slElement['value']]}"
         else:
             return f"{slElement['name']}: {slElement['value']}"
     else:
@@ -49,12 +50,14 @@ def vFormat(verbose: bool, slElement: dict, slClass=None):
 
 # Parser functions
 def get_circuit(args, gateway: ScreenLogicGateway):
-    if not int(args.circuit_num) in gateway.get_data()["circuits"]:
+    if not int(args.circuit_num) in gateway.get_data()[DATA.KEY_CIRCUITS]:
         print(f"Invalid circuit number: {args.circuit_num}")
         return 4
     print(
         vFormat(
-            args.verbose, gateway.get_data()["circuits"][int(args.circuit_num)], ON_OFF
+            args.verbose,
+            gateway.get_data()[DATA.KEY_CIRCUITS][int(args.circuit_num)],
+            ON_OFF,
         )
     )
     return 0
@@ -64,7 +67,7 @@ def set_circuit(args, gateway: ScreenLogicGateway):
     state = 0
     if args.state == "1" or args.state.lower() == "on":
         state = 1
-    if not int(args.circuit_num) in gateway.get_data()["circuits"]:
+    if not int(args.circuit_num) in gateway.get_data()[DATA.KEY_CIRCUITS]:
         print(f"Invalid circuit number: {args.circuit_num}")
         return 4
     if gateway.set_circuit(int(args.circuit_num), state):
@@ -73,7 +76,9 @@ def set_circuit(args, gateway: ScreenLogicGateway):
         return 4
     print(
         vFormat(
-            args.verbose, gateway.get_data()["circuits"][int(args.circuit_num)], ON_OFF
+            args.verbose,
+            gateway.get_data()[DATA.KEY_CIRCUITS][int(args.circuit_num)],
+            ON_OFF,
         )
     )
     return 0
@@ -86,7 +91,7 @@ def get_heat_mode(args, gateway: ScreenLogicGateway):
     print(
         vFormat(
             args.verbose,
-            gateway.get_data()["bodies"][int(body)]["heat_mode"],
+            gateway.get_data()[DATA.KEY_BODIES][int(body)]["heat_mode"],
             HEAT_MODE,
         )
     )
@@ -109,7 +114,7 @@ def set_heat_mode(args, gateway: ScreenLogicGateway):
     print(
         vFormat(
             args.verbose,
-            gateway.get_data()["bodies"][int(body)]["heat_mode"],
+            gateway.get_data()[DATA.KEY_BODIES][int(body)]["heat_mode"],
             HEAT_MODE,
         )
     )
@@ -121,7 +126,10 @@ def get_heat_temp(args, gateway: ScreenLogicGateway):
     if args.body == "1" or args.body.lower() == "spa":
         body = 1
     print(
-        vFormat(args.verbose, gateway.get_data()["bodies"][int(body)]["heat_set_point"])
+        vFormat(
+            args.verbose,
+            gateway.get_data()[DATA.KEY_BODIES][int(body)]["heat_set_point"],
+        )
     )
     return 0
 
@@ -136,7 +144,10 @@ def set_heat_temp(args, gateway: ScreenLogicGateway):
         else:
             return 16
     print(
-        vFormat(args.verbose, gateway.get_data()["bodies"][int(body)]["heat_set_point"])
+        vFormat(
+            args.verbose,
+            gateway.get_data()[DATA.KEY_BODIES][int(body)]["heat_set_point"],
+        )
     )
     return 0
 
@@ -147,7 +158,9 @@ def get_heat_state(args, gateway: ScreenLogicGateway):
         body = 1
     print(
         vFormat(
-            args.verbose, gateway.get_data()["bodies"][int(body)]["heat_status"], ON_OFF
+            args.verbose,
+            gateway.get_data()[DATA.KEY_BODIES][int(body)]["heat_status"],
+            ON_OFF,
         )
     )
     return 0
@@ -159,7 +172,8 @@ def get_current_temp(args, gateway: ScreenLogicGateway):
         body = 1
     print(
         vFormat(
-            args.verbose, gateway.get_data()["bodies"][int(body)]["current_temperature"]
+            args.verbose,
+            gateway.get_data()[DATA.KEY_BODIES][int(body)]["last_temperature"],
         )
     )
     return 0
@@ -185,7 +199,7 @@ def get_json(args, gateway):
 
 
 # Entry function
-def cli():
+def cli(cli_args):
     """Handle command line args"""
 
     option_parser = argparse.ArgumentParser(
@@ -201,7 +215,7 @@ def cli():
     # Discover command
     # pylint: disable=unused-variable
     discover_parser = subparsers.add_parser(  # noqa F841
-        "discover", help="Attempt to discover all availbe ScreenLogic gateways"
+        "discover", help="Attempt to discover all available ScreenLogic gateways"
     )
 
     # Get options
@@ -298,7 +312,8 @@ def cli():
     )
     set_heat_temp_parser.set_defaults(func=set_heat_temp)
 
-    args = option_parser.parse_args()  # save for debugger: ['-i', 'xx', 'get', 'json']
+    args = option_parser.parse_args(cli_args)
+    # save for debugger: ['-i', 'xx', 'get', 'json']
 
     try:
         host = {"ip": args.ip, "port": args.port}
@@ -327,7 +342,7 @@ def cli():
                             )
                     return 0
 
-                # For CLI commands that don't specifiy an ip address, auto use the first gateway discovered
+                # For CLI commands that don't specify an ip address, auto use the first gateway discovered
                 # Good for most cases where only one exists on the network
                 host = hosts[0]
 
@@ -337,7 +352,7 @@ def cli():
 
         gateway = ScreenLogicGateway(**host)
 
-        if "config" not in gateway.get_data():
+        if DATA.KEY_CONFIG not in gateway.get_data():
             return 1
 
         def print_gateway():
@@ -349,15 +364,15 @@ def cli():
             )
             print(
                 EQUIPMENT.CONTROLLER_HARDWARE[
-                    gateway.get_data()["config"]["controller_type"]
-                ][gateway.get_data()["config"]["hardware_type"]]
+                    gateway.get_data()[DATA.KEY_CONFIG]["controller_type"]
+                ][gateway.get_data()[DATA.KEY_CONFIG]["hardware_type"]]
             )
 
         def print_circuits():
             print("{}  {}  {}".format("ID".rjust(3), "STATE", "NAME"))
             print("--------------------------")
-            for id in gateway.get_data()["circuits"]:
-                circuit = gateway.get_data()["circuits"][int(id)]
+            for id in gateway.get_data()[DATA.KEY_CIRCUITS]:
+                circuit = gateway.get_data()[DATA.KEY_CIRCUITS][int(id)]
                 print(
                     "{}  {}  {}".format(
                         circuit["id"],
@@ -367,8 +382,8 @@ def cli():
                 )
 
         def print_heat():
-            for id in gateway.get_data()["bodies"]:
-                body = gateway.get_data()["bodies"][int(id)]
+            for id in gateway.get_data()[DATA.KEY_BODIES]:
+                body = gateway.get_data()[DATA.KEY_BODIES][int(id)]
                 print(
                     "{} temperature is last {}{}".format(
                         BODY_TYPE.NAME_FOR_NUM[body["body_type"]["value"]],
@@ -420,4 +435,4 @@ def cli():
 
 
 if __name__ == "__main__":
-    sys.exit(cli())
+    sys.exit(cli(sys.argv[1:]))

@@ -1,7 +1,7 @@
 import time
 import struct
 import socket
-from .utility import sendRecieveMessage, encodeMessageString, decodeMessageString
+from .utility import sendReceiveMessage, encodeMessageString, decodeMessageString
 from ..const import code, ScreenLogicError
 
 
@@ -46,7 +46,7 @@ def gateway_connect(connected_socket):
     connectString = b"CONNECTSERVERHOST\r\n\r\n"  # as bytes, not string
     connected_socket.sendall(connectString)
     time.sleep(0.25)
-    response = sendRecieveMessage(connected_socket, code.CHALLENGE_QUERY)
+    response = sendReceiveMessage(connected_socket, code.CHALLENGE_QUERY)
     mac_address = decodeMessageString(response)
     return mac_address
 
@@ -55,7 +55,7 @@ def gateway_login(connected_socket):
     msg = create_login_message()
     try:
         # Gateway will respond with the response code and that's all.
-        _ = sendRecieveMessage(connected_socket, code.LOCALLOGIN_QUERY, msg)
+        _ = sendReceiveMessage(connected_socket, code.LOCALLOGIN_QUERY, msg)
         return True
     except ScreenLogicError:
         return False

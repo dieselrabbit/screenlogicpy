@@ -11,9 +11,9 @@ def test_gateway():
         print(f"{gateway.ip}:{gateway.port} {gateway.name}")
         data = gateway.get_data()
         print(
-            const.EQUIPMENT.CONTROLLER_HARDWARE[data["config"]["controller_type"]][
-                data["config"]["hardware_type"]
-            ]
+            const.EQUIPMENT.CONTROLLER_HARDWARE[
+                data[const.DATA.KEY_CONFIG]["controller_type"]
+            ][data[const.DATA.KEY_CONFIG]["hardware_type"]]
         )
         return 0
     else:
