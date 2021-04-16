@@ -9,3 +9,4 @@ from .login import connect_to_gateway
 from .pump import request_pump_status
 from .status import request_pool_status
 from .chemistry import request_chemistry
+from .scg import request_scg_config

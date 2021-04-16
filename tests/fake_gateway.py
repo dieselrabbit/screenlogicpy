@@ -9,6 +9,7 @@ from tests.const_data import (
     FAKE_STATUS_RESPONSE,
     FAKE_PUMP_RESPONSE,
     FAKE_CHEMISTRY_RESPONSE,
+    FAKE_SCG_RESPONSE,
 )
 
 
@@ -127,6 +128,11 @@ class fake_ScreenLogicGateway:
                 print("Chemistry")
                 connection.sendall(
                     makeMessage(code.CHEMISTRY_ANSWER, FAKE_CHEMISTRY_RESPONSE)
+                )
+            elif rcvCode == code.SCGCONFIG_QUERY:
+                print("SCG")
+                connection.sendall(
+                    makeMessage(code.SCGCONFIG_ANSWER, FAKE_SCG_RESPONSE)
                 )
             elif rcvCode == code.BUTTONPRESS_QUERY:
                 connection.sendall(makeMessage(code.BUTTONPRESS_ANSWER))

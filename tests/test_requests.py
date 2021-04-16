@@ -6,16 +6,19 @@ from tests.const_data import (
     FAKE_STATUS_RESPONSE,
     FAKE_PUMP_RESPONSE,
     FAKE_CHEMISTRY_RESPONSE,
+    FAKE_SCG_RESPONSE,
     EXPECTED_CONFIG_DATA,
     EXPECTED_STATUS_DATA,
     EXPECTED_PUMP_DATA,
     EXPECTED_CHEMISTRY_DATA,
+    EXPECTED_SCG_DATA,
 )
 from screenlogicpy.requests import (
     request_pool_config,
     request_pool_status,
     request_pump_status,
     request_chemistry,
+    request_scg_config,
     request_pool_button_press,
     request_set_heat_mode,
     request_set_heat_setpoint,
@@ -71,6 +74,18 @@ def test_request_chemistry():
     assert data == EXPECTED_CHEMISTRY_DATA
 
 
+def test_request_scg_config():
+    data = {}
+    with patch(
+        "screenlogicpy.requests.scg.sendReceiveMessage", return_value=FAKE_SCG_RESPONSE
+    ) as mockRequest, patch("socket.socket", autospec=True) as mockSocket:
+        request_scg_config(mockSocket, data)
+
+    assert mockRequest.call_args[0][1] == 12572
+    assert mockRequest.call_args[0][2] == struct.pack("<I", 0)
+    assert data == EXPECTED_SCG_DATA
+
+
 def test_request_pool_button_press():
     circuit_id = 505
     circuit_state = 1
@@ -122,3 +137,4 @@ def test_request_pool_lights_command():
     assert mockRequest.call_args[0][1] == 12556
     assert mockRequest.call_args[0][2] == struct.pack("<II", 0, mode)
     assert success
+

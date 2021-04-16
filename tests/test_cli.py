@@ -7,6 +7,7 @@ from tests.const_data import (
     FAKE_STATUS_RESPONSE,
     FAKE_PUMP_RESPONSE,
     FAKE_CHEMISTRY_RESPONSE,
+    FAKE_SCG_RESPONSE,
     EXPECTED_COMPLETE_DATA,
     EXPECTED_DASHBOARD,
     EXPECTED_VERBOSE_PREAMBLE,
@@ -36,6 +37,8 @@ def mockCLI(args, expected):
         "screenlogicpy.requests.chemistry.sendReceiveMessage",
         return_value=FAKE_CHEMISTRY_RESPONSE,
     ) as mockChemistryRequest, patch(
+        "screenlogicpy.requests.scg.sendReceiveMessage", return_value=FAKE_SCG_RESPONSE
+    ) as mockSCGRequest, patch(
         "sys.stdout", new=StringIO()
     ) as mockOut:
         result = cli(args)
@@ -72,6 +75,7 @@ def mockCLI(args, expected):
     assert mockStatusRequest.call_count == updateCount
     assert mockPumpRequest.call_count == updateCount
     assert mockChemistryRequest.call_count == updateCount
+    assert mockSCGRequest.call_count == updateCount
 
 
 def test_cli_dashboard():

@@ -67,6 +67,7 @@ class DATA:
     KEY_CONFIG = "config"
     KEY_NOTIFICATIONS = "notifications"
     KEY_PUMPS = "pumps"
+    KEY_SCG = "scg"
     KEY_SENSORS = "sensors"
 
 

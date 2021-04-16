@@ -10,6 +10,7 @@ from .requests import (
     request_set_heat_mode,
     request_set_heat_setpoint,
     request_chemistry,
+    request_scg_config,
 )
 
 
@@ -32,6 +33,7 @@ class ScreenLogicGateway:
                 self._get_status()
                 self._get_pumps()
                 self._get_chemistry()
+                self._get_scg()
                 self._disconnect()
         else:
             raise ValueError("Invalid ip or port")
@@ -57,6 +59,7 @@ class ScreenLogicGateway:
             self._get_status()
             self._get_pumps()
             self._get_chemistry()
+            self._get_scg()
             self._disconnect()
 
     def get_data(self):
@@ -131,6 +134,10 @@ class ScreenLogicGateway:
     def _get_chemistry(self):
         if self.__connected or self._connect():
             request_chemistry(self.__socket, self.__data)
+
+    def _get_scg(self):
+        if self.__connected or self._connect():
+            request_scg_config(self.__socket, self.__data)
 
     def _is_valid_circuit(self, circuit):
         return circuit in self.__data[DATA.KEY_CIRCUITS]
