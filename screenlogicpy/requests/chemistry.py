@@ -66,10 +66,15 @@ def decode_chemistry(buff, data):
     # Seems to be '>I' x2 and '>H' x2
     # Values change when pH and ORP dosing but I was unable to decode
     # offset += 12
-    pHDoseTime, offset = getSome("I", buff, offset)  # 9
-    orpDoseTime, offset = getSome("I", buff, offset)  # 13
+    # Scratch above. Testing some values below.
+    pHDoseTime, offset = getSome(">I", buff, offset)  # 9
+    unknown["ph_dose_time"] = pHDoseTime
+    orpDoseTime, offset = getSome(">I", buff, offset)  # 13
+    unknown["orp_dose_time"] = orpDoseTime
     pHDoseVolume, offset = getSome(">H", buff, offset)  # 17
+    unknown["ph_dose_volume"] = pHDoseVolume
     orpDoseVolume, offset = getSome(">H", buff, offset)  # 19
+    unknown["orp_dose_volume"] = orpDoseVolume
 
     pHSupplyLevel, offset = getSome("B", buff, offset)  # 21 (20)
     chemistry["ph_supply_level"] = {"name": "pH Supply Level", "value": pHSupplyLevel}
@@ -81,11 +86,11 @@ def decode_chemistry(buff, data):
     }
 
     saturation, offset = getSome("B", buff, offset)  # 23
-    if saturation > 0:
-        saturation -= 256
     chemistry["saturation"] = {
         "name": "Saturation Index",
-        "value": (saturation / 100),
+        "value": (saturation - 256) / 100
+        if is_set(saturation, 0x80)
+        else saturation / 100,
         "unit": "lsi",
     }
 
@@ -172,33 +177,39 @@ def decode_chemistry(buff, data):
         "value": ON_OFF.from_bool(is_set(warnings, CHEMISTRY.FLAG_WARNING_ORP_LIMIT)),
     }
 
-    status, offset = getSome("B", buff, offset)  # 35
+    status, offset = getSome("B", buff, offset)  # 35 (34)
     unknown["status"] = status
-    notifications["corrosive"] = {
-        "name": "Corrosive",
-        "value": ON_OFF.from_bool(is_set(status, CHEMISTRY.FLAG_STATUS_CORROSIVE)),
+    # notifications["corrosive"] = {
+    #    "name": "Corrosive",
+    #    "value": ON_OFF.from_bool(is_set(status, CHEMISTRY.FLAG_STATUS_CORROSIVE)),
+    # }
+    # notifications["scaling"] = {
+    #    "name": "Scaling",
+    #    "value": ON_OFF.from_bool(is_set(status, CHEMISTRY.FLAG_STATUS_SCALING)),
+    # }
+
+    chemistry["ph_dosing_state"] = {
+        "name": "pH Dosing State",
+        "value": (status & CHEMISTRY.MASK_STATUS_PH_DOSING) >> 4,
     }
-    notifications["scaling"] = {
-        "name": "Scaling",
-        "value": ON_OFF.from_bool(is_set(status, CHEMISTRY.FLAG_STATUS_SCALING)),
-    }
-    notifications["ph_dosing"] = {
-        "name": "pH Dosing",
-        "value": ON_OFF.from_bool(is_set(status, CHEMISTRY.FLAG_STATUS_PH_DOSING)),
-    }
-    notifications["orp_dosing"] = {
-        "name": "ORP Dosing",
-        "value": ON_OFF.from_bool(is_set(status, CHEMISTRY.FLAG_STATUS_ORP_DOSING)),
+    chemistry["orp_dosing_state"] = {
+        "name": "ORP Dosing State",
+        "value": (status & CHEMISTRY.MASK_STATUS_ORP_DOSING) >> 6,
     }
 
-    flags, offset = getSome("B", buff, offset)  # 36
-    unknown["flags"] = flags
-    vMinor, offset = getSome("B", buff, offset)  # 37
-    unknown["v_minor"] = vMinor
-    vMajor, offset = getSome("B", buff, offset)  # 38
-    unknown["v_major"] = vMajor
-    last1, offset = getSome("B", buff, offset)  # 39
-    unknown["last1"] = last1
+    flags, offset = getSome("B", buff, offset)  # 36 (35)
+    chemistry["flags"] = flags
+
+    vMinor, offset = getSome("B", buff, offset)  # 37 (36)
+    vMajor, offset = getSome("B", buff, offset)  # 38 (37)
+    chemistry["firmware"] = {
+        "name": "IntelliChem Firmware Version",
+        "value": f"{vMajor}.{str(vMinor).zfill(3)}",
+    }
+
+    chemWarnings, offset = getSome("B", buff, offset)  # 39 (38)
+    unknown["warnings"] = chemWarnings
+
     last2, offset = getSome("B", buff, offset)  # 40
     unknown["last2"] = last2
     last3, offset = getSome("B", buff, offset)  # 41
