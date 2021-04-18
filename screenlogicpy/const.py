@@ -279,10 +279,10 @@ class CHEMISTRY:
 
 class CHEM_DOSING_STATE:
     DOSING = 0
-    MONITORING = 1
-    MIXING = 2
+    MIXING = 1
+    MONITORING = 2
 
-    NAME_FOR_NUM = {DOSING: "Dosing", MONITORING: "Monitoring", MIXING: "Mixing"}
+    NAME_FOR_NUM = {DOSING: "Dosing", MIXING: "Mixing", MONITORING: "Monitoring"}
     NUM_FOR_NAME = {name: num for num, name in NAME_FOR_NUM.items()}
 
 

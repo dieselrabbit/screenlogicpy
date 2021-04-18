@@ -573,6 +573,26 @@ EXPECTED_CHEMISTRY_DATA = {
         "current_orp": {"name": "Current ORP", "value": 0, "unit": "mV"},
         "ph_setpoint": {"name": "pH Setpoint", "value": 7.5, "unit": "pH"},
         "orp_setpoint": {"name": "ORP Setpoint", "value": 700, "unit": "mV"},
+        "ph_last_dose_time": {
+            "name": "Last pH Dose Time",
+            "value": 5,
+            "unit": "Sec"
+        },
+        "orp_last_dose_time": {
+            "name": "Last ORP Dose Time",
+            "value": 2,
+            "unit": "Sec"
+        },
+        "ph_last_dose_volume": {
+            "name": "Last pH Dose Volume",
+            "value": 10,
+            "unit": "mL"
+        },
+        "orp_last_dose_volume": {
+            "name": "Last ORP Dose Volume",
+            "value": 4,
+            "unit": "mL"
+        },
         "ph_supply_level": {"name": "pH Supply Level", "value": 3},
         "orp_supply_level": {"name": "ORP Supply Level", "value": 4},
         "saturation": {"name": "Saturation Index", "value": -0.13, "unit": "lsi"},
@@ -601,6 +621,7 @@ EXPECTED_CHEMISTRY_DATA = {
             # "corrosive": {"name": "Corrosive", "value": 1},
             # "scaling": {"name": "Scaling", "value": 0},
         },
+        "status": 165,
         "ph_dosing_state": {"name": "pH Dosing State", "value": 2},
         "orp_dosing_state": {"name": "ORP Dosing State", "value": 2},
         "flags": 32,
@@ -1052,6 +1073,26 @@ EXPECTED_COMPLETE_DATA = {
         "current_orp": {"name": "Current ORP", "value": 0, "unit": "mV"},
         "ph_setpoint": {"name": "pH Setpoint", "value": 7.5, "unit": "pH"},
         "orp_setpoint": {"name": "ORP Setpoint", "value": 700, "unit": "mV"},
+        "ph_last_dose_time": {
+            "name": "Last pH Dose Time",
+            "value": 5,
+            "unit": "Sec"
+        },
+        "orp_last_dose_time": {
+            "name": "Last ORP Dose Time",
+            "value": 2,
+            "unit": "Sec"
+        },
+        "ph_last_dose_volume": {
+            "name": "Last pH Dose Volume",
+            "value": 10,
+            "unit": "mL"
+        },
+        "orp_last_dose_volume": {
+            "name": "Last ORP Dose Volume",
+            "value": 4,
+            "unit": "mL"
+        },
         "ph_supply_level": {"name": "pH Supply Level", "value": 3},
         "orp_supply_level": {"name": "ORP Supply Level", "value": 4},
         "saturation": {"name": "Saturation Index", "value": -0.13, "unit": "lsi"},
@@ -1080,6 +1121,7 @@ EXPECTED_COMPLETE_DATA = {
             # "corrosive": {"name": "Corrosive", "value": 1},
             # "scaling": {"name": "Scaling", "value": 0},
         },
+        "status": 165,
         "ph_dosing_state": {"name": "pH Dosing State", "value": 2},
         "orp_dosing_state": {"name": "ORP Dosing State", "value": 2},
         "flags": 32,

@@ -62,19 +62,34 @@ def decode_chemistry(buff, data):
         "value": orpSetpoint,
         "unit": "mV",
     }
-    # fast forward 12 bytes
-    # Seems to be '>I' x2 and '>H' x2
-    # Values change when pH and ORP dosing but I was unable to decode
-    # offset += 12
-    # Scratch above. Testing some values below.
+
     pHDoseTime, offset = getSome(">I", buff, offset)  # 9
-    unknown["ph_dose_time"] = pHDoseTime
+    chemistry["ph_last_dose_time"] = {
+        "name": "Last pH Dose Time",
+        "value": pHDoseTime,
+        "unit": "Sec" 
+    }
+    
     orpDoseTime, offset = getSome(">I", buff, offset)  # 13
-    unknown["orp_dose_time"] = orpDoseTime
+    chemistry["orp_last_dose_time"] = {
+        "name": "Last ORP Dose Time",
+        "value": orpDoseTime,
+        "unit": "Sec" 
+    }
+
     pHDoseVolume, offset = getSome(">H", buff, offset)  # 17
-    unknown["ph_dose_volume"] = pHDoseVolume
+    chemistry["ph_last_dose_volume"] = {
+        "name": "Last pH Dose Volume",
+        "value": pHDoseVolume,
+        "unit": "mL" 
+    }
+    
     orpDoseVolume, offset = getSome(">H", buff, offset)  # 19
-    unknown["orp_dose_volume"] = orpDoseVolume
+    chemistry["orp_last_dose_volume"] = {
+        "name": "Last ORP Dose Volume",
+        "value": orpDoseVolume,
+        "unit": "mL" 
+    }
 
     pHSupplyLevel, offset = getSome("B", buff, offset)  # 21 (20)
     chemistry["ph_supply_level"] = {"name": "pH Supply Level", "value": pHSupplyLevel}
@@ -178,7 +193,7 @@ def decode_chemistry(buff, data):
     }
 
     status, offset = getSome("B", buff, offset)  # 35 (34)
-    unknown["status"] = status
+    chemistry["status"] = status
     # notifications["corrosive"] = {
     #    "name": "Corrosive",
     #    "value": ON_OFF.from_bool(is_set(status, CHEMISTRY.FLAG_STATUS_CORROSIVE)),
