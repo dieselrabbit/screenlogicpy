@@ -68,26 +68,25 @@ Each method will `return True` if the operation reported no exceptions.
 
 ## Turning a circuit ON or OFF
 
-A circuit can be requested to be turned on or off with the `set_circuit()` method. `set_circuit` takes two required arguments, `circuitID` which is the id number of the circuit as an `int`, and `circuitState` which represents the desired new state of the circuit, as an `int`: 0 = off, 1 = on.
+A circuit can be requested to be turned on or off with the `set_circuit()` method. `set_circuit` takes two required arguments, `circuitID` which is the id number of the circuit as an `int`, and `circuitState` which represents the desired new state of the circuit, as an `int`. See [Circuit State](#circuit-state) below.
 
     success = gateway.set_circuit(circuitID, circuitState)
 
 ## Setting a heating mode
 
-The desired heating mode can be set per body of water (pool or spa) with `set_heat_mode()`. `set_heat_mode` takes two required arguments, `body` as an `int`: 0 = Pool, 1 = Spa, and `mode` as an `int` of the desired heating mode: 0 = Off, 1 = Solar, 2 = Solar Prefered, 3 = Heater, 4 = Don't Change.
+The desired heating mode can be set per body of water (pool or spa) with `set_heat_mode()`. `set_heat_mode` takes two required arguments, `body` as an `int` representing the [body of water](#body), and `mode` as an `int` of the desired [heating mode](#heat-modes).
 
     success = gateway.set_heat_mode(body, mode)
 
 ## Setting a target temperature
 
-The target heating temperature can be set per body of water (pool or spa) with `set_heat_temp()`. `set_heat_temp` takes two required arguments, `body` as an `int`: 0 = Pool, 1 = Spa, and `temp` as an `int` of the desired target temperature.
+The target heating temperature can be set per body of water (pool or spa) with `set_heat_temp()`. `set_heat_temp` takes two required arguments, `body` as an `int` representing the [body of water](#body), and `temp` as an `int` of the desired target temperature.
 
     success = gateway.set_heat_temp(body, temp)
 
 ## Setting light colors or shows
 
-Colors or color-shows can be set for compatible color-enable lighting with `set_color_lights()`. `set_color_lights` takes one required argument, `light_command` as an `int` representing the desired command/show/color:
-`0` = All Off, `1`= All On, `2` = Color Set, `3` = Color Sync, `4` = Color Swim, `5` = Party, `6` = Romance, `7` = Caribbean, `8` = American, `9` = Sunset, `10` = Royal, `11` = Save, `12` = Recall, `13` = Blue, `14` =Green, `15` = Red, `16` = White, `17` = Magenta, `18` = Thumper, `19` = Next, `20` = Reset, `21` = Hold.
+Colors or color-shows can be set for compatible color-enable lighting with `set_color_lights()`. `set_color_lights` takes one required argument, `light_command` as an `int` representing the desired [command/show/color](#color-modes)
 
     success = gateway.set_color_lights(light_command)
 
@@ -189,28 +188,28 @@ Returns 1 for on and 0 for off
     screenlogicpy get heat-mode [body]
 
 Returns the current heating mode for the specified body of water.
-**Note:** `[body]` can be body number (`0` or `1`) or `pool` or `spa`.
+**Note:** `[body]` can be an `int` or `string` representing the [body of water](#body).
 
 #### get `heat-temp, ht`
 
     screenlogicpy get heat-temp [body]
 
 Returns the current target heating temperature for the specified body of water.
-**Note:** `[body]` can be body number (`0` or `1`) or `pool` or `spa`.
+**Note:** `[body]` can be an `int` or `string` representing the [body of water](#body).
 
 #### get `heat-state, hs`
 
     screenlogicpy get heat-state [body]
 
 Returns the current state of the heater for the specified boty of water. The current state will match the heat mode when heating is active, otherwise will be 0 (off).
-**Note:** `[body]` can be body number (`0` or `1`) or `pool` or `spa`.
+**Note:** `[body]` can be an `int` or `string` representing the [body of water](#body).
 
 #### get `current-temp, t`
 
     screenlogicpy get current-temp [body]
 
 Returns the current temperature for the specified body of water. This is actually the last-known temperature from when that body of water was active (Pool or Spa)
-**Note:** `[body]` can be body number (`0` or `1`) or `pool` or `spa`.
+**Note:** `[body]` can be an `int` or `string` representing the [body of water](#body).
 
 #### get `json, j`
 
@@ -228,21 +227,21 @@ All `set` commands work like their corresponding `get` commands, but take an add
 
     screenlogicpy set circuit [circuit number] [circuit state]
 
-Sets the specified circuit to the specified circuit state. **Note:** `[circuit state]` can be number state (`0` or `1`) or `on`, or `off`.
+Sets the specified circuit to the specified circuit state. **Note:** `[circuit state]` can be an `int` or `string` representing the desired [circuit state](#circuit-state).
 
 #### set `heat-mode, hm`
 
     screenlogicpy set heat-mode [body] [heat mode]
 
 Sets the desired heating mode for the specified body of water.
-**Note:** `[body]` can be body number (`0` or `1`) or `pool` or `spa`. `[heat mode]` can be any one of: [`0` or `off`, `1` or `solar`, `2` or `solar_preferred`, `3` or `heater`, `4` or `dont_change`]
+**Note:** `[body]` can be an `int` or `string` representing the [body of water](#body). `[heat mode]` can be an `int` or `string` representing the desired [heat mode](#heat-modes)
 
 #### set `heat-temp, ht`
 
     screenlogicpy set heat-temp [body] [heat temp]
 
 Sets the desired target heating temperature for the specified body of water.
-**Note:** `[body]` can be body number or `pool` or `spa`. `[heat temp]` is an `int` representing the desired target temperature.
+**Note:** `[body]` can be an `int` or `string` representing the [body of water](#body). `[heat temp]` is an `int` representing the desired target temperature.
 
 **v0.3.0+:**
 
@@ -250,8 +249,61 @@ Sets the desired target heating temperature for the specified body of water.
 
     screenlogicpy set color-lights [color mode]
 
-Sets a color mode for *all* color-capable lights configured on the pool controller. **Note:** `[color mode]` can be one of: [
-`0` or  `all_off`, `1` or `all_on`, `2` or `color_set`, `3` or `color_sync`, `4` or `color_swim`, `5` or `party`, `6` or `romance`, `7` or `caribbean`, `8` or `american`, `9` or `sunset`, `10` or `royal`, `11` or `save`, `12` or `recall`, `13` or `blue`, `14` or `green`, `15` or `red`, `16` or `white`, `17` or `magenta`, `18` or `thumper`, `19` or `next_mode`, `20` or `reset`, `21` or `hold`]
+Sets a color mode for *all* color-capable lights configured on the pool controller. **Note:** `[color mode]` can be either the `int` or `string` representation of a [color mode](#color-modes).
+
+# Reference
+
+### Circuit State
+
+| `int` | `string` | Name |
+| ----- | -------- | ---- |
+| `0`   | `off`    | Off  |
+| `1`   | `on`     | On   |
+
+### Body
+
+| `int` | `string` | Name |
+| ----- | -------- | ---- |
+| `0`   | `pool`   | Pool |
+| `1`   | `spa`    | Spa  |
+
+### Heat Modes
+
+| `int` | `string`          | Name            | Description                                                                                                         |
+| ----- | ----------------- | --------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `0`   | `off`             | Off             | Heating is off                                                                                                      |
+| `1`   | `solar`           | Solar           | Heating will use solar heat to achieve the desired temperature set point.                                           |
+| `2`   | `solar_preferred` | Solar Preferred | Heating will use solar if available to achieve the desired temperature set point, otherwise it will use the heater. |
+| `3`   | `heater`          | Heater          | Heating will use the heater to achieve the desired temperature set point.                                           |
+| `4`   | `dont_change`     | Don't Change    | Don't change the heating mode based on circuit or function changes.                                                 |
+
+
+### Color Modes
+
+| `int` | `string`     | Name         | Description                                                                                               |
+| ----- | ------------ | ------------ | --------------------------------------------------------------------------------------------------------- |
+| `0`   | `all_off`    | All Off      | Turns all light circuits off.                                                                             |
+| `1`   | `all_on`     | All On       | Turns all light circuits on to their last mode.                                                           |
+| `2`   | `color_set`  | Color Set    | Sets light circuits to their pre-set colors as set in the pool controller.                                |
+| `3`   | `color_sync` | Color Sync   | Synchronize all IntelliBrite, SAm, SAL, or FIBERworks color changing lights and synchronize their colors. |
+| `4`   | `color_swim` | Color Swim   | Cycles through white, magenta, blue and green colors. (Emulates Pentair SAm color changing light.)        |
+| `5`   | `party`      | Party        | Rapid color changing building the energy and excitement.                                                  |
+| `6`   | `romance`    | Romance      | Slow color transitions creating a mesmerizing and calming effect.                                         |
+| `7`   | `caribbean`  | Caribbean    | Transitions between a variety of blues and greens.                                                        |
+| `8`   | `american`   | American     | Patriotic red, white and blue transition.                                                                 |
+| `9`   | `sunset`     | Sunset       | Dramatic transitions of orange, red and magenta tones.                                                    |
+| `10`  | `royal`      | Royal        | Richer, deeper, color tones.                                                                              |
+| `11`  | `save`       | Save Color   | Save the exact colors that are being displayed.                                                           |
+| `12`  | `recall`     | Recall Color | Recall the saved colors.                                                                                  |
+| `13`  | `blue`       | Blue         | Fixed color: Blue                                                                                         |
+| `14`  | `green`      | Green        | Fixed color: Green                                                                                        |
+| `15`  | `red`        | Red          | Fixed color: Red                                                                                          |
+| `16`  | `white`      | White        | Fixed color: White                                                                                        |
+| `17`  | `magenta`    | Magenta      | Fixed color: Magenta                                                                                      |
+| `18`  | `thumper`    | Thumper      | Toggles the solenoid thumper on MagicStream laminars.                                                     |
+| `19`  | `next_mode`  | Next Mode    | Cycle to the next color mode.                                                                             |
+| `20`  | `reset`      | Reset        | Reset light modes.                                                                                        |
+| `21`  | `hold`       | Hold         | Hold light transitions.                                                                                   |
 
 ## Acknowledgements
 
