@@ -24,6 +24,7 @@ class ScreenLogicGateway:
         self.__subtype = gsubtype
         self.__name = name
         self.__mac = ""
+        self.__version = ""
         self.__connected = False
         self.__data = {}
 
@@ -53,6 +54,10 @@ class ScreenLogicGateway:
     @property
     def mac(self):
         return self.__mac
+
+    @property
+    def version(self):
+        return self.__version
 
     def update(self):
         if (self.is_connected or self._connect()) and self.__data:
@@ -105,7 +110,6 @@ class ScreenLogicGateway:
         soc_mac = connect_to_gateway(self.__ip, self.__port)
         if soc_mac:
             self.__socket, self.__mac = soc_mac
-            self.__version = ""
             self.__version = request_gateway_version(self.__socket)
             if self.__version:
                 self.__connected = True
