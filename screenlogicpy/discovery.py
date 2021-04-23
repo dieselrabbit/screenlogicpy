@@ -30,6 +30,7 @@ def create_broadcast_socket():
     addressfamily = socket.AF_INET
     udp_sock = socket.socket(addressfamily, socket.SOCK_DGRAM)
     udp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    udp_sock.bind(("", 0))
     return udp_sock
 
 
