@@ -23,16 +23,20 @@ FAKE_GATEWAY_TYPE = 2
 
 
 class fake_ScreenLogicGateway:
-    def __init__(self):
-        self._udp_sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
-        self._tcp_sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
+    def __init__(self, discovery=False, requests=False):
         self._connectServerHost = False
         self._challenge = False
         self._login = False
+        self._discovery = discovery
+        self._requests = requests
+        self._udp_sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+        self._tcp_sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
 
     def __enter__(self):
-        self._udp_sock.bind(("", FAKE_GATEWAY_DISCOVERY_PORT))
-        self._tcp_sock.bind((FAKE_GATEWAY_ADDRESS, FAKE_GATEWAY_PORT))
+        if self._discovery:
+            self._udp_sock.bind(("", FAKE_GATEWAY_DISCOVERY_PORT))
+        if self._requests:
+            self._tcp_sock.bind((FAKE_GATEWAY_ADDRESS, FAKE_GATEWAY_PORT))
 
     def __exit__(self, exception_type, exception_value, traceback):
         self._udp_sock.close()
@@ -53,7 +57,7 @@ class fake_ScreenLogicGateway:
                     int(ip2),
                     int(ip3),
                     int(ip4),
-                    self._tcp_sock.getsockname()[1],
+                    FAKE_GATEWAY_PORT,
                     FAKE_GATEWAY_TYPE,
                     FAKE_GATEWAY_SUB_TYPE,
                     FAKE_GATEWAY_NAME,

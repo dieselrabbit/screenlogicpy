@@ -8,7 +8,7 @@ from tests.fake_gateway import fake_ScreenLogicGateway
 
 @pytest.fixture(scope="module")
 def start_fake_discovery_gateway():
-    fake_gateway = fake_ScreenLogicGateway()
+    fake_gateway = fake_ScreenLogicGateway(discovery=True)
     with fake_gateway as _:
         discovery_thread = threading.Thread(target=fake_gateway.start_discovery_server)
         discovery_thread.daemon = True

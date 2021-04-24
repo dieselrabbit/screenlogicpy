@@ -5,9 +5,9 @@ from screenlogicpy.requests.login import connect_to_gateway
 from tests.fake_gateway import fake_ScreenLogicGateway
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def start_fake_request_gateway():
-    fake_gateway = fake_ScreenLogicGateway()
+    fake_gateway = fake_ScreenLogicGateway(requests=True)
     with fake_gateway as _:
         request_thread = threading.Thread(target=fake_gateway.start_request_server)
         request_thread.daemon = True
