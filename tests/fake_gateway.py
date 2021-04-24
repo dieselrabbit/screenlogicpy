@@ -1,7 +1,7 @@
 """ Fake ScreenLogic gateway """
 import socket
 import struct
-import threading
+
 from screenlogicpy.const import code
 from screenlogicpy.requests.utility import takeMessage, makeMessage, encodeMessageString
 from tests.const_data import (
@@ -12,72 +12,68 @@ from tests.const_data import (
     FAKE_SCG_RESPONSE,
 )
 
+FAKE_GATEWAY_ADDRESS = "127.0.0.1"
+FAKE_GATEWAY_CHK = 2
+FAKE_GATEWAY_DISCOVERY_PORT = 1444
+FAKE_GATEWAY_MAC = "00:00:00:00:00:00"
+FAKE_GATEWAY_NAME = b"Fake: 00-00-00"
+FAKE_GATEWAY_PORT = 6448
+FAKE_GATEWAY_SUB_TYPE = 12
+FAKE_GATEWAY_TYPE = 2
+
 
 class fake_ScreenLogicGateway:
-    def __init__(self, discovery=True, request=True):
-        self._chk = 2
-        self._broadcast_address = ""
-        self._gateway_address = "127.0.0.1"
-        self._discover_port = 1444
-        self._gateway_port = 6448
-        self._gateway_type = 2
-        self._gateway_subtype = 12
-        self._gateway_name = b"Fake: 00-00-00"
-        self._gateway_mac = "00:00:00:00:00:00"
+    def __init__(self):
+        self._udp_sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+        self._tcp_sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
         self._connectServerHost = False
         self._challenge = False
         self._login = False
-        self._discovery_thread = threading.Thread(
-            target=self.discovery_server, daemon=True
-        )
-        self._request_thread = threading.Thread(target=self.request_server, daemon=True)
 
-        if discovery:
-            self._discovery_thread.start()
+    def __enter__(self):
+        self._udp_sock.bind(("", FAKE_GATEWAY_DISCOVERY_PORT))
+        self._tcp_sock.bind((FAKE_GATEWAY_ADDRESS, FAKE_GATEWAY_PORT))
 
-        if request:
-            self._request_thread.start()
+    def __exit__(self, exception_type, exception_value, traceback):
+        self._udp_sock.close()
+        self._tcp_sock.close()
 
-    def discovery_server(self,):
-        with socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM) as udpSock:
-            udpSock.bind((self._broadcast_address, self._discover_port))
+    def start_discovery_server(self):
+        while True:
+            try:
+                message, sender = self._udp_sock.recvfrom(1024)
+            except Exception:
+                break
+            if struct.unpack("<8b", message) == (1, 0, 0, 0, 0, 0, 0, 0):
+                ip1, ip2, ip3, ip4 = FAKE_GATEWAY_ADDRESS.split(".")
+                response = struct.pack(
+                    f"<I4BH2B{len(FAKE_GATEWAY_NAME)}s",
+                    FAKE_GATEWAY_CHK,
+                    int(ip1),
+                    int(ip2),
+                    int(ip3),
+                    int(ip4),
+                    self._tcp_sock.getsockname()[1],
+                    FAKE_GATEWAY_TYPE,
+                    FAKE_GATEWAY_SUB_TYPE,
+                    FAKE_GATEWAY_NAME,
+                )
+                self._udp_sock.sendto(response, sender)
 
+    def start_request_server(self):
+        self._tcp_sock.listen()
+        print("waiting for connection")
+        connection, _ = self._tcp_sock.accept()
+        print("connected")
+        with connection:
             while True:
-                request = udpSock.recvfrom(1024)
-                message, sender = request
-                if struct.unpack("<8b", message) == (1, 0, 0, 0, 0, 0, 0, 0):
-                    ip1, ip2, ip3, ip4 = self._gateway_address.split(".")
-                    response = struct.pack(
-                        f"<I4BH2B{len(self._gateway_name)}s",
-                        self._chk,
-                        int(ip1),
-                        int(ip2),
-                        int(ip3),
-                        int(ip4),
-                        self._gateway_port,
-                        self._gateway_type,
-                        self._gateway_subtype,
-                        self._gateway_name,
-                    )
-                    udpSock.sendto(response, sender)
-
-    def request_server(self,):
-        with socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM) as tcpSock:
-            tcpSock.bind((self._gateway_address, self._gateway_port))
-            tcpSock.listen()
-            print("waiting for connection")
-            # pylint: disable=unused-variable
-            connection, sender = tcpSock.accept()  # noqa F401
-            print("connected")
-            with connection:
-                while True:
-                    print("waiting for request")
-                    request = connection.recv(1024)
-                    if not request:
-                        print("Connection closed")
-                        break
-                    # print("handling request", request)
-                    self.handle_request(connection, request)
+                print("waiting for request")
+                request = connection.recv(1024)
+                if not request:
+                    print("Connection closed")
+                    break
+                # print("handling request", request)
+                self.handle_request(connection, request)
 
     def handle_request(self, connection, request):
         # print(request)
@@ -87,7 +83,7 @@ class fake_ScreenLogicGateway:
                 print("Challenge")
                 connection.sendall(
                     makeMessage(
-                        code.CHALLENGE_ANSWER, encodeMessageString(self._gateway_mac)
+                        code.CHALLENGE_ANSWER, encodeMessageString(FAKE_GATEWAY_MAC)
                     )
                 )
                 self._connectServerHost = False

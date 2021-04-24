@@ -1,6 +1,6 @@
-from unittest.mock import patch
-import socket  # noqa: F401
 import struct
+from unittest.mock import patch
+
 from tests.const_data import (
     FAKE_CONFIG_RESPONSE,
     FAKE_STATUS_RESPONSE,
@@ -137,4 +137,3 @@ def test_request_pool_lights_command():
     assert mockRequest.call_args[0][1] == 12556
     assert mockRequest.call_args[0][2] == struct.pack("<II", 0, mode)
     assert success
-
