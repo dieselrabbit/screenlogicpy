@@ -573,25 +573,17 @@ EXPECTED_CHEMISTRY_DATA = {
         "current_orp": {"name": "Current ORP", "value": 0, "unit": "mV"},
         "ph_setpoint": {"name": "pH Setpoint", "value": 7.5, "unit": "pH"},
         "orp_setpoint": {"name": "ORP Setpoint", "value": 700, "unit": "mV"},
-        "ph_last_dose_time": {
-            "name": "Last pH Dose Time",
-            "value": 5,
-            "unit": "Sec"
-        },
-        "orp_last_dose_time": {
-            "name": "Last ORP Dose Time",
-            "value": 2,
-            "unit": "Sec"
-        },
+        "ph_last_dose_time": {"name": "Last pH Dose Time", "value": 5, "unit": "Sec"},
+        "orp_last_dose_time": {"name": "Last ORP Dose Time", "value": 2, "unit": "Sec"},
         "ph_last_dose_volume": {
             "name": "Last pH Dose Volume",
             "value": 10,
-            "unit": "mL"
+            "unit": "mL",
         },
         "orp_last_dose_volume": {
             "name": "Last ORP Dose Volume",
             "value": 4,
-            "unit": "mL"
+            "unit": "mL",
         },
         "ph_supply_level": {"name": "pH Supply Level", "value": 3},
         "orp_supply_level": {"name": "ORP Supply Level", "value": 4},
@@ -599,7 +591,7 @@ EXPECTED_CHEMISTRY_DATA = {
         "calcium_harness": {"name": "Calcium Hardness", "value": 740, "unit": "ppm"},
         "cya": {"name": "Cyanuric Acid", "value": 36, "unit": "ppm"},
         "total_alkalinity": {"name": "Total Alkalinity", "value": 70, "unit": "ppm"},
-        "salt_ppm": {"name": "Salt", "value": 1000, "unit": "ppm"},
+        "salt_tds_ppm": {"name": "Salt/TDS", "value": 1000, "unit": "ppm"},
         "ph_probe_water_temp": {
             "name": "pH Probe Water Temperature",
             "value": 56,
@@ -1073,25 +1065,17 @@ EXPECTED_COMPLETE_DATA = {
         "current_orp": {"name": "Current ORP", "value": 0, "unit": "mV"},
         "ph_setpoint": {"name": "pH Setpoint", "value": 7.5, "unit": "pH"},
         "orp_setpoint": {"name": "ORP Setpoint", "value": 700, "unit": "mV"},
-        "ph_last_dose_time": {
-            "name": "Last pH Dose Time",
-            "value": 5,
-            "unit": "Sec"
-        },
-        "orp_last_dose_time": {
-            "name": "Last ORP Dose Time",
-            "value": 2,
-            "unit": "Sec"
-        },
+        "ph_last_dose_time": {"name": "Last pH Dose Time", "value": 5, "unit": "Sec"},
+        "orp_last_dose_time": {"name": "Last ORP Dose Time", "value": 2, "unit": "Sec"},
         "ph_last_dose_volume": {
             "name": "Last pH Dose Volume",
             "value": 10,
-            "unit": "mL"
+            "unit": "mL",
         },
         "orp_last_dose_volume": {
             "name": "Last ORP Dose Volume",
             "value": 4,
-            "unit": "mL"
+            "unit": "mL",
         },
         "ph_supply_level": {"name": "pH Supply Level", "value": 3},
         "orp_supply_level": {"name": "ORP Supply Level", "value": 4},
@@ -1099,7 +1083,7 @@ EXPECTED_COMPLETE_DATA = {
         "calcium_harness": {"name": "Calcium Hardness", "value": 740, "unit": "ppm"},
         "cya": {"name": "Cyanuric Acid", "value": 36, "unit": "ppm"},
         "total_alkalinity": {"name": "Total Alkalinity", "value": 70, "unit": "ppm"},
-        "salt_ppm": {"name": "Salt", "value": 1000, "unit": "ppm"},
+        "salt_tds_ppm": {"name": "Salt/TDS", "value": 1000, "unit": "ppm"},
         "ph_probe_water_temp": {
             "name": "pH Probe Water Temperature",
             "value": 56,

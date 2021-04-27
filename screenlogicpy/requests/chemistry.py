@@ -67,28 +67,28 @@ def decode_chemistry(buff, data):
     chemistry["ph_last_dose_time"] = {
         "name": "Last pH Dose Time",
         "value": pHDoseTime,
-        "unit": "Sec" 
+        "unit": "Sec",
     }
-    
+
     orpDoseTime, offset = getSome(">I", buff, offset)  # 13
     chemistry["orp_last_dose_time"] = {
         "name": "Last ORP Dose Time",
         "value": orpDoseTime,
-        "unit": "Sec" 
+        "unit": "Sec",
     }
 
     pHDoseVolume, offset = getSome(">H", buff, offset)  # 17
     chemistry["ph_last_dose_volume"] = {
         "name": "Last pH Dose Volume",
         "value": pHDoseVolume,
-        "unit": "mL" 
+        "unit": "mL",
     }
-    
+
     orpDoseVolume, offset = getSome(">H", buff, offset)  # 19
     chemistry["orp_last_dose_volume"] = {
         "name": "Last ORP Dose Volume",
         "value": orpDoseVolume,
-        "unit": "mL" 
+        "unit": "mL",
     }
 
     pHSupplyLevel, offset = getSome("B", buff, offset)  # 21 (20)
@@ -127,7 +127,11 @@ def decode_chemistry(buff, data):
     }
 
     saltPPM, offset = getSome("B", buff, offset)  # 30
-    chemistry["salt_ppm"] = {"name": "Salt", "value": (saltPPM * 50), "unit": "ppm"}
+    chemistry["salt_tds_ppm"] = {
+        "name": "Salt/TDS",
+        "value": (saltPPM * 50),
+        "unit": "ppm",
+    }
 
     # Probe temp unit is Celsius?
     probIsC, offset = getSome("B", buff, offset)
