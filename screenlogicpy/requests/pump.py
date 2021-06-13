@@ -26,14 +26,16 @@ def decode_pump_status(buff, data, pumpID):
     pump["state"], offset = getSome("I", buff, offset)
 
     curW, offset = getSome("I", buff, offset)
-    pump["currentWatts"] = {}
+    pump["currentWatts"] = {}  # Need to find value when unsupported.
+
     curR, offset = getSome("I", buff, offset)
-    pump["currentRPM"] = {}
+    pump["currentRPM"] = {}  # Need to find value when unsupported.
 
     unknown1, offset = getSome("I", buff, offset)
 
     curG, offset = getSome("I", buff, offset)
-    pump["currentGPM"] = {}
+    if curG != 255:  # GPM reads 255 when unsupported.
+        pump["currentGPM"] = {}
 
     unknown2, offset = getSome("I", buff, offset)
 
@@ -56,22 +58,25 @@ def decode_pump_status(buff, data, pumpID):
     name = name.strip().strip(",") + " Pump"
     pump["name"] = name
 
-    pump["currentWatts"] = {
-        "name": pump["name"] + " Current Watts",
-        "value": curW,
-        "unit": "W",
-        "device_type": DEVICE_TYPE.ENERGY,
-    }
+    if "currentWatts" in pump:
+        pump["currentWatts"] = {
+            "name": pump["name"] + " Current Watts",
+            "value": curW,
+            "unit": "W",
+            "device_type": DEVICE_TYPE.ENERGY,
+        }
 
-    pump["currentRPM"] = {
-        "name": pump["name"] + " Current RPM",
-        "value": curR,
-        "unit": "rpm",
-    }
+    if "currentRPM" in pump:
+        pump["currentRPM"] = {
+            "name": pump["name"] + " Current RPM",
+            "value": curR,
+            "unit": "rpm",
+        }
 
-    pump["currentGPM"] = {
-        "name": pump["name"] + " Current GPM",
-        "value": curG,
-        "unit": "gpm",
-    }
+    if "currentGPM" in pump:
+        pump["currentGPM"] = {
+            "name": pump["name"] + " Current GPM",
+            "value": curG,
+            "unit": "gpm",
+        }
     # print(json.dumps(data, indent=4))

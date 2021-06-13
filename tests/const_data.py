@@ -599,12 +599,24 @@ EXPECTED_CHEMISTRY_DATA = {
             "device_type": "temperature",
         },
         "alerts": {
-            "flow_alarm": {"name": "Flow Alarm", "value": 1},
-            "ph_alarm": {"name": "pH Alarm", "value": 0},
-            "orp_alarm": {"name": "ORP Alarm", "value": 0},
-            "ph_supply_alarm": {"name": "pH Supply Alarm", "value": 0},
-            "orp_supply_alarm": {"name": "ORP Supply Alarm", "value": 0},
-            "probe_fault_alarm": {"name": "Probe Fault", "value": 1},
+            "flow_alarm": {"name": "Flow Alarm", "value": 1, "device_type": "alarm"},
+            "ph_alarm": {"name": "pH Alarm", "value": 0, "device_type": "alarm"},
+            "orp_alarm": {"name": "ORP Alarm", "value": 0, "device_type": "alarm"},
+            "ph_supply_alarm": {
+                "name": "pH Supply Alarm",
+                "value": 0,
+                "device_type": "alarm",
+            },
+            "orp_supply_alarm": {
+                "name": "ORP Supply Alarm",
+                "value": 0,
+                "device_type": "alarm",
+            },
+            "probe_fault_alarm": {
+                "name": "Probe Fault",
+                "value": 1,
+                "device_type": "alarm",
+            },
         },
         "notifications": {
             "ph_lockout": {"name": "pH Lockout", "value": 0},
@@ -1091,12 +1103,24 @@ EXPECTED_COMPLETE_DATA = {
             "device_type": "temperature",
         },
         "alerts": {
-            "flow_alarm": {"name": "Flow Alarm", "value": 1},
-            "ph_alarm": {"name": "pH Alarm", "value": 0},
-            "orp_alarm": {"name": "ORP Alarm", "value": 0},
-            "ph_supply_alarm": {"name": "pH Supply Alarm", "value": 0},
-            "orp_supply_alarm": {"name": "ORP Supply Alarm", "value": 0},
-            "probe_fault_alarm": {"name": "Probe Fault", "value": 1},
+            "flow_alarm": {"name": "Flow Alarm", "value": 1, "device_type": "alarm"},
+            "ph_alarm": {"name": "pH Alarm", "value": 0, "device_type": "alarm"},
+            "orp_alarm": {"name": "ORP Alarm", "value": 0, "device_type": "alarm"},
+            "ph_supply_alarm": {
+                "name": "pH Supply Alarm",
+                "value": 0,
+                "device_type": "alarm",
+            },
+            "orp_supply_alarm": {
+                "name": "ORP Supply Alarm",
+                "value": 0,
+                "device_type": "alarm",
+            },
+            "probe_fault_alarm": {
+                "name": "Probe Fault",
+                "value": 1,
+                "device_type": "alarm",
+            },
         },
         "notifications": {
             "ph_lockout": {"name": "pH Lockout", "value": 0},

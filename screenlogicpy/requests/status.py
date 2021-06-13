@@ -1,7 +1,7 @@
 # import json
 import struct
 from .utility import sendReceiveMessage, getSome
-from ..const import code, BODY_TYPE, DATA, DEVICE_TYPE, UNIT
+from ..const import ADD_UNKNOWN_VALUES, code, BODY_TYPE, DATA, DEVICE_TYPE, UNIT
 
 
 def request_pool_status(gateway_socket, data):
@@ -38,10 +38,14 @@ def decode_pool_status(buff, data):
     cleanerDelay, offset = getSome("B", buff, offset)
     config["cleaner_delay"] = {"name": "Cleaner Delay", "value": cleanerDelay}
 
+    unknown = {}
     # fast forward 3 bytes. Unknown data.
     ff1, offset = getSome("B", buff, offset)
+    unknown["ff1"] = ff1
     ff2, offset = getSome("B", buff, offset)
+    unknown["ff2"] = ff2
     ff3, offset = getSome("B", buff, offset)
+    unknown["ff3"] = ff3
 
     unit_txt = (
         UNIT.CELSIUS
@@ -188,4 +192,7 @@ def decode_pool_status(buff, data):
         "value": alarm,
         "device_type": DEVICE_TYPE.ALARM,
     }
+
+    if ADD_UNKNOWN_VALUES:
+        sensors["unknown"] = unknown
     # print(json.dumps(data, indent=4))

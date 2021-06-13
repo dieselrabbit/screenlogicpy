@@ -1,5 +1,7 @@
 import struct
 
+ADD_UNKNOWN_VALUES = False
+
 SL_GATEWAY_IP = "ip"
 SL_GATEWAY_PORT = "port"
 SL_GATEWAY_TYPE = "gtype"

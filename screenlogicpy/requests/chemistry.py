@@ -1,9 +1,7 @@
 # import json
 import struct
-from ..const import CHEMISTRY, code, DATA, DEVICE_TYPE, ON_OFF, UNIT
+from ..const import ADD_UNKNOWN_VALUES, CHEMISTRY, code, DATA, DEVICE_TYPE, ON_OFF, UNIT
 from .utility import sendReceiveMessage, getSome
-
-ADD_UNKNOWNS = False
 
 
 def request_chemistry(gateway_socket, data):
@@ -154,26 +152,32 @@ def decode_chemistry(buff, data):
     alerts["flow_alarm"] = {
         "name": "Flow Alarm",
         "value": ON_OFF.from_bool(is_set(alarms, CHEMISTRY.FLAG_ALARM_FLOW)),
+        "device_type": DEVICE_TYPE.ALARM,
     }
     alerts["ph_alarm"] = {
         "name": "pH Alarm",
         "value": ON_OFF.from_bool(is_set(alarms, CHEMISTRY.FLAG_ALARM_PH)),
+        "device_type": DEVICE_TYPE.ALARM,
     }
     alerts["orp_alarm"] = {
         "name": "ORP Alarm",
         "value": ON_OFF.from_bool(is_set(alarms, CHEMISTRY.FLAG_ALARM_ORP)),
+        "device_type": DEVICE_TYPE.ALARM,
     }
     alerts["ph_supply_alarm"] = {
         "name": "pH Supply Alarm",
         "value": ON_OFF.from_bool(is_set(alarms, CHEMISTRY.FLAG_ALARM_PH_SUPPLY)),
+        "device_type": DEVICE_TYPE.ALARM,
     }
     alerts["orp_supply_alarm"] = {
         "name": "ORP Supply Alarm",
         "value": ON_OFF.from_bool(is_set(alarms, CHEMISTRY.FLAG_ALARM_ORP_SUPPLY)),
+        "device_type": DEVICE_TYPE.ALARM,
     }
     alerts["probe_fault_alarm"] = {
         "name": "Probe Fault",
         "value": ON_OFF.from_bool(is_set(alarms, CHEMISTRY.FLAG_ALARM_PROBE_FAULT)),
+        "device_type": DEVICE_TYPE.ALARM,
     }
 
     if DATA.KEY_NOTIFICATIONS not in chemistry:
@@ -236,7 +240,7 @@ def decode_chemistry(buff, data):
     last4, offset = getSome("B", buff, offset)  # 42
     unknown["last4"] = last4
 
-    if ADD_UNKNOWNS:
+    if ADD_UNKNOWN_VALUES:
         chemistry["unknown"] = unknown
 
     # print(json.dumps(data, indent=4))
