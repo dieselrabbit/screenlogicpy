@@ -1,15 +1,26 @@
+# import json
+import asyncio
 import struct
 
-# import json
-from .utility import sendReceiveMessage, getSome, getString
-from ..const import code, BODY_TYPE, DATA
+from ..const import CODE, BODY_TYPE, DATA, MESSAGE, ScreenLogicWarning
+from .protocol import ScreenLogicProtocol
+from .utility import getSome, getString
 
 
-def request_pool_config(gateway_socket, data):
-    response = sendReceiveMessage(
-        gateway_socket, code.CTRLCONFIG_QUERY, struct.pack("<2I", 0, 0)
-    )
-    decode_pool_config(response, data)
+async def async_request_pool_config(protocol: ScreenLogicProtocol, data):
+    try:
+        await asyncio.wait_for(
+            (
+                request := protocol.await_send_data(
+                    CODE.CTRLCONFIG_QUERY, struct.pack("<2I", 0, 0)
+                )
+            ),
+            MESSAGE.COM_TIMEOUT,
+        )
+        if not request.cancelled():
+            decode_pool_config(request.result(), data)
+    except asyncio.TimeoutError:
+        raise ScreenLogicWarning("Timeout polling pool config")
 
 
 def decode_pool_config(buff, data):

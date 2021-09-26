@@ -1,13 +1,25 @@
+import asyncio
 import struct
-from .utility import sendReceiveMessage, getSome, getArray
-from ..const import code
+
+from ..const import CODE, MESSAGE, ScreenLogicWarning
+from .protocol import ScreenLogicProtocol
+from .utility import getSome, getArray
 
 
-def request_equipment_config(gateway_socket, data):
-    response = sendReceiveMessage(
-        gateway_socket, code.EQUIPMENT_QUERY, struct.pack("<2I", 0, 0)
-    )
-    decode_equipment_config(response, data)
+async def async_request_equipment_config(protocol: ScreenLogicProtocol, data):
+    try:
+        await asyncio.wait_for(
+            (
+                request := protocol.await_send_data(
+                    CODE.EQUIPMENT_QUERY, struct.pack("<2I", 0, 0)
+                )
+            ),
+            MESSAGE.COM_TIMEOUT,
+        )
+        if not request.cancelled():
+            decode_equipment_config(request.result(), data)
+    except asyncio.TimeoutError:
+        raise ScreenLogicWarning("Timeout polling equipment config")
 
 
 # pylint: disable=unused-variable

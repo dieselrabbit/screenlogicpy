@@ -1,23 +1,44 @@
 # import json
+import asyncio
 import struct
-from ..const import ADD_UNKNOWN_VALUES, CHEMISTRY, code, DATA, DEVICE_TYPE, ON_OFF, UNIT
-from .utility import sendReceiveMessage, getSome
+
+from ..const import (
+    ADD_UNKNOWN_VALUES,
+    CHEMISTRY,
+    CODE,
+    DATA,
+    DEVICE_TYPE,
+    MESSAGE,
+    ON_OFF,
+    UNIT,
+    ScreenLogicWarning,
+)
+from .protocol import ScreenLogicProtocol
+from .utility import getSome
 
 
-def request_chemistry(gateway_socket, data):
-    response = sendReceiveMessage(
-        gateway_socket, code.CHEMISTRY_QUERY, struct.pack("<I", 0)
-    )
-    decode_chemistry(response, data)
-
-
-def is_set(bits, mask) -> bool:
-    return True if (bits & mask) == mask else False
+async def async_request_chemistry(protocol: ScreenLogicProtocol, data):
+    try:
+        await asyncio.wait_for(
+            (
+                request := protocol.await_send_data(
+                    CODE.CHEMISTRY_QUERY, struct.pack("<I", 0)
+                )
+            ),
+            MESSAGE.COM_TIMEOUT,
+        )
+        if not request.cancelled():
+            decode_chemistry(request.result(), data)
+    except asyncio.TimeoutError:
+        raise ScreenLogicWarning("Timeout poiling chemistry status")
 
 
 # pylint: disable=unused-variable
 def decode_chemistry(buff, data):
     # print(buff)
+
+    def is_set(bits, mask) -> bool:
+        return True if (bits & mask) == mask else False
 
     if DATA.KEY_CHEMISTRY not in data:
         data[DATA.KEY_CHEMISTRY] = {}

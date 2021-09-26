@@ -1,8 +1,7 @@
-import sys
 import string
 import json
 import argparse
-from screenlogicpy.discovery import discover
+from screenlogicpy.discovery import async_discover
 from screenlogicpy.gateway import ScreenLogicGateway
 from screenlogicpy.const import (
     BODY_TYPE,
@@ -12,6 +11,7 @@ from screenlogicpy.const import (
     HEAT_MODE,
     ON_OFF,
     ScreenLogicError,
+    ScreenLogicWarning,
 )
 
 
@@ -49,7 +49,7 @@ def vFormat(verbose: bool, slElement: dict, slClass=None):
 
 
 # Parser functions
-def get_circuit(args, gateway: ScreenLogicGateway):
+async def async_get_circuit(args, gateway: ScreenLogicGateway):
     if not int(args.circuit_num) in gateway.get_data()[DATA.KEY_CIRCUITS]:
         print(f"Invalid circuit number: {args.circuit_num}")
         return 4
@@ -63,15 +63,15 @@ def get_circuit(args, gateway: ScreenLogicGateway):
     return 0
 
 
-def set_circuit(args, gateway: ScreenLogicGateway):
+async def async_set_circuit(args, gateway: ScreenLogicGateway):
     state = 0
     if args.state == "1" or args.state.lower() == "on":
         state = 1
     if not int(args.circuit_num) in gateway.get_data()[DATA.KEY_CIRCUITS]:
         print(f"Invalid circuit number: {args.circuit_num}")
         return 4
-    if gateway.set_circuit(int(args.circuit_num), state):
-        gateway.update()
+    if await gateway.async_set_circuit(int(args.circuit_num), state):
+        await gateway.async_update()
     else:
         return 4
     print(
@@ -84,7 +84,7 @@ def set_circuit(args, gateway: ScreenLogicGateway):
     return 0
 
 
-def get_heat_mode(args, gateway: ScreenLogicGateway):
+async def async_get_heat_mode(args, gateway: ScreenLogicGateway):
     body = 0
     if args.body == "1" or args.body.lower() == "spa":
         body = 1
@@ -98,7 +98,7 @@ def get_heat_mode(args, gateway: ScreenLogicGateway):
     return 0
 
 
-def set_heat_mode(args, gateway: ScreenLogicGateway):
+async def async_set_heat_mode(args, gateway: ScreenLogicGateway):
     body = 0
     mode = 0
     if args.body == "1" or args.body.lower() == "spa":
@@ -107,8 +107,8 @@ def set_heat_mode(args, gateway: ScreenLogicGateway):
         mode = cliFormatDict(HEAT_MODE.NUM_FOR_NAME)[args.mode]
     else:
         mode = int(args.mode)
-    if gateway.set_heat_mode(int(body), mode):
-        gateway.update()
+    if await gateway.async_set_heat_mode(int(body), mode):
+        await gateway.async_update()
     else:
         return 8
     print(
@@ -121,7 +121,7 @@ def set_heat_mode(args, gateway: ScreenLogicGateway):
     return 0
 
 
-def get_heat_temp(args, gateway: ScreenLogicGateway):
+async def async_get_heat_temp(args, gateway: ScreenLogicGateway):
     body = 0
     if args.body == "1" or args.body.lower() == "spa":
         body = 1
@@ -134,13 +134,13 @@ def get_heat_temp(args, gateway: ScreenLogicGateway):
     return 0
 
 
-def set_heat_temp(args, gateway: ScreenLogicGateway):
+async def async_set_heat_temp(args, gateway: ScreenLogicGateway):
     body = 0
     if args.body == "1" or args.body.lower() == "spa":
         body = 1
     if args.temp != -1:
-        if gateway.set_heat_temp(int(body), int(args.temp)):
-            gateway.update()
+        if await gateway.async_set_heat_temp(int(body), int(args.temp)):
+            await gateway.async_update()
         else:
             return 16
     print(
@@ -152,7 +152,7 @@ def set_heat_temp(args, gateway: ScreenLogicGateway):
     return 0
 
 
-def get_heat_state(args, gateway: ScreenLogicGateway):
+async def async_get_heat_state(args, gateway: ScreenLogicGateway):
     body = 0
     if args.body == "1" or args.body.lower() == "spa":
         body = 1
@@ -166,7 +166,7 @@ def get_heat_state(args, gateway: ScreenLogicGateway):
     return 0
 
 
-def get_current_temp(args, gateway: ScreenLogicGateway):
+async def async_get_current_temp(args, gateway: ScreenLogicGateway):
     body = 0
     if args.body == "1" or args.body.lower() == "spa":
         body = 1
@@ -179,11 +179,11 @@ def get_current_temp(args, gateway: ScreenLogicGateway):
     return 0
 
 
-def set_color_light(args, gateway: ScreenLogicGateway):
+async def async_set_color_light(args, gateway: ScreenLogicGateway):
     mode = cliFormatDict(COLOR_MODE.NUM_FOR_NAME).get(args.mode)
     if mode is None:
         mode = int(args.mode)
-    if gateway.set_color_lights(mode):
+    if await gateway.async_set_color_lights(mode):
         print(
             f"Set color mode to {COLOR_MODE.NAME_FOR_NUM[mode]}"
             if args.verbose
@@ -193,13 +193,26 @@ def set_color_light(args, gateway: ScreenLogicGateway):
     return 32
 
 
-def get_json(args, gateway):
+async def async_set_scg_config(args, gateway: ScreenLogicGateway):
+    scg_data = gateway.get_data()[DATA.KEY_SCG]
+    scg_1 = args.scg_pool if args.scg_pool is not None else scg_data["scg_level1"]
+    scg_2 = args.scg_spa if args.scg_spa is not None else scg_data["scg_level2"]
+
+    if await gateway.async_set_scg_config(scg_1, scg_2):
+        await gateway.async_update()
+        new_scg_data = gateway.get_data()[DATA.KEY_SCG]
+        print(f"SCG set to {new_scg_data['scg_level1']}, {new_scg_data['scg_level2']}")
+        return 0
+    return 64
+
+
+async def async_get_json(args, gateway):
     print(json.dumps(gateway.get_data(), indent=2))
     return 0
 
 
 # Entry function
-def cli(cli_args):
+async def cli(cli_args):
     """Handle command line args"""
 
     option_parser = argparse.ArgumentParser(
@@ -231,7 +244,7 @@ def cli(cli_args):
     }
     get_circuit_parser = get_subparsers.add_parser("circuit", aliases=["c"])
     get_circuit_parser.add_argument(**ARGUMENT_CIRCUIT_NUM)
-    get_circuit_parser.set_defaults(func=get_circuit)
+    get_circuit_parser.set_defaults(async_func=async_get_circuit)
 
     body_options = optionsFromDict(BODY_TYPE.NAME_FOR_NUM)
     ARGUMENT_BODY = {
@@ -243,22 +256,22 @@ def cli(cli_args):
     }
     get_heat_mode_parser = get_subparsers.add_parser("heat-mode", aliases=["hm"])
     get_heat_mode_parser.add_argument(**ARGUMENT_BODY)
-    get_heat_mode_parser.set_defaults(func=get_heat_mode)
+    get_heat_mode_parser.set_defaults(async_func=async_get_heat_mode)
 
     get_heat_temp_parser = get_subparsers.add_parser("heat-temp", aliases=["ht"])
     get_heat_temp_parser.add_argument(**ARGUMENT_BODY)
-    get_heat_temp_parser.set_defaults(func=get_heat_temp)
+    get_heat_temp_parser.set_defaults(async_func=async_get_heat_temp)
 
     get_heat_state_parser = get_subparsers.add_parser("heat-state", aliases=["hs"])
     get_heat_state_parser.add_argument(**ARGUMENT_BODY)
-    get_heat_state_parser.set_defaults(func=get_heat_state)
+    get_heat_state_parser.set_defaults(async_func=async_get_heat_state)
 
     get_current_temp_parser = get_subparsers.add_parser("current-temp", aliases=["t"])
     get_current_temp_parser.add_argument(**ARGUMENT_BODY)
-    get_current_temp_parser.set_defaults(func=get_current_temp)
+    get_current_temp_parser.set_defaults(async_func=async_get_current_temp)
 
     get_json_parser = get_subparsers.add_parser("json", aliases=["j"])
-    get_json_parser.set_defaults(func=get_json)
+    get_json_parser.set_defaults(async_func=async_get_json)
 
     # Set options
     set_parser = subparsers.add_parser("set")
@@ -277,7 +290,7 @@ def cli(cli_args):
     )
 
     cl_options = optionsFromDict(COLOR_MODE.NAME_FOR_NUM)
-    set_circuit_parser.set_defaults(func=set_circuit)
+    set_circuit_parser.set_defaults(async_func=async_set_circuit)
     set_color_light_parser = set_subparsers.add_parser("color-lights", aliases=["cl"])
     set_color_light_parser.add_argument(
         "mode",
@@ -286,7 +299,7 @@ def cli(cli_args):
         choices=cl_options,
         help=f"Color lights command, color or show. One of :{cl_options}",
     )
-    set_color_light_parser.set_defaults(func=set_color_light)
+    set_color_light_parser.set_defaults(async_func=async_set_color_light)
 
     set_heat_mode_parser = set_subparsers.add_parser("heat-mode", aliases=["hm"])
     set_heat_mode_parser.add_argument(**ARGUMENT_BODY)
@@ -299,7 +312,7 @@ def cli(cli_args):
         default=hm_options[0],
         help=f"Heat mode to set. One of: {hm_options}",
     )
-    set_heat_mode_parser.set_defaults(func=set_heat_mode)
+    set_heat_mode_parser.set_defaults(async_func=async_set_heat_mode)
 
     set_heat_temp_parser = set_subparsers.add_parser("heat-temp", aliases=["ht"])
     set_heat_temp_parser.add_argument(**ARGUMENT_BODY)
@@ -310,17 +323,23 @@ def cli(cli_args):
         default=None,
         help="Temperature to set in same unit of measurement as controller settings",
     )
-    set_heat_temp_parser.set_defaults(func=set_heat_temp)
+    set_heat_temp_parser.set_defaults(async_func=async_set_heat_temp)
+
+    set_scg_config_parser = set_subparsers.add_parser("salt-generator", aliases=["scg"])
+    set_scg_config_parser.add_argument(
+        "pool", type=int, metavar="POOL_PCT", default=None
+    )
+    set_scg_config_parser.add_argument("spa", type=int, metavar="SPA_PCT", default=None)
+    set_scg_config_parser.set_defaults(async_func=async_set_scg_config)
 
     args = option_parser.parse_args(cli_args)
-    # save for debugger: ['-i', 'xx', 'get', 'json']
 
     try:
         host = {"ip": args.ip, "port": args.port}
         discovered = False
         if not host["ip"]:
             # Try to discover gateway
-            hosts = discover()
+            hosts = await async_discover()
             # Host(s) found
             if len(hosts) > 0:
                 discovered = True
@@ -351,6 +370,10 @@ def cli(cli_args):
                 return 1
 
         gateway = ScreenLogicGateway(**host)
+
+        await gateway.async_connect()
+
+        await gateway.async_update()
 
         if DATA.KEY_CONFIG not in gateway.get_data():
             return 1
@@ -422,17 +445,15 @@ def cli(cli_args):
 
         if args.action is None:
             print_dashboard()
+            await gateway.async_disconnect()
             return 0
 
         if args.verbose:
             print_gateway()
+        result = await args.async_func(args, gateway)
+        await gateway.async_disconnect()
+        return result
 
-        return args.func(args, gateway)
-
-    except ScreenLogicError as err:
+    except (ScreenLogicError, ScreenLogicWarning) as err:
         print(err)
-        return 64
-
-
-if __name__ == "__main__":
-    sys.exit(cli(sys.argv[1:]))
+        return 128
