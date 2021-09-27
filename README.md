@@ -184,13 +184,14 @@ Tells screenlogicpy to be a little more verbose in it's output. Friendlier for h
 
     screenlogicpy -i xxx.xxx.xxx.xxx
 
-Specify the IP address of the ScreenLogic gateway to connect to. **Note:** If the IP address is not specified, screenlogicpy will attempt to discover ScreenLogic gateways on the local network, and connect to the first one that responds. This is generally fine if you only have one ScreenLogic gateway.
+Specify the IP address of the ScreenLogic protocol adapter to connect to.  
+**Note:** If the IP address is not specified, screenlogicpy will attempt to discover ScreenLogic protocol adapters on the local network, and connect to the first one that responds. This is generally fine if you only have one ScreenLogic protocol adapter.
 
 ### `-p, --port`
 
     screenlogicpy -i xxx.xxx.xxx.xxx -p xx
 
-Specify the port of the ScreenLogic gateway to connect to. Needs to be used in conjunction with `-i, --ip` option.
+Specify the port of the ScreenLogic protocol adapter to connect to. Needs to be used in conjunction with `-i, --ip` option.
 
 ## Positional arguments
 
@@ -198,7 +199,7 @@ Specify the port of the ScreenLogic gateway to connect to. Needs to be used in c
 
     screenlogicpy discover
 
-Attempts to discover ScreenLogic gateways on the local network via UDP broadcast. Returns `[ip address]:[port]` of each discovered ScreenLogic gateway, one per line.
+Attempts to discover ScreenLogic protocol adapters on the local network via UDP broadcast. Returns `[ip address]:[port]` of each discovered ScreenLogic protocol adapter, one per line.
 
 ### `get`
 
@@ -216,28 +217,28 @@ Returns 1 for on and 0 for off
 
     screenlogicpy get heat-mode [body]
 
-Returns the current heating mode for the specified body of water.
+Returns the current heating mode for the specified body of water.  
 **Note:** `[body]` can be an `int` or `string` representing the [body of water](#body).
 
 #### get `heat-temp, ht`
 
     screenlogicpy get heat-temp [body]
 
-Returns the current target heating temperature for the specified body of water.
+Returns the current target heating temperature for the specified body of water.  
 **Note:** `[body]` can be an `int` or `string` representing the [body of water](#body).
 
 #### get `heat-state, hs`
 
     screenlogicpy get heat-state [body]
 
-Returns the current state of the heater for the specified boty of water. The current state will match the heat mode when heating is active, otherwise will be 0 (off).
+Returns the current state of the heater for the specified boty of water. The current state will match the heat mode when heating is active, otherwise will be 0 (off).  
 **Note:** `[body]` can be an `int` or `string` representing the [body of water](#body).
 
 #### get `current-temp, t`
 
     screenlogicpy get current-temp [body]
 
-Returns the current temperature for the specified body of water. This is actually the last-known temperature from when that body of water was active (Pool or Spa)
+Returns the current temperature for the specified body of water. This is actually the last-known temperature from when that body of water was active (Pool or Spa)  
 **Note:** `[body]` can be an `int` or `string` representing the [body of water](#body).
 
 #### get `json, j`
@@ -256,29 +257,31 @@ All `set` commands work like their corresponding `get` commands, but take an add
 
     screenlogicpy set circuit [circuit number] [circuit state]
 
-Sets the specified circuit to the specified circuit state. **Note:** `[circuit state]` can be an `int` or `string` representing the desired [circuit state](#circuit-state).
+Sets the specified circuit to the specified circuit state.  
+**Note:** `[circuit state]` can be an `int` or `string` representing the desired [circuit state](#circuit-state).
 
 #### set `heat-mode, hm`
 
     screenlogicpy set heat-mode [body] [heat mode]
 
-Sets the desired heating mode for the specified body of water.
+Sets the desired heating mode for the specified body of water.  
 **Note:** `[body]` can be an `int` or `string` representing the [body of water](#body). `[heat mode]` can be an `int` or `string` representing the desired [heat mode](#heat-modes)
 
 #### set `heat-temp, ht`
 
     screenlogicpy set heat-temp [body] [heat temp]
 
-Sets the desired target heating temperature for the specified body of water.
+Sets the desired target heating temperature for the specified body of water.  
 **Note:** `[body]` can be an `int` or `string` representing the [body of water](#body). `[heat temp]` is an `int` representing the desired target temperature.
-
-**v0.3.0+:**
 
 #### set `color-lights, cl`
 
     screenlogicpy set color-lights [color mode]
 
-Sets a color mode for *all* color-capable lights configured on the pool controller. **Note:** `[color mode]` can be either the `int` or `string` representation of a [color mode](#color-modes).
+Sets a color mode for *all* color-capable lights configured on the pool controller.  
+**Note:** `[color mode]` can be either the `int` or `string` representation of a [color mode](#color-modes).
+
+*New in v0.3.0*
 
 # Reference
 
