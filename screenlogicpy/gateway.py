@@ -53,6 +53,24 @@ class ScreenLogicGateway:
     def is_connected(self) -> bool:
         return self.__connected
 
+    async def async_connect(self) -> bool:
+        connectPkg = await async_connect_to_gateway(
+            self.__ip, self.__port, self._disconnected, self.__data
+        )
+        if connectPkg:
+            self.__transport, self.__protocol, self.__mac = connectPkg
+            self.__version = await async_request_gateway_version(self.__protocol)
+            if self.__version:
+                self.__connected = True
+                await self._async_get_config()
+                return True
+        return False
+
+    async def async_disconnect(self):
+        self.__connected = False
+        if self.__transport and not self.__transport.is_closing():
+            self.__transport.close()
+
     async def async_update(self):
         if (self.is_connected or await self.async_connect()) and self.__data:
             # print("Updating Status.")
@@ -107,31 +125,8 @@ class ScreenLogicGateway:
                     return True
         return False
 
-    async def async_connect(self) -> bool:
-        connectPkg = await async_connect_to_gateway(
-            self.__ip, self.__port, self._disconnected, self.__data
-        )
-        if connectPkg:
-            self.__transport, self.__protocol, self.__mac = connectPkg
-            self.__version = await async_request_gateway_version(self.__protocol)
-            if self.__version:
-                self.__connected = True
-                await self._async_get_config()
-                return True
-            return False
-
     def _disconnected(self):
         self.__connected = False
-
-    def _disconnect(self):
-        self.__connected = False
-        if self.__socket:
-            self.__socket.close()
-
-    async def async_disconnect(self):
-        self.__connected = False
-        if self.__transport and not self.__transport.is_closing():
-            self.__transport.close()
 
     async def _async_get_config(self):
         if self.__connected or await self.async_connect():
