@@ -121,7 +121,6 @@ class ScreenLogicGateway:
                 if await async_request_set_scg_config(
                     self.__protocol, pool_output, spa_output
                 ):
-                    self._disconnect()
                     return True
         return False
 
