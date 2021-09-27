@@ -22,7 +22,7 @@ The `ScreenLogicGateway` class is the primary interface.
 
 ## Connecting to a ScreenLogic Protocol Adapter
 
-Once instanciated, use `async_connect()` to connect and logon to the ScreenLogic Protocol Adapter.
+Once instanciated, use `async_connect()` to connect and logon to the ScreenLogic protocol adapter.
 
     success = await gateway.async_connect()
 
@@ -45,11 +45,11 @@ This update consists of sending requests for:
 
 **Warning:** This method is not rate-limited. The calling application is responsible for maintaining reasonable intervals between updates.
 
-*Changed in v0.5.0: This method now an async coroutine and no longer disconnects from the protocol adapter after polling the data.*
+*Changed in v0.5.0: This method is now an async coroutine and no longer disconnects from the protocol adapter after polling the data.*
 
 ## Using the data
 
-The `ScreenLogicGateway` class updates all data at once from the ScreenLogic gateway. That data is cached as a `dict` object for continued reference by the consuming application. The consuming application may get this data at anytime with the `get_data()` method.
+The `ScreenLogicGateway` class updates all data at once from the ScreenLogic protocol adapter. That data is cached as a `dict` object for continued reference by the consuming application. The consuming application may get this data at anytime with the `get_data()` method.
 
     data = gateway.get_data()
 
@@ -63,7 +63,7 @@ When done, use `async_disconnect()` to close the connection to the protocol adap
 
 ## Gateway Discovery
 
-The `discovery` module's `async_discover()` function can be used to get a list of all discovered ScreenLogic protocol adapters on the local network. Each protocol adapterx is represented as a `dict` object that can then be directly used to instanciate a `ScreenLogicGateway` class.
+The `discovery` module's `async_discover()` function can be used to get a list of all discovered ScreenLogic protocol adapters on the local network. Each protocol adapter is represented as a `dict` object that can then be directly used to instanciate a `ScreenLogicGateway` class.
 
     hosts = await discovery.async_discover()
 
@@ -336,6 +336,6 @@ Sets a color mode for *all* color-capable lights configured on the pool controll
 
 ## Acknowledgements
 
-Based on https://github.com/keithpjolley/soipip
+Inspired by https://github.com/keithpjolley/soipip
 
 The protocol and codes are documented fairly well here: https://github.com/ceisenach/screenlogic_over_ip
