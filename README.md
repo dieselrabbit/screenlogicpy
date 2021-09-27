@@ -1,6 +1,6 @@
 # screenlogicpy
 
-`screenlogicpy` is an interface for Pentair ScreenLogic connected pool controllers over IP via python.
+`screenlogicpy` is an interface for Pentair ScreenLogic connected pool controllers over IP via python using asyncio.
 
 # Installation
 
@@ -10,49 +10,78 @@ The `screenlogicpy` package can be installed from PyPI using `pip`.
 
 # Library usage
 
+***New for v0.5.0:** The screenlogicpy library has moved over to using asyncio for all network I/O. Relevent methods now require the **async/await** syntax.*
+
 The `ScreenLogicGateway` class is the primary interface.
 
     from screenlogicpy import ScreenLogicGateway
+
     gateway = ScreenLogicGateway("192.168.x.x")
 
-## Gateway Discovery
+*Changed in v0.5.0: Instanciating the gateway no longer automatically connects to the protocol adapter or performs an initial update.*
 
-The `discovery` module's `discover()` function can be used to get a list of all discovered ScreenLogic gateways on the local network. Each gateway is represented as a `dict` object that can then be directly used to instanciate a `ScreenLogicGateway` class.
+## Connecting to a ScreenLogic Protocol Adapter
 
-    from screenlogicpy import ScreenLogicGateway, discovery
+Once instanciated, use `async_connect()` to connect and logon to the ScreenLogic Protocol Adapter.
 
-    hosts = discovery.discover()
-    if len(hosts) > 0:
-        gateway = ScreenLogicGateway(**hosts[0])
-        data = gateway.get_data()
-    else:
-        print("No gateways found")
+    success = await gateway.async_connect()
 
-## Querying data
+This method also performs the initial polling of the pool controller configuration.
+
+*New in v0.5.0*
+
+## Polling the data
+
+Once connected, all available data can be polled with the `async_update()` coroutine.
+
+    await gateway.async_update()
+
+This update consists of sending requests for:
+
+1. Current pool status
+2. Detailed information for *each* configured pump
+3. Detailed pool chemistry information
+4. Status ans settings for any configured salt chlorine generators
+
+**Warning:** This method is not rate-limited. The calling application is responsible for maintaining reasonable intervals between updates.
+
+*Changed in v0.5.0: This method now an async coroutine and no longer disconnects from the protocol adapter after polling the data.*
+
+## Using the data
 
 The `ScreenLogicGateway` class updates all data at once from the ScreenLogic gateway. That data is cached as a `dict` object for continued reference by the consuming application. The consuming application may get this data at anytime with the `get_data()` method.
 
     data = gateway.get_data()
 
-## Updating the data
+## Disconnecting
 
-When instanciated, the `ScreenLogicGateway` class object will perform an initial update of all available data to populate it's internal cache. A consuming application may request further updates of the internal data with the `update()` method.
+When done, use `async_disconnect()` to close the connection to the protocol adapter.
 
-    gateway.update()
+    await gateway.async_disconnect()
 
-After `update()`, The consuming application may then query the new data with `get_data()`.
+*New in v0.5.0*
 
-**Note:** This update consists of:
+## Gateway Discovery
 
-1. Connecting and logging-on to the specified ScreenLogic gateway.
-2. Sending requests for
-    1. Pool controller configuration
-    2. Current pool status
-    3. Detailed information for *each* configured pump
-    4. Detailed pool chemistry information
-3. Closing the connection to the gateway.
+The `discovery` module's `async_discover()` function can be used to get a list of all discovered ScreenLogic protocol adapters on the local network. Each protocol adapterx is represented as a `dict` object that can then be directly used to instanciate a `ScreenLogicGateway` class.
 
-**Warning:** This method is not rate-limited. The calling application is responsible for maintaining reasonable intervals between updates.
+    hosts = await discovery.async_discover()
+
+*New in v0.5.0: This method is now an async coroutine.*
+
+## Example
+
+    from screenlogicpy import ScreenLogicGateway, discovery
+
+    hosts = await discovery.async_discover()
+    if len(hosts) > 0:
+        gateway = ScreenLogicGateway(**hosts[0])
+        if await gateway.async_connect():
+            await gateway.async_update()
+            await gateway.async_disconnect()
+            data = gateway.get_data()
+    else:
+        print("No gateways found")
 
 ## Performing actions
 
@@ -68,31 +97,31 @@ Each method will `return True` if the operation reported no exceptions.
 
 ## Turning a circuit ON or OFF
 
-A circuit can be requested to be turned on or off with the `set_circuit()` method. `set_circuit` takes two required arguments, `circuitID` which is the id number of the circuit as an `int`, and `circuitState` which represents the desired new state of the circuit, as an `int`. See [Circuit State](#circuit-state) below.
+A circuit can be requested to be turned on or off with the `async_set_circuit()` method. `async_set_circuit` takes two required arguments, `circuitID` which is the id number of the circuit as an `int`, and `circuitState` which represents the desired new state of the circuit, as an `int`. See [Circuit State](#circuit-state) below.
 
-    success = gateway.set_circuit(circuitID, circuitState)
+    success = await gateway.async_set_circuit(circuitID, circuitState)
 
 ## Setting a heating mode
 
-The desired heating mode can be set per body of water (pool or spa) with `set_heat_mode()`. `set_heat_mode` takes two required arguments, `body` as an `int` representing the [body of water](#body), and `mode` as an `int` of the desired [heating mode](#heat-modes).
+The desired heating mode can be set per body of water (pool or spa) with `async_set_heat_mode()`. `async_set_heat_mode` takes two required arguments, `body` as an `int` representing the [body of water](#body), and `mode` as an `int` of the desired [heating mode](#heat-modes).
 
-    success = gateway.set_heat_mode(body, mode)
+    success = await gateway.async_set_heat_mode(body, mode)
 
 ## Setting a target temperature
 
-The target heating temperature can be set per body of water (pool or spa) with `set_heat_temp()`. `set_heat_temp` takes two required arguments, `body` as an `int` representing the [body of water](#body), and `temp` as an `int` of the desired target temperature.
+The target heating temperature can be set per body of water (pool or spa) with `async_set_heat_temp()`. `async_set_heat_temp` takes two required arguments, `body` as an `int` representing the [body of water](#body), and `temp` as an `int` of the desired target temperature.
 
-    success = gateway.set_heat_temp(body, temp)
+    success = await gateway.async_set_heat_temp(body, temp)
 
 ## Setting light colors or shows
 
-Colors or color-shows can be set for compatible color-enable lighting with `set_color_lights()`. `set_color_lights` takes one required argument, `light_command` as an `int` representing the desired [command/show/color](#color-modes)
+Colors or color-shows can be set for compatible color-enable lighting with `async_set_color_lights()`. `async_set_color_lights` takes one required argument, `light_command` as an `int` representing the desired [command/show/color](#color-modes)
 
-    success = gateway.set_color_lights(light_command)
+    success = await gateway.async_set_color_lights(light_command)
 
 # Command line
 
-Screenlogicpy can also be used via the command line. The primary design is for the command line output to be consume/parsed by other applications and thus by default is not very human-readable. For more human-friendly output, specify the `-v` option.
+Screenlogicpy can also be used via the command line. The primary design is for the command line output to be consumed/parsed by other applications and thus by default is not very human-readable. For more human-friendly output, specify the `-v, --verbose` option.
 
 ## Basic usage
 
@@ -290,7 +319,7 @@ Sets a color mode for *all* color-capable lights configured on the pool controll
 | `5`   | `party`      | Party        | Rapid color changing building the energy and excitement.                                                  |
 | `6`   | `romance`    | Romance      | Slow color transitions creating a mesmerizing and calming effect.                                         |
 | `7`   | `caribbean`  | Caribbean    | Transitions between a variety of blues and greens.                                                        |
-| `8`   | `american`   | American     | Patriotic red, white and blue transition.                                                                 |
+| `8`   | `american`   | American     | Patriotic red, white and blue transitions.                                                                |
 | `9`   | `sunset`     | Sunset       | Dramatic transitions of orange, red and magenta tones.                                                    |
 | `10`  | `royal`      | Royal        | Richer, deeper, color tones.                                                                              |
 | `11`  | `save`       | Save Color   | Save the exact colors that are being displayed.                                                           |
