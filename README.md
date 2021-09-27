@@ -17,7 +17,6 @@ The `ScreenLogicGateway` class is the primary interface.
     from screenlogicpy import ScreenLogicGateway
 
     gateway = ScreenLogicGateway("192.168.x.x")
-
 *Changed in v0.5.0: Instanciating the gateway no longer automatically connects to the protocol adapter or performs an initial update.*
 
 ## Connecting to a ScreenLogic Protocol Adapter
@@ -26,8 +25,7 @@ Once instanciated, use `async_connect()` to connect and logon to the ScreenLogic
 
     success = await gateway.async_connect()
 
-This method also performs the initial polling of the pool controller configuration.
-
+This method also performs the initial polling of the pool controller configuration.  
 *New in v0.5.0*
 
 ## Polling the data
@@ -43,8 +41,7 @@ This update consists of sending requests for:
 3. Detailed pool chemistry information
 4. Status ans settings for any configured salt chlorine generators
 
-**Warning:** This method is not rate-limited. The calling application is responsible for maintaining reasonable intervals between updates.
-
+**Warning:** This method is not rate-limited. The calling application is responsible for maintaining reasonable intervals between updates.  
 *Changed in v0.5.0: This method is now an async coroutine and no longer disconnects from the protocol adapter after polling the data.*
 
 ## Using the data
@@ -57,8 +54,7 @@ The `ScreenLogicGateway` class updates all data at once from the ScreenLogic pro
 
 When done, use `async_disconnect()` to close the connection to the protocol adapter.
 
-    await gateway.async_disconnect()
-
+    await gateway.async_disconnect()  
 *New in v0.5.0*
 
 ## Gateway Discovery
@@ -66,8 +62,7 @@ When done, use `async_disconnect()` to close the connection to the protocol adap
 The `discovery` module's `async_discover()` function can be used to get a list of all discovered ScreenLogic protocol adapters on the local network. Each protocol adapter is represented as a `dict` object that can then be directly used to instanciate a `ScreenLogicGateway` class.
 
     hosts = await discovery.async_discover()
-
-*New in v0.5.0: This method is now an async coroutine.*
+*Changed in v0.5.0: This method is now an async coroutine.*
 
 ## Example
 
@@ -279,8 +274,7 @@ Sets the desired target heating temperature for the specified body of water.
     screenlogicpy set color-lights [color mode]
 
 Sets a color mode for *all* color-capable lights configured on the pool controller.  
-**Note:** `[color mode]` can be either the `int` or `string` representation of a [color mode](#color-modes).
-
+**Note:** `[color mode]` can be either the `int` or `string` representation of a [color mode](#color-modes).  
 *New in v0.3.0*
 
 #### set `salt-generator, scg`
@@ -288,8 +282,7 @@ Sets a color mode for *all* color-capable lights configured on the pool controll
     screenlogicpy set salt-generator [pool_pct] [spa_pct]
 
 Sets the chlorinator output levels for the pool and spa. Pentair treats spa output level as a percentage of the pool's output level.  
-**Note:** `[pool_pct]` can be an `int` between `1`-`100`, or `*` to keep the current value. `[spa_pct]` can be an `int` between `1`-`20`, or `*` to keep the current value.
-
+**Note:** `[pool_pct]` can be an `int` between `1`-`100`, or `*` to keep the current value. `[spa_pct]` can be an `int` between `1`-`20`, or `*` to keep the current value.  
 *New in v0.5.0*
 
 # Reference
