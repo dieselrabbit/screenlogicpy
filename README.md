@@ -283,6 +283,15 @@ Sets a color mode for *all* color-capable lights configured on the pool controll
 
 *New in v0.3.0*
 
+#### set `salt-generator, scg`
+
+    screenlogicpy set salt-generator [pool_pct] [spa_pct]
+
+Sets the chlorinator output levels for the pool and spa. Pentair treats spa output level as a percentage of the pool's output level.  
+**Note:** `[pool_pct]` can be an `int` between `1`-`100`, or `*` to keep the current value. `[spa_pct]` can be an `int` between `1`-`20`, or `*` to keep the current value.
+
+*New in v0.5.0*
+
 # Reference
 
 ### Circuit State
