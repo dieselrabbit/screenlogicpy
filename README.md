@@ -95,24 +95,34 @@ Each method will `return True` if the operation reported no exceptions.
 A circuit can be requested to be turned on or off with the `async_set_circuit()` method. `async_set_circuit` takes two required arguments, `circuitID` which is the id number of the circuit as an `int`, and `circuitState` which represents the desired new state of the circuit, as an `int`. See [Circuit State](#circuit-state) below.
 
     success = await gateway.async_set_circuit(circuitID, circuitState)
+*Changed in v0.5.0: This method is now an async coroutine.*
 
 ## Setting a heating mode
 
 The desired heating mode can be set per body of water (pool or spa) with `async_set_heat_mode()`. `async_set_heat_mode` takes two required arguments, `body` as an `int` representing the [body of water](#body), and `mode` as an `int` of the desired [heating mode](#heat-modes).
 
     success = await gateway.async_set_heat_mode(body, mode)
+*Changed in v0.5.0: This method is now an async coroutine.*
 
 ## Setting a target temperature
 
 The target heating temperature can be set per body of water (pool or spa) with `async_set_heat_temp()`. `async_set_heat_temp` takes two required arguments, `body` as an `int` representing the [body of water](#body), and `temp` as an `int` of the desired target temperature.
 
     success = await gateway.async_set_heat_temp(body, temp)
+*Changed in v0.5.0: This method is now an async coroutine.*
 
 ## Setting light colors or shows
 
 Colors or color-shows can be set for compatible color-enable lighting with `async_set_color_lights()`. `async_set_color_lights` takes one required argument, `light_command` as an `int` representing the desired [command/show/color](#color-modes)
 
     success = await gateway.async_set_color_lights(light_command)
+*Changed in v0.5.0: This method is now an async coroutine.*
+
+## Setting chlorinator output levels
+Chlorinator output levels can be set with `async_set_scg_config()`.  `async_set_scg_config` takes two `int` arguments, `pool_output` and `spa_output`.
+    
+    success = await gateway.async_set_scg_config(pool_output, spa_output)  
+*New in v0.5.0*
 
 # Command line
 
