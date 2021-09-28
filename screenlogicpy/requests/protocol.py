@@ -6,7 +6,9 @@ from ..const import CODE, MESSAGE
 
 
 class ScreenLogicProtocol(asyncio.Protocol):
-    def __init__(self, loop, data, connection_lost_callback: Callable) -> None:
+    def __init__(
+        self, loop, data={}, connection_lost_callback: Callable = None
+    ) -> None:
         self.connected = False
         self._connection_lost_callback = connection_lost_callback
         self._data = data
@@ -62,7 +64,8 @@ class ScreenLogicProtocol(asyncio.Protocol):
     def connection_lost(self, exc) -> None:
         # print("The connection was closed.")
         self.connected = False
-        self._connection_lost_callback()
+        if self._connection_lost_callback is not None:
+            self._connection_lost_callback()
         # self.on_connection_lost.set_result(True)
 
     def register_async_message_callback(
@@ -71,7 +74,7 @@ class ScreenLogicProtocol(asyncio.Protocol):
         self._callbacks[messageCode] = callback
 
     class FutureManager:
-        def __init__(self, loop) -> None:
+        def __init__(self, loop: asyncio.AbstractEventLoop) -> None:
             self._collection = {}
             self.loop = loop
 
