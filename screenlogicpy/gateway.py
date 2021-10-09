@@ -1,4 +1,4 @@
-from .const import DATA
+from .const import BODY_TYPE, DATA, SCG
 from .requests import (
     async_connect_to_gateway,
     async_request_gateway_version,
@@ -54,8 +54,11 @@ class ScreenLogicGateway:
         return self.__connected
 
     async def async_connect(self) -> bool:
+        if self.__connected:
+            return True
+
         connectPkg = await async_connect_to_gateway(
-            self.__ip, self.__port, self._disconnected, self.__data
+            self.__ip, self.__port, self._set_disconnected, self.__data
         )
         if connectPkg:
             self.__transport, self.__protocol, self.__mac = connectPkg
@@ -114,9 +117,9 @@ class ScreenLogicGateway:
         return False
 
     async def async_set_scg_config(self, pool_output, spa_output):
-        if self._is_valid_scg_value(pool_output) and self._is_valid_scg_value(
-            spa_output
-        ):
+        if self._is_valid_scg_value(
+            pool_output, BODY_TYPE.POOL
+        ) and self._is_valid_scg_value(spa_output, BODY_TYPE.SPA):
             if self.__connected or await self.async_connect():
                 if await async_request_set_scg_config(
                     self.__protocol, pool_output, spa_output
@@ -124,7 +127,7 @@ class ScreenLogicGateway:
                     return True
         return False
 
-    def _disconnected(self):
+    def _set_disconnected(self):
         self.__connected = False
 
     async def _async_get_config(self):
@@ -168,5 +171,5 @@ class ScreenLogicGateway:
         max_temp = self.__data[DATA.KEY_BODIES][int(body)]["max_set_point"]["value"]
         return min_temp <= temp <= max_temp
 
-    def _is_valid_scg_value(self, scg_value):
-        return 0 <= scg_value <= 100
+    def _is_valid_scg_value(self, scg_value, body_type):
+        return 0 <= scg_value <= SCG.LIMIT_FOR_BODY[body_type]
