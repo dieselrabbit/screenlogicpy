@@ -1,8 +1,7 @@
 import asyncio
-import struct
 from typing import Callable
 
-from ..const import CODE, MESSAGE
+from .utility import makeMessage, takeMessage
 
 
 class ScreenLogicProtocol(asyncio.Protocol):
@@ -21,17 +20,8 @@ class ScreenLogicProtocol(asyncio.Protocol):
         self.transport = transport
 
     def send_data(self, messageCode, data=b"", senderID=0):
-        def makeMessage(sndCode, msgCode, messageData=b""):
-            return struct.pack(
-                MESSAGE.HEADER_FORMAT + str(len(messageData)) + "s",
-                sndCode,
-                msgCode,
-                len(messageData),
-                messageData,
-            )
-
         # print(f"Sending: {senderID}, {messageCode}, {data}")
-        self.transport.write(makeMessage(senderID, messageCode, data))
+        self.transport.write(makeMessage(messageCode, data, senderID))
 
     def await_send_data(self, messageCode, data=b"", senderID=0) -> asyncio.Future:
         # print(f"Sending: {senderID}, {messageCode}, {data}")
@@ -39,20 +29,9 @@ class ScreenLogicProtocol(asyncio.Protocol):
         return self._futures.create(messageCode + 1, senderID)
 
     def data_received(self, data: bytes) -> None:
-        def takeMessage(data):
-            messageBytes = len(data) - MESSAGE.HEADER_LENGTH
-            sndCode, msgCode, msgLen, message = struct.unpack(
-                MESSAGE.HEADER_FORMAT + str(messageBytes) + "s", data
-            )
-            if msgLen != messageBytes:
-                pass
-            if msgCode == CODE.UNKNOWN_ANSWER:
-                pass
-            return sndCode, msgCode, message  # return raw data
-
-        senderID, messageCode, message = takeMessage(data)
+        messageCode, message, senderID = takeMessage(data)
         # print(f"Received: {senderID}, {messageCode}, {message}")
-        if not self._futures.mark_done(messageCode, senderID, message):
+        if not self._futures.mark_done(messageCode, message, senderID):
 
             def process_async_message(senderID, messageCode, message):
                 print(f"Received async message: {senderID}, {messageCode}, {message}")
@@ -90,7 +69,7 @@ class ScreenLogicProtocol(asyncio.Protocol):
                 return None
             return msg.get(senderID)
 
-        def mark_done(self, msgCode, senderID=0, result=True):
+        def mark_done(self, msgCode, result=True, senderID=0):
             if (fut := self.try_get(msgCode, senderID)) is not None:
                 if not fut.cancelled():
                     fut.set_result(result)

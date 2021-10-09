@@ -1,5 +1,29 @@
 import struct
 
+from ..const import CODE, MESSAGE
+
+
+def makeMessage(msgCode, messageData=b"", sndCode=0):
+    return struct.pack(
+        MESSAGE.HEADER_FORMAT + str(len(messageData)) + "s",
+        sndCode,
+        msgCode,
+        len(messageData),
+        messageData,
+    )
+
+
+def takeMessage(data):
+    messageBytes = len(data) - MESSAGE.HEADER_LENGTH
+    sndCode, msgCode, msgLen, message = struct.unpack(
+        MESSAGE.HEADER_FORMAT + str(messageBytes) + "s", data
+    )
+    if msgLen != messageBytes:
+        pass
+    if msgCode == CODE.UNKNOWN_ANSWER:
+        pass
+    return msgCode, message, sndCode  # return raw data
+
 
 def encodeMessageString(string):
     data = string.encode()
