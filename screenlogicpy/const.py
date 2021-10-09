@@ -276,6 +276,10 @@ class CHEM_DOSING_STATE:
     NUM_FOR_NAME = {name: num for num, name in NAME_FOR_NUM.items()}
 
 
+class SCG:
+    LIMIT_FOR_BODY = {BODY_TYPE.POOL: 100, BODY_TYPE.SPA: 20}
+
+
 GENERIC_CIRCUIT_NAMES = [
     *[f"Aux {num}" for num in range(1, 8)],  # Last number is 7
     "AuxEx",
