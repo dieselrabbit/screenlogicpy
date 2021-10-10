@@ -10,7 +10,7 @@ The `screenlogicpy` package can be installed from PyPI using `pip`.
 
 # Library usage
 
-***New for v0.5.0:** The screenlogicpy library has moved over to using asyncio for all network I/O. Relevent methods now require the **async/await** syntax.*
+***New for v0.5.0:** The screenlogicpy library has moved over to using asyncio for all network I/O. Relevant methods now require the **async/await** syntax.*
 
 The `ScreenLogicGateway` class is the primary interface.
 
@@ -39,7 +39,7 @@ This update consists of sending requests for:
 1. Current pool status
 2. Detailed information for *each* configured pump
 3. Detailed pool chemistry information
-4. Status ans settings for any configured salt chlorine generators
+4. Status and settings for any configured salt chlorine generators
 
 **Warning:** This method is not rate-limited. The calling application is responsible for maintaining reasonable intervals between updates.  
 *Changed in v0.5.0: This method is now an async coroutine and no longer disconnects from the protocol adapter after polling the data.*
@@ -236,7 +236,7 @@ Returns the current target heating temperature for the specified body of water.
 
     screenlogicpy get heat-state [body]
 
-Returns the current state of the heater for the specified boty of water. The current state will match the heat mode when heating is active, otherwise will be 0 (off).  
+Returns the current state of the heater for the specified body of water. The current state will match the heat mode when heating is active, otherwise will be 0 (off).  
 **Note:** `[body]` can be an `int` or `string` representing the [body of water](#body).
 
 #### get `current-temp, t`
@@ -292,7 +292,7 @@ Sets a color mode for *all* color-capable lights configured on the pool controll
     screenlogicpy set salt-generator [pool_pct] [spa_pct]
 
 Sets the chlorinator output levels for the pool and spa. Pentair treats spa output level as a percentage of the pool's output level.  
-**Note:** `[pool_pct]` can be an `int` between `1`-`100`, or `*` to keep the current value. `[spa_pct]` can be an `int` between `1`-`20`, or `*` to keep the current value.  
+**Note:** `[pool_pct]` can be an `int` between `0`-`100`, or `*` to keep the current value. `[spa_pct]` can be an `int` between `0`-`20`, or `*` to keep the current value.  
 *New in v0.5.0*
 
 # Reference
