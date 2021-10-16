@@ -23,9 +23,14 @@ async def async_gateway_connect(
     transport: asyncio.BaseTransport, protocol: ScreenLogicProtocol
 ) -> str:
     connectString = b"CONNECTSERVERHOST\r\n\r\n"  # as bytes, not string
-    # Connect ping
-    transport.write(connectString)
+    try:
+        # Connect ping
+        transport.write(connectString)
+    except Exception as ex:
+        raise ScreenLogicError("Error sending connect ping") from ex
+
     await asyncio.sleep(0.25)
+
     try:
         await asyncio.wait_for(
             (request := protocol.await_send_data(CODE.CHALLENGE_QUERY)),
