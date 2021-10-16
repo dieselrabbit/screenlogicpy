@@ -10,6 +10,9 @@ from screenlogicpy.const import (
     EQUIPMENT,
     HEAT_MODE,
     ON_OFF,
+    SL_GATEWAY_IP,
+    SL_GATEWAY_NAME,
+    SL_GATEWAY_PORT,
     ScreenLogicError,
     ScreenLogicWarning,
 )
@@ -345,9 +348,9 @@ async def cli(cli_args):
     args = option_parser.parse_args(cli_args)
 
     try:
-        host = {"ip": args.ip, "port": args.port}
+        host = {SL_GATEWAY_IP: args.ip, SL_GATEWAY_PORT: args.port}
         discovered = False
-        if not host["ip"]:
+        if not host[SL_GATEWAY_IP]:
             # Try to discover gateway
             hosts = await async_discover()
             # Host(s) found
@@ -360,13 +363,17 @@ async def cli(cli_args):
                         if args.verbose:
                             print(
                                 "'{}' at {}:{}".format(
-                                    host["name"], host["ip"], host["port"]
+                                    host[SL_GATEWAY_NAME],
+                                    host[SL_GATEWAY_IP],
+                                    host[SL_GATEWAY_PORT],
                                 )
                             )
                         else:
                             print(
                                 "{}:{} '{}'".format(
-                                    host["ip"], host["port"], host["name"]
+                                    host[SL_GATEWAY_IP],
+                                    host[SL_GATEWAY_PORT],
+                                    host[SL_GATEWAY_NAME],
                                 )
                             )
                     return 0
