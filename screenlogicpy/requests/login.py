@@ -20,7 +20,7 @@ def create_login_message():
 
 
 async def async_gateway_connect(
-    transport: asyncio.BaseTransport, protocol: ScreenLogicProtocol
+    transport: asyncio.Transport, protocol: ScreenLogicProtocol
 ) -> str:
     connectString = b"CONNECTSERVERHOST\r\n\r\n"  # as bytes, not string
     try:

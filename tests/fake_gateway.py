@@ -25,7 +25,7 @@ class CONNECTION_STAGE:
 
 
 class FakeScreenLogicTCPProtocol(asyncio.Protocol):
-    def connection_made(self, transport: asyncio.BaseTransport) -> None:
+    def connection_made(self, transport: asyncio.Transport) -> None:
         self.transport = transport
         self.connected = True
         self._connection_stage = CONNECTION_STAGE.NO_CONNECTION

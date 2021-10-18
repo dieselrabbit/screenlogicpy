@@ -99,7 +99,7 @@ class ScreenLogicGateway:
     def get_data(self) -> dict:
         return self.__data
 
-    async def async_set_circuit(self, circuitID, circuitState):
+    async def async_set_circuit(self, circuitID: int, circuitState: int):
         """Sets the circuit state for the specified circuit."""
         if not self._is_valid_circuit(circuitID):
             raise ValueError(f"Invalid circuitID: {circuitID}")
@@ -113,7 +113,7 @@ class ScreenLogicGateway:
                 return True
         return False
 
-    async def async_set_heat_temp(self, body, temp):
+    async def async_set_heat_temp(self, body: int, temp: int):
         """Sets the target temperature for the specified body."""
         if not self._is_valid_body(body):
             raise ValueError(f"Invalid body: {body}")
@@ -125,7 +125,7 @@ class ScreenLogicGateway:
                 return True
         return False
 
-    async def async_set_heat_mode(self, body, mode):
+    async def async_set_heat_mode(self, body: int, mode: int):
         """Sets the heating mode for the specified body."""
         if not self._is_valid_body(body):
             raise ValueError(f"Invalid body: {body}")
@@ -137,7 +137,7 @@ class ScreenLogicGateway:
                 return True
         return False
 
-    async def async_set_color_lights(self, light_command):
+    async def async_set_color_lights(self, light_command: int):
         """Sets the light show mode for all capable lights."""
         if not self._is_valid_color_mode(light_command):
             raise ValueError(f"Invalid light_command: {light_command}")
@@ -147,7 +147,7 @@ class ScreenLogicGateway:
                 return True
         return False
 
-    async def async_set_scg_config(self, pool_output, spa_output):
+    async def async_set_scg_config(self, pool_output: int, spa_output: int):
         """Sets the salt-chlorine-generator output for both pool and spa."""
         if not self._is_valid_scg_value(pool_output, BODY_TYPE.POOL):
             raise ValueError(f"Invalid pool_output: {pool_output}")

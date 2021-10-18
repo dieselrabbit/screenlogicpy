@@ -14,7 +14,7 @@ class ScreenLogicProtocol(asyncio.Protocol):
         self._futures = self.FutureManager(loop)
         self._callbacks = {}
 
-    def connection_made(self, transport) -> None:
+    def connection_made(self, transport: asyncio.Transport) -> None:
         # print("Connected to server.")
         self.connected = True
         self.transport = transport
