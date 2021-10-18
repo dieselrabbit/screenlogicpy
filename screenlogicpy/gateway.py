@@ -1,3 +1,5 @@
+import asyncio
+
 from .const import BODY_TYPE, DATA, SCG, ScreenLogicWarning
 from .requests import (
     async_connect_to_gateway,
@@ -13,6 +15,7 @@ from .requests import (
     async_request_scg_config,
     async_request_set_scg_config,
 )
+from .requests.protocol import ScreenLogicProtocol
 
 
 class ScreenLogicGateway:
@@ -27,6 +30,8 @@ class ScreenLogicGateway:
         self.__mac = ""
         self.__version = ""
         self.__connected = False
+        self.__transport: asyncio.Transport = None
+        self.__protocol: ScreenLogicProtocol = None
         self.__data = {}
 
     @property
@@ -51,15 +56,15 @@ class ScreenLogicGateway:
 
     @property
     def is_connected(self) -> bool:
-        return self.__connected
+        return self.__protocol.connected if self.__protocol else False
 
     async def async_connect(self) -> bool:
         """Connects to the ScreenLogic protocol adapter"""
-        if self.__connected:
+        if self.is_connected:
             return True
 
         connectPkg = await async_connect_to_gateway(
-            self.__ip, self.__port, self._set_disconnected, self.__data
+            self.__ip, self.__port, None, self.__data
         )
         if connectPkg:
             self.__transport, self.__protocol, self.__mac = connectPkg
@@ -78,9 +83,7 @@ class ScreenLogicGateway:
 
     async def async_update(self) -> bool:
         """Updates all ScreenLogic data if already connected. Tries to connect if not."""
-        if (
-            not self.is_connected and not await self.async_connect()
-        ) or not self.__data:
+        if (not await self.async_connect()) or not self.__data:
             return False
 
         try:
@@ -90,19 +93,20 @@ class ScreenLogicGateway:
             await self._async_get_scg()
             return True
         except ScreenLogicWarning as warn:
-            self.__connected = False
+            await self.async_disconnect()
             raise warn
 
     def get_data(self) -> dict:
         return self.__data
 
     async def async_set_circuit(self, circuitID, circuitState):
+        """Sets the circuit state for the specified circuit."""
         if not self._is_valid_circuit(circuitID):
             raise ValueError(f"Invalid circuitID: {circuitID}")
         if not self._is_valid_circuit_state(circuitState):
             raise ValueError(f"Invalid circuitState: {circuitState}")
 
-        if self.__connected or await self.async_connect():
+        if await self.async_connect():
             if await async_request_pool_button_press(
                 self.__protocol, circuitID, circuitState
             ):
@@ -110,43 +114,47 @@ class ScreenLogicGateway:
         return False
 
     async def async_set_heat_temp(self, body, temp):
+        """Sets the target temperature for the specified body."""
         if not self._is_valid_body(body):
             raise ValueError(f"Invalid body: {body}")
         if not self._is_valid_heattemp(body, temp):
             raise ValueError(f"Invalid temp ({temp}) for body ({body})")
 
-        if self.__connected or await self.async_connect():
+        if await self.async_connect():
             if await async_request_set_heat_setpoint(self.__protocol, body, temp):
                 return True
         return False
 
     async def async_set_heat_mode(self, body, mode):
+        """Sets the heating mode for the specified body."""
         if not self._is_valid_body(body):
             raise ValueError(f"Invalid body: {body}")
         if not self._is_valid_heatmode(mode):
             raise ValueError(f"Invalid mode: {mode}")
 
-        if self.__connected or await self.async_connect():
+        if await self.async_connect():
             if await async_request_set_heat_mode(self.__protocol, body, mode):
                 return True
         return False
 
     async def async_set_color_lights(self, light_command):
+        """Sets the light show mode for all capable lights."""
         if not self._is_valid_color_mode(light_command):
             raise ValueError(f"Invalid light_command: {light_command}")
 
-        if self.__connected or await self.async_connect():
+        if await self.async_connect():
             if await async_request_pool_lights_command(self.__protocol, light_command):
                 return True
         return False
 
     async def async_set_scg_config(self, pool_output, spa_output):
+        """Sets the salt-chlorine-generator output for both pool and spa."""
         if not self._is_valid_scg_value(pool_output, BODY_TYPE.POOL):
             raise ValueError(f"Invalid pool_output: {pool_output}")
         if not self._is_valid_scg_value(spa_output, BODY_TYPE.SPA):
             raise ValueError(f"Invalid spa_output: {spa_output}")
 
-        if self.__connected or await self.async_connect():
+        if await self.async_connect():
             if await async_request_set_scg_config(
                 self.__protocol, pool_output, spa_output
             ):
@@ -157,21 +165,21 @@ class ScreenLogicGateway:
         self.__connected = False
 
     async def _async_get_config(self):
-        if not self.__connected:
+        if not self.is_connected:
             raise ScreenLogicWarning(
                 "Not connected to protocol adapter. get_config failed."
             )
         await async_request_pool_config(self.__protocol, self.__data)
 
     async def _async_get_status(self):
-        if not self.__connected:
+        if not self.is_connected:
             raise ScreenLogicWarning(
                 "Not connected to protocol adapter. get_status failed."
             )
         await async_request_pool_status(self.__protocol, self.__data)
 
     async def _async_get_pumps(self):
-        if not self.__connected:
+        if not self.is_connected:
             raise ScreenLogicWarning(
                 "Not connected to protocol adapter. get_pumps failed."
             )
@@ -180,14 +188,14 @@ class ScreenLogicGateway:
                 await async_request_pump_status(self.__protocol, self.__data, pumpID)
 
     async def _async_get_chemistry(self):
-        if not self.__connected:
+        if not self.is_connected:
             raise ScreenLogicWarning(
                 "Not connected to protocol adapter. get_chemistry failed."
             )
         await async_request_chemistry(self.__protocol, self.__data)
 
     async def _async_get_scg(self):
-        if not self.__connected:
+        if not self.is_connected:
             raise ScreenLogicWarning(
                 "Not connected to protocol adapter. get_scg failed."
             )
