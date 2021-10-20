@@ -19,6 +19,29 @@ def create_login_message():
     return struct.pack(fmt, schema, connectionType, clientVersion, passwd, pid)
 
 
+async def async_create_connection(
+    gateway_ip, gateway_port, data={}, connection_lost_callback: Callable = None
+):
+    try:
+        loop = asyncio.get_running_loop()
+
+        # on_con_lost = loop.create_future()
+
+        transport, protocol = await asyncio.wait_for(
+            loop.create_connection(
+                lambda: ScreenLogicProtocol(loop, data, connection_lost_callback),
+                gateway_ip,
+                gateway_port,
+            ),
+            MESSAGE.COM_TIMEOUT,
+        )
+        return transport, protocol
+    except asyncio.TimeoutError:
+        raise ScreenLogicError(
+            f"Failed to connect to host at {gateway_ip}:{gateway_port}"
+        )
+
+
 async def async_gateway_connect(
     transport: asyncio.Transport, protocol: ScreenLogicProtocol
 ) -> str:
@@ -59,25 +82,11 @@ async def async_gateway_login(protocol: ScreenLogicProtocol) -> bool:
 
 
 async def async_connect_to_gateway(
-    gateway_ip, gateway_port, connection_lost_callback: Callable, data
+    gateway_ip, gateway_port, data, connection_lost_callback: Callable
 ):
-    try:
-        loop = asyncio.get_running_loop()
-
-        # on_con_lost = loop.create_future()
-
-        transport, protocol = await asyncio.wait_for(
-            loop.create_connection(
-                lambda: ScreenLogicProtocol(loop, data, connection_lost_callback),
-                gateway_ip,
-                gateway_port,
-            ),
-            MESSAGE.COM_TIMEOUT,
-        )
-        mac_address = await async_gateway_connect(transport, protocol)
-        if await async_gateway_login(protocol):
-            return transport, protocol, mac_address
-    except asyncio.TimeoutError:
-        raise ScreenLogicError(
-            f"Failed to connect to host at {gateway_ip}:{gateway_port}"
-        )
+    transport, protocol = await async_create_connection(
+        gateway_ip, gateway_port, data, connection_lost_callback
+    )
+    mac_address = await async_gateway_connect(transport, protocol)
+    if await async_gateway_login(protocol):
+        return transport, protocol, mac_address

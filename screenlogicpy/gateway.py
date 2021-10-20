@@ -64,7 +64,7 @@ class ScreenLogicGateway:
             return True
 
         connectPkg = await async_connect_to_gateway(
-            self.__ip, self.__port, None, self.__data
+            self.__ip, self.__port, self.__data, None
         )
         if connectPkg:
             self.__transport, self.__protocol, self.__mac = connectPkg
