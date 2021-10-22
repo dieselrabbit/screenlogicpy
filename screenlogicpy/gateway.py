@@ -78,7 +78,7 @@ class ScreenLogicGateway:
 
     async def async_update(self) -> bool:
         """Updates all ScreenLogic data if already connected. Tries to connect if not."""
-        if (not await self.async_connect()) or not self.__data:
+        if not await self.async_connect() or not self.__data:
             return False
 
         try:
@@ -92,6 +92,7 @@ class ScreenLogicGateway:
             raise warn
 
     def get_data(self) -> dict:
+        """Returns the data."""
         return self.__data
 
     async def async_set_circuit(self, circuitID: int, circuitState: int):
