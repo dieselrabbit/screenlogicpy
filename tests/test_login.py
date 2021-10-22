@@ -19,7 +19,7 @@ async def test_async_gateway_login(event_loop):
     async with server:
         await server.start_serving()
         _, _, mac_address = await async_connect_to_gateway(
-            FAKE_GATEWAY_ADDRESS, FAKE_GATEWAY_PORT, None, {}
+            FAKE_GATEWAY_ADDRESS, FAKE_GATEWAY_PORT
         )
         server.close()
 

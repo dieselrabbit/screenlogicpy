@@ -20,7 +20,7 @@ def create_login_message():
 
 
 async def async_create_connection(
-    gateway_ip, gateway_port, data={}, connection_lost_callback: Callable = None
+    gateway_ip, gateway_port, connection_lost_callback: Callable = None
 ):
     try:
         loop = asyncio.get_running_loop()
@@ -29,7 +29,7 @@ async def async_create_connection(
 
         transport, protocol = await asyncio.wait_for(
             loop.create_connection(
-                lambda: ScreenLogicProtocol(loop, data, connection_lost_callback),
+                lambda: ScreenLogicProtocol(loop, connection_lost_callback),
                 gateway_ip,
                 gateway_port,
             ),
@@ -82,10 +82,10 @@ async def async_gateway_login(protocol: ScreenLogicProtocol) -> bool:
 
 
 async def async_connect_to_gateway(
-    gateway_ip, gateway_port, data, connection_lost_callback: Callable
+    gateway_ip, gateway_port, connection_lost_callback: Callable = None
 ):
     transport, protocol = await async_create_connection(
-        gateway_ip, gateway_port, data, connection_lost_callback
+        gateway_ip, gateway_port, connection_lost_callback
     )
     mac_address = await async_gateway_connect(transport, protocol)
     if await async_gateway_login(protocol):

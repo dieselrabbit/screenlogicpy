@@ -5,12 +5,9 @@ from .utility import makeMessage, takeMessage
 
 
 class ScreenLogicProtocol(asyncio.Protocol):
-    def __init__(
-        self, loop, data={}, connection_lost_callback: Callable = None
-    ) -> None:
+    def __init__(self, loop, connection_lost_callback: Callable = None) -> None:
         self.connected = False
         self._connection_lost_callback = connection_lost_callback
-        self._data = data
         self._futures = self.FutureManager(loop)
         self._callbacks = {}
 
@@ -35,8 +32,9 @@ class ScreenLogicProtocol(asyncio.Protocol):
 
             def process_async_message(senderID, messageCode, message):
                 print(f"Received async message: {senderID}, {messageCode}, {message}")
-                if (callback := self._callbacks.get(messageCode)) is not None:
-                    callback(messageCode, senderID, message, self._data)
+                if messageCode in self._callbacks:
+                    callback, target_data = self._callbacks[messageCode]
+                    callback(messageCode, senderID, message, target_data)
 
             process_async_message(senderID, messageCode, message)
 
@@ -48,9 +46,12 @@ class ScreenLogicProtocol(asyncio.Protocol):
         # self.on_connection_lost.set_result(True)
 
     def register_async_message_callback(
-        self, messageCode, callback: Callable[[int, int, bytes, dict], None]
+        self,
+        messageCode,
+        callback: Callable[[int, int, bytes, dict], None],
+        target_data=None,
     ):
-        self._callbacks[messageCode] = callback
+        self._callbacks[messageCode] = (callback, target_data)
 
     class FutureManager:
         def __init__(self, loop: asyncio.AbstractEventLoop) -> None:

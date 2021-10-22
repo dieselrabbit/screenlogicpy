@@ -29,7 +29,6 @@ class ScreenLogicGateway:
         self.__name = name
         self.__mac = ""
         self.__version = ""
-        self.__connected = False
         self.__transport: asyncio.Transport = None
         self.__protocol: ScreenLogicProtocol = None
         self.__data = {}
@@ -63,21 +62,17 @@ class ScreenLogicGateway:
         if self.is_connected:
             return True
 
-        connectPkg = await async_connect_to_gateway(
-            self.__ip, self.__port, self.__data, None
-        )
+        connectPkg = await async_connect_to_gateway(self.__ip, self.__port)
         if connectPkg:
             self.__transport, self.__protocol, self.__mac = connectPkg
             self.__version = await async_request_gateway_version(self.__protocol)
             if self.__version:
-                self.__connected = True
                 await self._async_get_config()
                 return True
         return False
 
     async def async_disconnect(self):
         """Disconnects from the ScreenLogic protocol adapter"""
-        self.__connected = False
         if self.__transport and not self.__transport.is_closing():
             self.__transport.close()
 
@@ -160,9 +155,6 @@ class ScreenLogicGateway:
             ):
                 return True
         return False
-
-    def _set_disconnected(self):
-        self.__connected = False
 
     async def _async_get_config(self):
         if not self.is_connected:
