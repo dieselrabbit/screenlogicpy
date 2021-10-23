@@ -19,6 +19,8 @@ from .requests.protocol import ScreenLogicProtocol
 
 
 class ScreenLogicGateway:
+    """Class for interacting and communicating with a ScreenLogic protocol adapter."""
+
     def __init__(
         self, ip, port=80, gtype=0, gsubtype=0, name="Unnamed-Screenlogic-Gateway"
     ):

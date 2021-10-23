@@ -8,6 +8,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class ScreenLogicProtocol(asyncio.Protocol):
+    """asyncio.Protocol for handling the connection to a ScreenLogic protocol adapter."""
+
     def __init__(self, loop, connection_lost_callback: Callable = None) -> None:
         self.connected = False
         self._connection_lost_callback = connection_lost_callback
@@ -20,10 +22,15 @@ class ScreenLogicProtocol(asyncio.Protocol):
         self.transport = transport
 
     def send_data(self, messageCode, data=b"", senderID=0):
+        """Sends the message via the transport."""
         _LOGGER.debug("Sending: %i, %i, %s", senderID, messageCode, data)
         self.transport.write(makeMessage(messageCode, data, senderID))
 
     def await_send_data(self, messageCode, data=b"", senderID=0) -> asyncio.Future:
+        """
+        Sends the message and returns an awaitable asyncio.Future object that will contain the
+        result of the ScreenLogic protocol adapter's response.
+        """
         self.send_data(messageCode, data, senderID)
         return self._futures.create(messageCode + 1, senderID)
 
@@ -34,6 +41,8 @@ class ScreenLogicProtocol(asyncio.Protocol):
             _LOGGER.debug(
                 "Received async message: %i, %i, %s", senderID, messageCode, message
             )
+            # Unsolicited message received. See if there's a callback registered
+            # for the message code and call it.
             if messageCode in self._callbacks:
                 callback, target_data = self._callbacks[messageCode]
                 callback(messageCode, senderID, message, target_data)
@@ -50,6 +59,7 @@ class ScreenLogicProtocol(asyncio.Protocol):
         callback: Callable[[int, int, bytes, dict], None],
         target_data=None,
     ):
+        """Registers a callback function to call for the specified unhandled message code."""
         self._callbacks[messageCode] = (callback, target_data)
 
     class FutureManager:
