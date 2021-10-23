@@ -1,4 +1,5 @@
 # screenlogicpy
+![PyPI](https://img.shields.io/pypi/v/screenlogicpy) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/screenlogicpy)
 
 `screenlogicpy` is an interface for Pentair ScreenLogic connected pool controllers over IP via python using asyncio.
 
@@ -6,7 +7,7 @@
 
 The `screenlogicpy` package can be installed from PyPI using `pip`.
 
-    pip install screenlogicpy
+    $ pip install screenlogicpy
 
 # Library usage
 
@@ -130,7 +131,7 @@ Screenlogicpy can also be used via the command line. The primary design is for t
 
 ## Basic usage
 
-    screenlogicpy
+    $ screenlogicpy
 
 Without any arguments, screenlogicpy will attempt to discover a gateway on the LAN, and display a human readable "dashboard" of the current state of their pool.
 
