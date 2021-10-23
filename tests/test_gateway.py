@@ -2,7 +2,8 @@ import asyncio
 import pytest
 import struct
 from unittest.mock import patch
-from deepdiff import DeepDiff
+
+# from deepdiff import DeepDiff
 
 
 from .const_data import (
@@ -27,8 +28,8 @@ async def test_gateway(event_loop: asyncio.AbstractEventLoop, MockConnectedGatew
     await gateway.async_disconnect()
     assert data
 
-    diff = DeepDiff(data, EXPECTED_COMPLETE_DATA)
-    print(diff)
+    # diff = DeepDiff(data, EXPECTED_COMPLETE_DATA)
+    # print(diff)
     assert data == EXPECTED_COMPLETE_DATA
 
 
