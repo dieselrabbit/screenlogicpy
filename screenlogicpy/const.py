@@ -17,13 +17,14 @@ class ScreenLogicWarning(Exception):
     pass
 
 
-class header:
-    fmt = "<HHI"
-    length = struct.calcsize(fmt)
+class MESSAGE:
+    COM_TIMEOUT = 5
+    HEADER_FORMAT = "<HHI"
+    HEADER_LENGTH = struct.calcsize(HEADER_FORMAT)
 
 
 # Some of the message codes
-class code:
+class CODE:
     MSG_CODE_1 = 0
     UNKNOWN_ANSWER = 13
     CHALLENGE_QUERY = 14
@@ -58,6 +59,8 @@ class code:
     CHEMISTRY_ANSWER = CHEMISTRY_QUERY + 1
     SCGCONFIG_QUERY = 12572
     SCGCONFIG_ANSWER = SCGCONFIG_QUERY + 1
+    SETSCG_QUERY = 12576
+    SETSCG_ANSWER = SETSCG_QUERY + 1
 
 
 class DATA:
@@ -71,28 +74,6 @@ class DATA:
     KEY_PUMPS = "pumps"
     KEY_SCG = "scg"
     KEY_SENSORS = "sensors"
-
-
-# class mapping:
-#    BODY_TYPE  = ['Pool', 'Spa']
-
-#    HEAT_MODE  = ['Off', 'Solar',
-#                  "Solar Preferred",
-#                  'Heat', "Don't Change"]
-
-#    ON_OFF     = ['Off', 'On']
-
-#    COLOR_MODE = ['Off', 'On',
-#                  'Set', 'Sync',
-#                  'Swim', 'Party',
-#                  'Romantic', 'Caribbean',
-#                  'American', 'Sunset',
-#                  'Royal', 'Save',
-#                  'Recall', 'Blue',
-#                  'Green', 'Red',
-#                  'White', 'Magenta',
-#                  'Thumper', 'Next',
-#                  'Reset', 'Hold']
 
 
 class BODY_TYPE:
@@ -205,7 +186,7 @@ class EQUIPMENT:
         2: {0: "IntelliTouch i9+3"},
         3: {0: "IntelliTouch i5+3S"},
         4: {0: "IntelliTouch i9+3S"},
-        5: {0: "IntelliTouch i10+3D"},
+        5: {0: "IntelliTouch i10+3D", 1: "IntelliTouch i10X"},
         11: {0: "Suntouch/Intellicom"},
         13: {
             0: "EasyTouch2 8",
@@ -225,9 +206,9 @@ class EQUIPMENT:
 
     PUMP_TYPE = {
         0: "None",
-        1: "Intelliflow VF",
-        2: "Intelliflow VS",
-        3: "Intelliflow VSF",
+        1: "Intelliflo VF",
+        2: "Intelliflo VS",
+        3: "Intelliflo VSF",
     }
 
     FLAG_SOLAR = 0x1
@@ -245,9 +226,16 @@ class CIRCUIT_FUNCTION:
     POOL = 2
     MASTER_CLEANER = 5
     LIGHT = 7
-    MAGICSTREAM = 8  # ?
+    DIMMER = 8
+    SAM_LIGHT = 9
+    SAL_LIGHT = 10
+    PHOTONGEN = 11
+    COLOR_WHEEL = 12
+    VALVE = 13
     SPILLWAY = 14
+    FLOOR_CLEANER = 15
     INTELLIBRITE = 16
+    MAGICSTREAM = 17
 
 
 class INTERFACE_GROUP:
@@ -286,6 +274,10 @@ class CHEM_DOSING_STATE:
 
     NAME_FOR_NUM = {DOSING: "Dosing", MIXING: "Mixing", MONITORING: "Monitoring"}
     NUM_FOR_NAME = {name: num for num, name in NAME_FOR_NUM.items()}
+
+
+class SCG:
+    LIMIT_FOR_BODY = {BODY_TYPE.POOL: 100, BODY_TYPE.SPA: 20}
 
 
 GENERIC_CIRCUIT_NAMES = [

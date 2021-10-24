@@ -1,14 +1,26 @@
 # import json
+import asyncio
 import struct
-from .utility import sendReceiveMessage, getSome
-from ..const import code, DATA
+
+from ..const import CODE, DATA, MESSAGE, ScreenLogicWarning
+from .protocol import ScreenLogicProtocol
+from .utility import getSome
 
 
-def request_scg_config(gateway_socket, data):
-    response = sendReceiveMessage(
-        gateway_socket, code.SCGCONFIG_QUERY, struct.pack("<I", 0)
-    )
-    decode_scg_config(response, data)
+async def async_request_scg_config(protocol: ScreenLogicProtocol, data):
+    try:
+        await asyncio.wait_for(
+            (
+                request := protocol.await_send_data(
+                    CODE.SCGCONFIG_QUERY, struct.pack("<I", 0)
+                )
+            ),
+            MESSAGE.COM_TIMEOUT,
+        )
+        if not request.cancelled():
+            decode_scg_config(request.result(), data)
+    except asyncio.TimeoutError:
+        raise ScreenLogicWarning("Timeout polling scg config")
 
 
 def decode_scg_config(buff, data):
@@ -44,3 +56,21 @@ def decode_scg_config(buff, data):
     }
 
     # print(json.dumps(data, indent=2))
+
+
+async def async_request_set_scg_config(
+    protocol: ScreenLogicProtocol, pool_output, spa_output
+):
+    try:
+        await asyncio.wait_for(
+            (
+                request := protocol.await_send_data(
+                    CODE.SETSCG_QUERY,
+                    struct.pack("<IIIII", 0, pool_output, spa_output, 0, 0),
+                )
+            ),
+            MESSAGE.COM_TIMEOUT,
+        )
+        return not request.cancelled() and request.result() == b""
+    except asyncio.TimeoutError:
+        raise ScreenLogicWarning("Timeout requesting scg config change")

@@ -6,6 +6,8 @@
     "python.testing.nosetestsEnabled": false,
     "python.testing.pytestEnabled": true,
     "cSpell.ignoreWords": [
+        "SCGCONFIG",
+        "asyncio",
         "struct"
     ],
     "cSpell.words": [

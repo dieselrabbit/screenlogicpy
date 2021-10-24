@@ -1,58 +1,83 @@
 # screenlogicpy
+![PyPI](https://img.shields.io/pypi/v/screenlogicpy) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/screenlogicpy)
 
-`screenlogicpy` is an interface for Pentair ScreenLogic connected pool controllers over IP via python.
+`screenlogicpy` is an interface for Pentair ScreenLogic connected pool controllers over IP via python using asyncio.
 
 # Installation
 
 The `screenlogicpy` package can be installed from PyPI using `pip`.
 
-    pip install screenlogicpy
+    $ pip install screenlogicpy
 
 # Library usage
+
+***New for v0.5.0:** The screenlogicpy library has moved over to using asyncio for all network I/O. Relevant methods now require the **async/await** syntax.*
 
 The `ScreenLogicGateway` class is the primary interface.
 
     from screenlogicpy import ScreenLogicGateway
+
     gateway = ScreenLogicGateway("192.168.x.x")
+*Changed in v0.5.0: Instanciating the gateway no longer automatically connects to the protocol adapter or performs an initial update.*
 
-## Gateway Discovery
+## Connecting to a ScreenLogic Protocol Adapter
 
-The `discovery` module's `discover()` function can be used to get a list of all discovered ScreenLogic gateways on the local network. Each gateway is represented as a `dict` object that can then be directly used to instanciate a `ScreenLogicGateway` class.
+Once instanciated, use `async_connect()` to connect and logon to the ScreenLogic protocol adapter.
 
-    from screenlogicpy import ScreenLogicGateway, discovery
+    success = await gateway.async_connect()
 
-    hosts = discovery.discover()
-    if len(hosts) > 0:
-        gateway = ScreenLogicGateway(**hosts[0])
-        data = gateway.get_data()
-    else:
-        print("No gateways found")
+This method also performs the initial polling of the pool controller configuration.  
+*New in v0.5.0*
 
-## Querying data
+## Polling the data
 
-The `ScreenLogicGateway` class updates all data at once from the ScreenLogic gateway. That data is cached as a `dict` object for continued reference by the consuming application. The consuming application may get this data at anytime with the `get_data()` method.
+Once connected, all available data can be polled with the `async_update()` coroutine.
+
+    await gateway.async_update()
+
+This update consists of sending requests for:
+
+1. Current pool status
+2. Detailed information for *each* configured pump
+3. Detailed pool chemistry information
+4. Status and settings for any configured salt chlorine generators
+
+**Warning:** This method is not rate-limited. The calling application is responsible for maintaining reasonable intervals between updates.  
+*Changed in v0.5.0: This method is now an async coroutine and no longer disconnects from the protocol adapter after polling the data.*
+
+## Using the data
+
+The `ScreenLogicGateway` class updates all data at once from the ScreenLogic protocol adapter. That data is cached as a `dict` object for continued reference by the consuming application. The consuming application may get this data at anytime with the `get_data()` method.
 
     data = gateway.get_data()
 
-## Updating the data
+## Disconnecting
 
-When instanciated, the `ScreenLogicGateway` class object will perform an initial update of all available data to populate it's internal cache. A consuming application may request further updates of the internal data with the `update()` method.
+When done, use `async_disconnect()` to close the connection to the protocol adapter.
 
-    gateway.update()
+    await gateway.async_disconnect()  
+*New in v0.5.0*
 
-After `update()`, The consuming application may then query the new data with `get_data()`.
+## Gateway Discovery
 
-**Note:** This update consists of:
+The `discovery` module's `async_discover()` function can be used to get a list of all discovered ScreenLogic protocol adapters on the local network. Each protocol adapter is represented as a `dict` object that can then be directly used to instanciate a `ScreenLogicGateway` class.
 
-1. Connecting and logging-on to the specified ScreenLogic gateway.
-2. Sending requests for
-    1. Pool controller configuration
-    2. Current pool status
-    3. Detailed information for *each* configured pump
-    4. Detailed pool chemistry information
-3. Closing the connection to the gateway.
+    hosts = await discovery.async_discover()
+*Changed in v0.5.0: This method is now an async coroutine.*
 
-**Warning:** This method is not rate-limited. The calling application is responsible for maintaining reasonable intervals between updates.
+## Example
+
+    from screenlogicpy import ScreenLogicGateway, discovery
+
+    hosts = await discovery.async_discover()
+    if len(hosts) > 0:
+        gateway = ScreenLogicGateway(**hosts[0])
+        if await gateway.async_connect():
+            await gateway.async_update()
+            await gateway.async_disconnect()
+            data = gateway.get_data()
+    else:
+        print("No gateways found")
 
 ## Performing actions
 
@@ -68,35 +93,45 @@ Each method will `return True` if the operation reported no exceptions.
 
 ## Turning a circuit ON or OFF
 
-A circuit can be requested to be turned on or off with the `set_circuit()` method. `set_circuit` takes two required arguments, `circuitID` which is the id number of the circuit as an `int`, and `circuitState` which represents the desired new state of the circuit, as an `int`. See [Circuit State](#circuit-state) below.
+A circuit can be requested to be turned on or off with the `async_set_circuit()` method. `async_set_circuit` takes two required arguments, `circuitID` which is the id number of the circuit as an `int`, and `circuitState` which represents the desired new state of the circuit, as an `int`. See [Circuit State](#circuit-state) below.
 
-    success = gateway.set_circuit(circuitID, circuitState)
+    success = await gateway.async_set_circuit(circuitID, circuitState)
+*Changed in v0.5.0: This method is now an async coroutine.*
 
 ## Setting a heating mode
 
-The desired heating mode can be set per body of water (pool or spa) with `set_heat_mode()`. `set_heat_mode` takes two required arguments, `body` as an `int` representing the [body of water](#body), and `mode` as an `int` of the desired [heating mode](#heat-modes).
+The desired heating mode can be set per body of water (pool or spa) with `async_set_heat_mode()`. `async_set_heat_mode` takes two required arguments, `body` as an `int` representing the [body of water](#body), and `mode` as an `int` of the desired [heating mode](#heat-modes).
 
-    success = gateway.set_heat_mode(body, mode)
+    success = await gateway.async_set_heat_mode(body, mode)
+*Changed in v0.5.0: This method is now an async coroutine.*
 
 ## Setting a target temperature
 
-The target heating temperature can be set per body of water (pool or spa) with `set_heat_temp()`. `set_heat_temp` takes two required arguments, `body` as an `int` representing the [body of water](#body), and `temp` as an `int` of the desired target temperature.
+The target heating temperature can be set per body of water (pool or spa) with `async_set_heat_temp()`. `async_set_heat_temp` takes two required arguments, `body` as an `int` representing the [body of water](#body), and `temp` as an `int` of the desired target temperature.
 
-    success = gateway.set_heat_temp(body, temp)
+    success = await gateway.async_set_heat_temp(body, temp)
+*Changed in v0.5.0: This method is now an async coroutine.*
 
 ## Setting light colors or shows
 
-Colors or color-shows can be set for compatible color-enable lighting with `set_color_lights()`. `set_color_lights` takes one required argument, `light_command` as an `int` representing the desired [command/show/color](#color-modes)
+Colors or color-shows can be set for compatible color-enable lighting with `async_set_color_lights()`. `async_set_color_lights` takes one required argument, `light_command` as an `int` representing the desired [command/show/color](#color-modes)
 
-    success = gateway.set_color_lights(light_command)
+    success = await gateway.async_set_color_lights(light_command)
+*Changed in v0.5.0: This method is now an async coroutine.*
+
+## Setting chlorinator output levels
+Chlorinator output levels can be set with `async_set_scg_config()`.  `async_set_scg_config` takes two `int` arguments, `pool_output` and `spa_output`.
+    
+    success = await gateway.async_set_scg_config(pool_output, spa_output)  
+*New in v0.5.0*
 
 # Command line
 
-Screenlogicpy can also be used via the command line. The primary design is for the command line output to be consume/parsed by other applications and thus by default is not very human-readable. For more human-friendly output, specify the `-v` option.
+Screenlogicpy can also be used via the command line. The primary design is for the command line output to be consumed/parsed by other applications and thus by default is not very human-readable. For more human-friendly output, specify the `-v, --verbose` option.
 
 ## Basic usage
 
-    screenlogicpy
+    $ screenlogicpy
 
 Without any arguments, screenlogicpy will attempt to discover a gateway on the LAN, and display a human readable "dashboard" of the current state of their pool.
 
@@ -155,13 +190,14 @@ Tells screenlogicpy to be a little more verbose in it's output. Friendlier for h
 
     screenlogicpy -i xxx.xxx.xxx.xxx
 
-Specify the IP address of the ScreenLogic gateway to connect to. **Note:** If the IP address is not specified, screenlogicpy will attempt to discover ScreenLogic gateways on the local network, and connect to the first one that responds. This is generally fine if you only have one ScreenLogic gateway.
+Specify the IP address of the ScreenLogic protocol adapter to connect to.  
+**Note:** If the IP address is not specified, screenlogicpy will attempt to discover ScreenLogic protocol adapters on the local network, and connect to the first one that responds. This is generally fine if you only have one ScreenLogic protocol adapter.
 
 ### `-p, --port`
 
     screenlogicpy -i xxx.xxx.xxx.xxx -p xx
 
-Specify the port of the ScreenLogic gateway to connect to. Needs to be used in conjunction with `-i, --ip` option.
+Specify the port of the ScreenLogic protocol adapter to connect to. Needs to be used in conjunction with `-i, --ip` option.
 
 ## Positional arguments
 
@@ -169,7 +205,7 @@ Specify the port of the ScreenLogic gateway to connect to. Needs to be used in c
 
     screenlogicpy discover
 
-Attempts to discover ScreenLogic gateways on the local network via UDP broadcast. Returns `[ip address]:[port]` of each discovered ScreenLogic gateway, one per line.
+Attempts to discover ScreenLogic protocol adapters on the local network via UDP broadcast. Returns `[ip address]:[port]` of each discovered ScreenLogic protocol adapter, one per line.
 
 ### `get`
 
@@ -187,28 +223,28 @@ Returns 1 for on and 0 for off
 
     screenlogicpy get heat-mode [body]
 
-Returns the current heating mode for the specified body of water.
+Returns the current heating mode for the specified body of water.  
 **Note:** `[body]` can be an `int` or `string` representing the [body of water](#body).
 
 #### get `heat-temp, ht`
 
     screenlogicpy get heat-temp [body]
 
-Returns the current target heating temperature for the specified body of water.
+Returns the current target heating temperature for the specified body of water.  
 **Note:** `[body]` can be an `int` or `string` representing the [body of water](#body).
 
 #### get `heat-state, hs`
 
     screenlogicpy get heat-state [body]
 
-Returns the current state of the heater for the specified boty of water. The current state will match the heat mode when heating is active, otherwise will be 0 (off).
+Returns the current state of the heater for the specified body of water. The current state will match the heat mode when heating is active, otherwise will be 0 (off).  
 **Note:** `[body]` can be an `int` or `string` representing the [body of water](#body).
 
 #### get `current-temp, t`
 
     screenlogicpy get current-temp [body]
 
-Returns the current temperature for the specified body of water. This is actually the last-known temperature from when that body of water was active (Pool or Spa)
+Returns the current temperature for the specified body of water. This is actually the last-known temperature from when that body of water was active (Pool or Spa)  
 **Note:** `[body]` can be an `int` or `string` representing the [body of water](#body).
 
 #### get `json, j`
@@ -227,29 +263,38 @@ All `set` commands work like their corresponding `get` commands, but take an add
 
     screenlogicpy set circuit [circuit number] [circuit state]
 
-Sets the specified circuit to the specified circuit state. **Note:** `[circuit state]` can be an `int` or `string` representing the desired [circuit state](#circuit-state).
+Sets the specified circuit to the specified circuit state.  
+**Note:** `[circuit state]` can be an `int` or `string` representing the desired [circuit state](#circuit-state).
 
 #### set `heat-mode, hm`
 
     screenlogicpy set heat-mode [body] [heat mode]
 
-Sets the desired heating mode for the specified body of water.
+Sets the desired heating mode for the specified body of water.  
 **Note:** `[body]` can be an `int` or `string` representing the [body of water](#body). `[heat mode]` can be an `int` or `string` representing the desired [heat mode](#heat-modes)
 
 #### set `heat-temp, ht`
 
     screenlogicpy set heat-temp [body] [heat temp]
 
-Sets the desired target heating temperature for the specified body of water.
+Sets the desired target heating temperature for the specified body of water.  
 **Note:** `[body]` can be an `int` or `string` representing the [body of water](#body). `[heat temp]` is an `int` representing the desired target temperature.
-
-**v0.3.0+:**
 
 #### set `color-lights, cl`
 
     screenlogicpy set color-lights [color mode]
 
-Sets a color mode for *all* color-capable lights configured on the pool controller. **Note:** `[color mode]` can be either the `int` or `string` representation of a [color mode](#color-modes).
+Sets a color mode for *all* color-capable lights configured on the pool controller.  
+**Note:** `[color mode]` can be either the `int` or `string` representation of a [color mode](#color-modes).  
+*New in v0.3.0*
+
+#### set `salt-generator, scg`
+
+    screenlogicpy set salt-generator [pool_pct] [spa_pct]
+
+Sets the chlorinator output levels for the pool and spa. Pentair treats spa output level as a percentage of the pool's output level.  
+**Note:** `[pool_pct]` can be an `int` between `0`-`100`, or `*` to keep the current value. `[spa_pct]` can be an `int` between `0`-`20`, or `*` to keep the current value.  
+*New in v0.5.0*
 
 # Reference
 
@@ -290,7 +335,7 @@ Sets a color mode for *all* color-capable lights configured on the pool controll
 | `5`   | `party`      | Party        | Rapid color changing building the energy and excitement.                                                  |
 | `6`   | `romance`    | Romance      | Slow color transitions creating a mesmerizing and calming effect.                                         |
 | `7`   | `caribbean`  | Caribbean    | Transitions between a variety of blues and greens.                                                        |
-| `8`   | `american`   | American     | Patriotic red, white and blue transition.                                                                 |
+| `8`   | `american`   | American     | Patriotic red, white and blue transitions.                                                                |
 | `9`   | `sunset`     | Sunset       | Dramatic transitions of orange, red and magenta tones.                                                    |
 | `10`  | `royal`      | Royal        | Richer, deeper, color tones.                                                                              |
 | `11`  | `save`       | Save Color   | Save the exact colors that are being displayed.                                                           |
@@ -307,6 +352,6 @@ Sets a color mode for *all* color-capable lights configured on the pool controll
 
 ## Acknowledgements
 
-Based on https://github.com/keithpjolley/soipip
+Inspired by https://github.com/keithpjolley/soipip
 
 The protocol and codes are documented fairly well here: https://github.com/ceisenach/screenlogic_over_ip

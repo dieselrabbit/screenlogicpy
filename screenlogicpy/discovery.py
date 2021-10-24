@@ -36,28 +36,30 @@ def create_broadcast_socket():
 
 def process_discovery_response(data):
     """Process a discovery response."""
-    paddedfmt = (
-        DISCOVERY_RESPONSE_FORMAT + str(len(data) - DISCOVERY_RESPONSE_SIZE) + "s"
-    )
-    (
-        chk,
-        ip1,
-        ip2,
-        ip3,
-        ip4,
-        gateway_port,
-        gateway_type,
-        gateway_subtype,
-        gateway_name,
-    ) = struct.unpack(paddedfmt, data)
-
-    # not sure we need to exit if "chk" isn't what we wanted.
-    if chk != DISCOVERY_CHKSUM:
-        raise ScreenLogicError("ScreenLogic Discovery: Unexpected response checksum.")
-
-    # make sure we got a good IP address
-    received_ip = f"{str(ip1)}.{str(ip2)}.{str(ip3)}.{str(ip4)}"
     try:
+        paddedfmt = (
+            DISCOVERY_RESPONSE_FORMAT + str(len(data) - DISCOVERY_RESPONSE_SIZE) + "s"
+        )
+        (
+            chk,
+            ip1,
+            ip2,
+            ip3,
+            ip4,
+            gateway_port,
+            gateway_type,
+            gateway_subtype,
+            gateway_name,
+        ) = struct.unpack(paddedfmt, data)
+
+        # not sure we need to check if "chk" isn't what we wanted.
+        if chk != DISCOVERY_CHKSUM:
+            raise ScreenLogicError(
+                "ScreenLogic Discovery: Unexpected response checksum."
+            )
+
+        # make sure we got a good IP address
+        received_ip = f"{str(ip1)}.{str(ip2)}.{str(ip3)}.{str(ip4)}"
         gateway_ip = str(ipaddress.ip_address(received_ip))
     except ValueError as err:
         raise ScreenLogicError(
@@ -105,27 +107,6 @@ class ScreenLogicDiscoveryProtocol:
 
     def error_received(self, exc):
         """Error received."""
-
-
-def discover():
-    """Discover screenlogic gateways."""
-    udp_sock = create_broadcast_socket()
-    udp_sock.settimeout(DISCOVERY_TIMEOUT)
-    responses = []
-    try:
-        udp_sock.sendto(DISCOVERY_PAYLOAD, (DISCOVERY_ADDRESS, DISCOVERY_PORT))
-        while True:
-            response = udp_sock.recvfrom(4096)
-            if response:
-                responses.append(response)
-            else:
-                break
-    except socket.timeout:
-        pass
-    finally:
-        udp_sock.close()
-
-    return [process_discovery_response(response[0]) for response in responses]
 
 
 async def async_discover():

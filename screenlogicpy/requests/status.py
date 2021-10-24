@@ -1,14 +1,35 @@
 # import json
+import asyncio
 import struct
-from .utility import sendReceiveMessage, getSome
-from ..const import ADD_UNKNOWN_VALUES, code, BODY_TYPE, DATA, DEVICE_TYPE, UNIT
+
+from ..const import (
+    ADD_UNKNOWN_VALUES,
+    CODE,
+    BODY_TYPE,
+    DATA,
+    DEVICE_TYPE,
+    MESSAGE,
+    UNIT,
+    ScreenLogicWarning,
+)
+from .protocol import ScreenLogicProtocol
+from .utility import getSome
 
 
-def request_pool_status(gateway_socket, data):
-    response = sendReceiveMessage(
-        gateway_socket, code.POOLSTATUS_QUERY, struct.pack("<I", 0)
-    )
-    decode_pool_status(response, data)
+async def async_request_pool_status(protocol: ScreenLogicProtocol, data):
+    try:
+        await asyncio.wait_for(
+            (
+                request := protocol.await_send_data(
+                    CODE.POOLSTATUS_QUERY, struct.pack("<I", 0)
+                )
+            ),
+            MESSAGE.COM_TIMEOUT,
+        )
+        if not request.cancelled():
+            decode_pool_status(request.result(), data)
+    except asyncio.TimeoutError:
+        raise ScreenLogicWarning("Timeout polling pool status")
 
 
 # pylint: disable=unused-variable

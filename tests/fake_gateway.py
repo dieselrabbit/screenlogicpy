@@ -1,146 +1,91 @@
 """ Fake ScreenLogic gateway """
-import socket
+import asyncio
 import struct
+from typing import Tuple
 
-from screenlogicpy.const import code
+from screenlogicpy.const import CODE
 from screenlogicpy.requests.utility import takeMessage, makeMessage, encodeMessageString
 from tests.const_data import (
-    FAKE_CONFIG_RESPONSE,
-    FAKE_STATUS_RESPONSE,
-    FAKE_PUMP_RESPONSE,
-    FAKE_CHEMISTRY_RESPONSE,
-    FAKE_SCG_RESPONSE,
+    ASYNC_SL_RESPONSES,
+    FAKE_GATEWAY_ADDRESS,
+    FAKE_GATEWAY_CHK,
+    FAKE_GATEWAY_MAC,
+    FAKE_GATEWAY_NAME,
+    FAKE_GATEWAY_PORT,
+    FAKE_GATEWAY_SUB_TYPE,
+    FAKE_GATEWAY_TYPE,
 )
 
-FAKE_GATEWAY_ADDRESS = "127.0.0.1"
-FAKE_GATEWAY_CHK = 2
-FAKE_GATEWAY_DISCOVERY_PORT = 1444
-FAKE_GATEWAY_MAC = "00:00:00:00:00:00"
-FAKE_GATEWAY_NAME = b"Fake: 00-00-00"
-FAKE_GATEWAY_PORT = 6448
-FAKE_GATEWAY_SUB_TYPE = 12
-FAKE_GATEWAY_TYPE = 2
+
+class CONNECTION_STAGE:
+    NO_CONNECTION = 0
+    CONNECTSERVERHOST = 1
+    CHALLENGE = 2
+    LOGIN = 3
 
 
-class fake_ScreenLogicGateway:
-    def __init__(self, discovery=False, requests=False):
-        self._connectServerHost = False
-        self._challenge = False
-        self._login = False
-        self._discovery = discovery
-        self._requests = requests
-        self._udp_sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
-        self._tcp_sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
+class FakeScreenLogicTCPProtocol(asyncio.Protocol):
+    def connection_made(self, transport: asyncio.Transport) -> None:
+        self.transport = transport
+        self.connected = True
+        self._connection_stage = CONNECTION_STAGE.NO_CONNECTION
 
-    def __enter__(self):
-        if self._discovery:
-            self._udp_sock.bind(("", FAKE_GATEWAY_DISCOVERY_PORT))
-        if self._requests:
-            self._tcp_sock.bind((FAKE_GATEWAY_ADDRESS, FAKE_GATEWAY_PORT))
+    def data_received(self, data: bytes) -> None:
+        if (data_to_send := self.process_request(data)) is not None:
+            self.transport.write(data_to_send)
 
-    def __exit__(self, exception_type, exception_value, traceback):
-        self._udp_sock.close()
-        self._tcp_sock.close()
+    def connection_lost(self, exc: Exception) -> None:
+        return super().connection_lost(exc)
 
-    def start_discovery_server(self):
-        while True:
-            try:
-                message, sender = self._udp_sock.recvfrom(1024)
-            except Exception:
-                break
-            if struct.unpack("<8b", message) == (1, 0, 0, 0, 0, 0, 0, 0):
-                ip1, ip2, ip3, ip4 = FAKE_GATEWAY_ADDRESS.split(".")
-                response = struct.pack(
-                    f"<I4BH2B{len(FAKE_GATEWAY_NAME)}s",
-                    FAKE_GATEWAY_CHK,
-                    int(ip1),
-                    int(ip2),
-                    int(ip3),
-                    int(ip4),
-                    FAKE_GATEWAY_PORT,
-                    FAKE_GATEWAY_TYPE,
-                    FAKE_GATEWAY_SUB_TYPE,
-                    FAKE_GATEWAY_NAME,
-                )
-                self._udp_sock.sendto(response, sender)
+    def process_request(self, data):
+        if self._connection_stage == CONNECTION_STAGE.NO_CONNECTION:
+            if data == b"CONNECTSERVERHOST\r\n\r\n":
+                self._connection_stage = CONNECTION_STAGE.CONNECTSERVERHOST
+                return None
 
-    def start_request_server(self):
-        self._tcp_sock.listen()
-        print("waiting for connection")
-        connection, _ = self._tcp_sock.accept()
-        print("connected")
-        with connection:
-            while True:
-                print("waiting for request")
-                request = connection.recv(1024)
-                if not request:
-                    print("Connection closed")
-                    break
-                # print("handling request", request)
-                self.handle_request(connection, request)
+        messageID, message, senderID = takeMessage(data)
+        if (
+            messageID == CODE.CHALLENGE_QUERY
+            and self._connection_stage == CONNECTION_STAGE.CONNECTSERVERHOST
+        ):
+            self._connection_stage = CONNECTION_STAGE.CHALLENGE
+            return makeMessage(
+                CODE.CHALLENGE_ANSWER, encodeMessageString(FAKE_GATEWAY_MAC), senderID
+            )
 
-    def handle_request(self, connection, request):
-        # print(request)
-        if self._connectServerHost:
-            rcvCode, _ = takeMessage(request)
-            if rcvCode == code.CHALLENGE_QUERY:
-                print("Challenge")
-                connection.sendall(
-                    makeMessage(
-                        code.CHALLENGE_ANSWER, encodeMessageString(FAKE_GATEWAY_MAC)
-                    )
-                )
-                self._connectServerHost = False
-                self._challenge = True
-        elif self._challenge:
-            # pylint: disable=unused-variable
-            rcvCode, buff = takeMessage(request)
-            if rcvCode == code.LOCALLOGIN_QUERY:
-                # Need to test validity of login message?
-                print("Login")
-                connection.sendall(makeMessage(code.LOCALLOGIN_ANSWER))
-                self._challenge = False
-                self._login = True
-        elif self._login:
-            rcvCode, buff = takeMessage(request)
-            if rcvCode == code.VERSION_QUERY:
-                print("Version")
-                version = "fake 0.0.2"
-                connection.sendall(
-                    makeMessage(code.VERSION_ANSWER, encodeMessageString(version))
-                )
-            if rcvCode == code.CTRLCONFIG_QUERY:
-                print("Config")
-                connection.sendall(
-                    makeMessage(code.CTRLCONFIG_ANSWER, FAKE_CONFIG_RESPONSE)
-                )
-            elif rcvCode == code.POOLSTATUS_QUERY:
-                print("Status")
-                connection.sendall(
-                    makeMessage(code.POOLSTATUS_ANSWER, FAKE_STATUS_RESPONSE)
-                )
-            elif rcvCode == code.PUMPSTATUS_QUERY:
-                print("Pump")
-                connection.sendall(
-                    makeMessage(code.PUMPSTATUS_ANSWER, FAKE_PUMP_RESPONSE)
-                )
-            elif rcvCode == code.CHEMISTRY_QUERY:
-                print("Chemistry")
-                connection.sendall(
-                    makeMessage(code.CHEMISTRY_ANSWER, FAKE_CHEMISTRY_RESPONSE)
-                )
-            elif rcvCode == code.SCGCONFIG_QUERY:
-                print("SCG")
-                connection.sendall(
-                    makeMessage(code.SCGCONFIG_ANSWER, FAKE_SCG_RESPONSE)
-                )
-            elif rcvCode == code.BUTTONPRESS_QUERY:
-                connection.sendall(makeMessage(code.BUTTONPRESS_ANSWER))
-            else:
-                print("Unknown code")
-        else:
-            if request == b"CONNECTSERVERHOST\r\n\r\n":
-                print("CONNECTSERVERHOST")
-                self._connectServerHost = True
-            else:
-                print("Unknown request")
+        if (
+            messageID == CODE.LOCALLOGIN_QUERY
+            and self._connection_stage == CONNECTION_STAGE.CHALLENGE
+        ):
+            self._connection_stage = CONNECTION_STAGE.LOGIN
+            return makeMessage(CODE.LOCALLOGIN_ANSWER, b"", senderID)
+
+        if (
+            self._connection_stage == CONNECTION_STAGE.LOGIN
+            and messageID in ASYNC_SL_RESPONSES
+        ):
+            return makeMessage(messageID + 1, ASYNC_SL_RESPONSES[messageID], senderID)
+
+        return None
+
+
+class FakeScreenLogicUDPProtocol(asyncio.DatagramProtocol):
+    def connection_made(self, transport: asyncio.DatagramTransport):
+        self.transport = transport
+
+    def datagram_received(self, data: bytes, addr: Tuple[str, int]) -> None:
+        if struct.unpack("<8b", data) == (1, 0, 0, 0, 0, 0, 0, 0):
+            ip1, ip2, ip3, ip4 = FAKE_GATEWAY_ADDRESS.split(".")
+            response = struct.pack(
+                f"<I4BH2B{len(FAKE_GATEWAY_NAME)}s",
+                FAKE_GATEWAY_CHK,
+                int(ip1),
+                int(ip2),
+                int(ip3),
+                int(ip4),
+                FAKE_GATEWAY_PORT,
+                FAKE_GATEWAY_TYPE,
+                FAKE_GATEWAY_SUB_TYPE,
+                bytes(FAKE_GATEWAY_NAME, "UTF-8"),
+            )
+            self.transport.sendto(response, addr)

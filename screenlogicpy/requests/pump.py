@@ -1,14 +1,26 @@
 # import json
+import asyncio
 import struct
-from .utility import sendReceiveMessage, getSome
-from ..const import code, DATA, DEVICE_TYPE
+
+from ..const import CODE, DATA, DEVICE_TYPE, MESSAGE, ScreenLogicWarning
+from .protocol import ScreenLogicProtocol
+from .utility import getSome
 
 
-def request_pump_status(gateway_socket, data, pumpID):
-    response = sendReceiveMessage(
-        gateway_socket, code.PUMPSTATUS_QUERY, struct.pack("<II", 0, pumpID)
-    )
-    decode_pump_status(response, data, pumpID)
+async def async_request_pump_status(protocol: ScreenLogicProtocol, data, pumpID):
+    try:
+        await asyncio.wait_for(
+            (
+                request := protocol.await_send_data(
+                    CODE.PUMPSTATUS_QUERY, struct.pack("<II", 0, pumpID), pumpID
+                )
+            ),
+            MESSAGE.COM_TIMEOUT,
+        )
+        if not request.cancelled():
+            decode_pump_status(request.result(), data, pumpID)
+    except asyncio.TimeoutError:
+        raise ScreenLogicWarning(f"Timeout poiling pump {pumpID} status")
 
 
 # pylint: disable=unused-variable

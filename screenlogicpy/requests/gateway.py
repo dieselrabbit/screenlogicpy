@@ -1,7 +1,17 @@
-from .utility import sendReceiveMessage, decodeMessageString
-from ..const import code
+import asyncio
+
+from ..const import CODE, MESSAGE, ScreenLogicWarning
+from .protocol import ScreenLogicProtocol
+from .utility import decodeMessageString
 
 
-def request_gateway_version(gateway_socket):
-    response = sendReceiveMessage(gateway_socket, code.VERSION_QUERY)
-    return decodeMessageString(response)
+async def async_request_gateway_version(protocol: ScreenLogicProtocol):
+    try:
+        await asyncio.wait_for(
+            (request := protocol.await_send_data(CODE.VERSION_QUERY)),
+            MESSAGE.COM_TIMEOUT,
+        )
+        if not request.cancelled():
+            return decodeMessageString(request.result())
+    except asyncio.TimeoutError:
+        raise ScreenLogicWarning("Timeout polling gateway version")

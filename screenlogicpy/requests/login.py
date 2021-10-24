@@ -1,8 +1,10 @@
-import time
+import asyncio
 import struct
-import socket
-from .utility import sendReceiveMessage, encodeMessageString, decodeMessageString
-from ..const import code, ScreenLogicError
+from typing import Callable
+
+from ..const import CODE, MESSAGE, ScreenLogicError
+from .protocol import ScreenLogicProtocol
+from .utility import encodeMessageString, decodeMessageString
 
 
 def create_login_message():
@@ -17,56 +19,74 @@ def create_login_message():
     return struct.pack(fmt, schema, connectionType, clientVersion, passwd, pid)
 
 
-def create_socket(ip, port):
-    tcpSock = None
-    # pylint: disable=unused-variable
-    for result in socket.getaddrinfo(ip, port, socket.AF_UNSPEC, socket.SOCK_STREAM):
-        af, socktype, proto, canonname, sa = result
-        try:
-            tcpSock = socket.socket(af, socktype, proto)
-        except OSError:
-            tcpSock = None
-            continue
-        try:
-            tcpSock.settimeout(5)
-            tcpSock.connect(sa)
-        except OSError:
-            tcpSock.close()
-            tcpSock = None
-            continue
-        break
-
-    if not tcpSock:
-        raise ScreenLogicError(f"Unable to connect to {ip}:{port}")
-
-    return tcpSock
-
-
-def gateway_connect(connected_socket):
-    connectString = b"CONNECTSERVERHOST\r\n\r\n"  # as bytes, not string
-    connected_socket.sendall(connectString)
-    time.sleep(0.25)
-    response = sendReceiveMessage(connected_socket, code.CHALLENGE_QUERY)
-    mac_address = decodeMessageString(response)
-    return mac_address
-
-
-def gateway_login(connected_socket):
-    msg = create_login_message()
+async def async_create_connection(
+    gateway_ip, gateway_port, connection_lost_callback: Callable = None
+):
     try:
-        # Gateway will respond with the response code and that's all.
-        _ = sendReceiveMessage(connected_socket, code.LOCALLOGIN_QUERY, msg)
-        return True
-    except ScreenLogicError:
-        return False
+        loop = asyncio.get_running_loop()
+
+        # on_con_lost = loop.create_future()
+
+        transport, protocol = await asyncio.wait_for(
+            loop.create_connection(
+                lambda: ScreenLogicProtocol(loop, connection_lost_callback),
+                gateway_ip,
+                gateway_port,
+            ),
+            MESSAGE.COM_TIMEOUT,
+        )
+        return transport, protocol
+    except asyncio.TimeoutError:
+        raise ScreenLogicError(
+            f"Failed to connect to host at {gateway_ip}:{gateway_port}"
+        )
 
 
-def connect_to_gateway(gateway_ip, gateway_port):
-    connected_socket = create_socket(gateway_ip, gateway_port)
+async def async_gateway_connect(
+    transport: asyncio.Transport, protocol: ScreenLogicProtocol
+) -> str:
+    connectString = b"CONNECTSERVERHOST\r\n\r\n"  # as bytes, not string
+    try:
+        # Connect ping
+        transport.write(connectString)
+    except Exception as ex:
+        raise ScreenLogicError("Error sending connect ping") from ex
 
-    mac_address = gateway_connect(connected_socket)
+    await asyncio.sleep(0.25)
 
-    if gateway_login(connected_socket):
-        return connected_socket, mac_address
-    else:
-        return None
+    try:
+        await asyncio.wait_for(
+            (request := protocol.await_send_data(CODE.CHALLENGE_QUERY)),
+            MESSAGE.COM_TIMEOUT,
+        )
+        if not request.cancelled():
+            # mac address
+            return decodeMessageString(request.result())
+    except asyncio.TimeoutError:
+        raise ScreenLogicError("Host failed to respond to challenge")
+
+
+async def async_gateway_login(protocol: ScreenLogicProtocol) -> bool:
+    try:
+        await asyncio.wait_for(
+            (
+                request := protocol.await_send_data(
+                    CODE.LOCALLOGIN_QUERY, create_login_message()
+                )
+            ),
+            MESSAGE.COM_TIMEOUT,
+        )
+        return not request.cancelled()
+    except asyncio.TimeoutError:
+        raise ScreenLogicError("Failed to logon to gateway")
+
+
+async def async_connect_to_gateway(
+    gateway_ip, gateway_port, connection_lost_callback: Callable = None
+):
+    transport, protocol = await async_create_connection(
+        gateway_ip, gateway_port, connection_lost_callback
+    )
+    mac_address = await async_gateway_connect(transport, protocol)
+    if await async_gateway_login(protocol):
+        return transport, protocol, mac_address
