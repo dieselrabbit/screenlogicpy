@@ -20,7 +20,7 @@ async def async_request_pool_status(protocol: ScreenLogicProtocol, data):
     try:
         await asyncio.wait_for(
             (
-                request := protocol.await_send_data(
+                request := protocol.await_send_message(
                     CODE.POOLSTATUS_QUERY, struct.pack("<I", 0)
                 )
             ),

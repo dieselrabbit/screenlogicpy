@@ -90,7 +90,7 @@ class ScreenLogicGateway:
             await self._async_get_scg()
             return True
         except ScreenLogicWarning as warn:
-            await self.async_disconnect()
+            # await self.async_disconnect()
             raise warn
 
     def get_data(self) -> dict:

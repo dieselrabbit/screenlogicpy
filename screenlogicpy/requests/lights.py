@@ -11,7 +11,7 @@ async def async_request_pool_lights_command(
     try:
         await asyncio.wait_for(
             (
-                request := protocol.await_send_data(
+                request := protocol.await_send_message(
                     CODE.LIGHTCOMMAND_QUERY, struct.pack("<II", 0, light_command)
                 )
             ),

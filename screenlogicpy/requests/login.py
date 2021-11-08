@@ -56,7 +56,7 @@ async def async_gateway_connect(
 
     try:
         await asyncio.wait_for(
-            (request := protocol.await_send_data(CODE.CHALLENGE_QUERY)),
+            (request := protocol.await_send_message(CODE.CHALLENGE_QUERY)),
             MESSAGE.COM_TIMEOUT,
         )
         if not request.cancelled():
@@ -70,7 +70,7 @@ async def async_gateway_login(protocol: ScreenLogicProtocol) -> bool:
     try:
         await asyncio.wait_for(
             (
-                request := protocol.await_send_data(
+                request := protocol.await_send_message(
                     CODE.LOCALLOGIN_QUERY, create_login_message()
                 )
             ),

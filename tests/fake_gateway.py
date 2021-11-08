@@ -1,6 +1,7 @@
 """ Fake ScreenLogic gateway """
 import asyncio
 import struct
+import time
 from typing import Tuple
 
 from screenlogicpy.const import CODE
@@ -43,28 +44,31 @@ class FakeScreenLogicTCPProtocol(asyncio.Protocol):
                 self._connection_stage = CONNECTION_STAGE.CONNECTSERVERHOST
                 return None
 
-        messageID, message, senderID = takeMessage(data)
+        time.sleep(1)
+        messageID, messageCode, message = takeMessage(data)
         if (
-            messageID == CODE.CHALLENGE_QUERY
+            messageCode == CODE.CHALLENGE_QUERY
             and self._connection_stage == CONNECTION_STAGE.CONNECTSERVERHOST
         ):
             self._connection_stage = CONNECTION_STAGE.CHALLENGE
             return makeMessage(
-                CODE.CHALLENGE_ANSWER, encodeMessageString(FAKE_GATEWAY_MAC), senderID
+                messageID, CODE.CHALLENGE_ANSWER, encodeMessageString(FAKE_GATEWAY_MAC)
             )
 
         if (
-            messageID == CODE.LOCALLOGIN_QUERY
+            messageCode == CODE.LOCALLOGIN_QUERY
             and self._connection_stage == CONNECTION_STAGE.CHALLENGE
         ):
             self._connection_stage = CONNECTION_STAGE.LOGIN
-            return makeMessage(CODE.LOCALLOGIN_ANSWER, b"", senderID)
+            return makeMessage(messageID, CODE.LOCALLOGIN_ANSWER, b"")
 
         if (
             self._connection_stage == CONNECTION_STAGE.LOGIN
-            and messageID in ASYNC_SL_RESPONSES
+            and messageCode in ASYNC_SL_RESPONSES
         ):
-            return makeMessage(messageID + 1, ASYNC_SL_RESPONSES[messageID], senderID)
+            return makeMessage(
+                messageID, messageCode + 1, ASYNC_SL_RESPONSES[messageCode]
+            )
 
         return None
 

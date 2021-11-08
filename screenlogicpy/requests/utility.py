@@ -1,28 +1,31 @@
 import struct
+from typing import Tuple
 
-from ..const import CODE, MESSAGE
+from ..const import CODE, MESSAGE, ScreenLogicError
 
 
-def makeMessage(msgCode, messageData=b"", sndCode=0):
+def makeMessage(msgID: int, msgCode: int, messageData: bytes = b""):
+    """Returns packed bytes formatted as a ready-to-send ScreenLogic message."""
     return struct.pack(
         MESSAGE.HEADER_FORMAT + str(len(messageData)) + "s",
-        sndCode,
+        msgID,
         msgCode,
         len(messageData),
         messageData,
     )
 
 
-def takeMessage(data):
+def takeMessage(data: bytes) -> Tuple[int, int, bytes]:
+    """Return (messageID, messageCode, message) from raw ScreenLogic message bytes."""
     messageBytes = len(data) - MESSAGE.HEADER_LENGTH
-    sndCode, msgCode, msgLen, message = struct.unpack(
+    msgID, msgCode, msgLen, message = struct.unpack(
         MESSAGE.HEADER_FORMAT + str(messageBytes) + "s", data
     )
     if msgLen != messageBytes:
-        pass
+        raise ScreenLogicError("Response length invalid")
     if msgCode == CODE.UNKNOWN_ANSWER:
-        pass
-    return msgCode, message, sndCode  # return raw data
+        raise ScreenLogicError("Request rejected")
+    return msgID, msgCode, message  # return raw data
 
 
 def encodeMessageString(string):
@@ -34,7 +37,6 @@ def encodeMessageString(string):
 
 
 def decodeMessageString(data):
-    # length = len(data)
     size = struct.unpack_from("<I", data, 0)[0]
     return struct.unpack_from("<" + str(size) + "s", data, struct.calcsize("<I"))[
         0
