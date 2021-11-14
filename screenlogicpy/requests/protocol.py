@@ -67,6 +67,9 @@ class ScreenLogicProtocol(asyncio.Protocol):
         """Registers a callback function to call for the specified unhandled message code."""
         self._callbacks[messageCode] = (callback, target_data)
 
+    def requests_pending(self) -> bool:
+        return not self._futures.all_done()
+
     class FutureManager:
         def __init__(self, loop: asyncio.AbstractEventLoop) -> None:
             self._collection = {}
@@ -76,14 +79,22 @@ class ScreenLogicProtocol(asyncio.Protocol):
             self._collection[msgID] = self.loop.create_future()
             return self._collection[msgID]
 
-        def try_get(self, msgID):
+        def try_get(self, msgID) -> asyncio.Future:
+            fut: asyncio.Future
             if (fut := self._collection.get(msgID)) is not None:
                 if not fut.cancelled():
                     return fut
             return None
 
-        def mark_done(self, msgID, result=True):
+        def mark_done(self, msgID, result=True) -> bool:
             if (fut := self.try_get(msgID)) is not None:
                 fut.set_result(result)
                 return True
             return False
+
+        def all_done(self) -> bool:
+            fut: asyncio.Future
+            for fut in self._collection.values():
+                if not fut.done():
+                    return False
+            return True

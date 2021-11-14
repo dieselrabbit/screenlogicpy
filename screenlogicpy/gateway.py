@@ -73,8 +73,12 @@ class ScreenLogicGateway:
                 return True
         return False
 
-    async def async_disconnect(self):
+    async def async_disconnect(self, force=False):
         """Disconnects from the ScreenLogic protocol adapter"""
+        if not force:
+            while self.__protocol.requests_pending():
+                await asyncio.sleep(1)
+
         if self.__transport and not self.__transport.is_closing():
             self.__transport.close()
 
@@ -89,9 +93,8 @@ class ScreenLogicGateway:
             await self._async_get_chemistry()
             await self._async_get_scg()
             return True
-        except ScreenLogicWarning as warn:
-            # await self.async_disconnect()
-            raise warn
+        except ScreenLogicWarning:
+            return False
 
     def get_data(self) -> dict:
         """Returns the data."""

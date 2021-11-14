@@ -21,3 +21,18 @@ async def test_async_data_received(event_loop):
     protocol.data_received(payload)
 
     assert data.get("result") == MESSAGE
+
+
+@pytest.mark.asyncio
+async def test_async_disconnect(event_loop):
+    fut_manager = ScreenLogicProtocol.FutureManager(event_loop)
+
+    futures = []
+    for i in range(5):
+        futures.append(fut_manager.create(i))
+
+    for x in range(4):
+        futures[x].set_result(True)
+        assert not fut_manager.all_done()
+    futures[4].set_result(True)
+    assert fut_manager.all_done()
