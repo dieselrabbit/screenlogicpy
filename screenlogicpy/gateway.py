@@ -87,14 +87,11 @@ class ScreenLogicGateway:
         if not await self.async_connect() or not self.__data:
             return False
 
-        try:
-            await self._async_get_status()
-            await self._async_get_pumps()
-            await self._async_get_chemistry()
-            await self._async_get_scg()
-            return True
-        except ScreenLogicWarning:
-            return False
+        await self._async_get_status()
+        await self._async_get_pumps()
+        await self._async_get_chemistry()
+        await self._async_get_scg()
+        return True
 
     def get_data(self) -> dict:
         """Returns the data."""
