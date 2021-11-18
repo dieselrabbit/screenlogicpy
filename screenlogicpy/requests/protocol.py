@@ -11,7 +11,8 @@ _LOGGER = logging.getLogger(__name__)
 class ScreenLogicProtocol(asyncio.Protocol):
     """asyncio.Protocol for handling the connection to a ScreenLogic protocol adapter."""
 
-    mID = itertools.cycle(range(65535))  # Maximum value for the messageID data size
+    # Adapter-initiated message IDs seem to start at 32767
+    mID = itertools.cycle(range(32767))
 
     def __init__(self, loop, connection_lost_callback: Callable = None) -> None:
         self.connected = False
@@ -41,8 +42,9 @@ class ScreenLogicProtocol(asyncio.Protocol):
 
     def data_received(self, data: bytes) -> None:
         messageID, messageCode, message = takeMessage(data)
-        _LOGGER.debug("Received: %i, %i, %s", messageID, messageCode, message)
-        if not self._futures.mark_done(messageID, message):
+        if self._futures.mark_done(messageID, message):
+            _LOGGER.debug("Received: %i, %i, %s", messageID, messageCode, message)
+        else:
             _LOGGER.debug(
                 "Received async message: %i, %i, %s", messageID, messageCode, message
             )
