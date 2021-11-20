@@ -1,7 +1,6 @@
 """ Fake ScreenLogic gateway """
 import asyncio
 import struct
-import time
 from typing import Tuple
 
 from screenlogicpy.const import CODE
@@ -44,7 +43,6 @@ class FakeScreenLogicTCPProtocol(asyncio.Protocol):
                 self._connection_stage = CONNECTION_STAGE.CONNECTSERVERHOST
                 return None
 
-        time.sleep(1)
         messageID, messageCode, message = takeMessage(data)
         if (
             messageCode == CODE.CHALLENGE_QUERY
