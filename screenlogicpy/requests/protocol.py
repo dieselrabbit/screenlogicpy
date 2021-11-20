@@ -3,6 +3,7 @@ import itertools
 import logging
 from typing import Callable
 
+from ..const import ScreenLogicError
 from .utility import makeMessage, takeMessage
 
 _LOGGER = logging.getLogger(__name__)
@@ -90,7 +91,12 @@ class ScreenLogicProtocol(asyncio.Protocol):
 
         def mark_done(self, msgID, result=True) -> bool:
             if (fut := self.try_get(msgID)) is not None:
-                fut.set_result(result)
+                try:
+                    fut.set_result(result)
+                except asyncio.exceptions.InvalidStateError as ise:
+                    raise ScreenLogicError(
+                        f"Attempted to set result on future {msgID} when result exists: {fut.result()}"
+                    ) from ise
                 return True
             return False
 
