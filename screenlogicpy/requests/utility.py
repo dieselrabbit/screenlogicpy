@@ -23,7 +23,7 @@ def takeMessage(data: bytes) -> Tuple[int, int, bytes]:
     )
     if msgLen != messageBytes:
         raise ScreenLogicError(
-            f"Response length invalid. Claimed: {msgLen}. Received: {messageBytes}. Message ID: {msgID}. Message Code: {msgCode}"
+            f"Response length invalid. Claimed: {msgLen}. Received: {messageBytes}. Message ID: {msgID}. Message Code: {msgCode}. Data: {data}"
         )
     if msgCode == CODE.UNKNOWN_ANSWER:
         raise ScreenLogicError("Request rejected")
