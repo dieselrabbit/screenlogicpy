@@ -12,14 +12,14 @@ _LOGGER = logging.getLogger(__name__)
 class ScreenLogicProtocol(asyncio.Protocol):
     """asyncio.Protocol for handling the connection to a ScreenLogic protocol adapter."""
 
-    # Adapter-initiated message IDs seem to start at 32767
-    mID = itertools.cycle(range(32767))
-
     def __init__(self, loop, connection_lost_callback: Callable = None) -> None:
         self.connected = False
         self._connection_lost_callback = connection_lost_callback
         self._futures = self.FutureManager(loop)
         self._callbacks = {}
+        # Adapter-initiated message IDs seem to start at 32767,
+        # so we'll use only the lower half of the message ID data size.
+        self.__msgID = itertools.cycle(range(32767))
 
     def connection_made(self, transport: asyncio.Transport) -> None:
         _LOGGER.debug("Connected to server")
@@ -36,7 +36,7 @@ class ScreenLogicProtocol(asyncio.Protocol):
         Sends the message and returns an awaitable asyncio.Future object that will contain the
         result of the ScreenLogic protocol adapter's response.
         """
-        messageID = next(self.mID)
+        messageID = next(self.__msgID)
         fut = self._futures.create(messageID)
         self.send_message(messageID, messageCode, messageData)
         return fut
