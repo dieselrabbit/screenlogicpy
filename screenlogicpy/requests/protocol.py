@@ -3,8 +3,8 @@ import itertools
 import logging
 from typing import Callable
 
-from ..const import ScreenLogicError
-from .utility import makeMessage, takeMessage
+from ..const import CODE, ScreenLogicError
+from .utility import makeMessage, takeMessages
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -42,18 +42,25 @@ class ScreenLogicProtocol(asyncio.Protocol):
         return fut
 
     def data_received(self, data: bytes) -> None:
-        messageID, messageCode, message = takeMessage(data)
-        if self._futures.mark_done(messageID, message):
-            _LOGGER.debug("Received: %i, %i, %s", messageID, messageCode, message)
-        else:
-            _LOGGER.debug(
-                "Received async message: %i, %i, %s", messageID, messageCode, message
-            )
-            # Unsolicited message received. See if there's a callback registered
-            # for the message code and call it.
-            if messageCode in self._callbacks:
-                callback, target_data = self._callbacks[messageCode]
-                callback(messageCode, message, target_data)
+        for messageID, messageCode, message in takeMessages(data):
+
+            if messageCode == CODE.UNKNOWN_ANSWER:
+                raise ScreenLogicError(f"Request explicitly rejected: {messageID}")
+
+            if self._futures.mark_done(messageID, message):
+                _LOGGER.debug("Received: %i, %i, %s", messageID, messageCode, message)
+            else:
+                _LOGGER.debug(
+                    "Received async message: %i, %i, %s",
+                    messageID,
+                    messageCode,
+                    message,
+                )
+                # Unsolicited message received. See if there's a callback registered
+                # for the message code and call it.
+                if messageCode in self._callbacks:
+                    callback, target_data = self._callbacks[messageCode]
+                    callback(messageCode, message, target_data)
 
     def connection_lost(self, exc) -> None:
         _LOGGER.debug("Connection closed")

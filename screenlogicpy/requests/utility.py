@@ -1,5 +1,5 @@
 import struct
-from typing import Tuple
+from typing import List, Tuple
 
 from ..const import CODE, MESSAGE, ScreenLogicError
 
@@ -28,6 +28,23 @@ def takeMessage(data: bytes) -> Tuple[int, int, bytes]:
     if msgCode == CODE.UNKNOWN_ANSWER:
         raise ScreenLogicError("Request rejected")
     return msgID, msgCode, message  # return raw data
+
+
+def takeMessages(data: bytes) -> List[Tuple[int, int, bytes]]:
+    messages = []
+    pos = 0
+    try:
+        while pos < len(data):
+            msgID, pos = getSome("H", data, pos)
+            msgCode, pos = getSome("H", data, pos)
+            msgLength, pos = getSome("I", data, pos)
+            message, pos = getSome(f"{msgLength}s", data, pos)
+            messages.append([msgID, msgCode, message])
+        return messages
+    except struct.error as err:
+        raise ScreenLogicError(
+            f"Unexpected amount of data received. Data: {data}"
+        ) from err
 
 
 def encodeMessageString(string):
