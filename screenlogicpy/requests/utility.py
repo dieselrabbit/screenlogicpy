@@ -50,8 +50,9 @@ def takeMessages(data: bytes) -> List[Tuple[int, int, bytes]]:
 def encodeMessageString(string):
     data = string.encode()
     length = len(data)
-    pad = 4 - (length % 4)  # pad 'x' to multiple of 4
-    fmt = "<I" + str(length) + "s" + str(pad) + "x"
+    over = length % 4
+    pad = (4 - over) if over > 0 else 0  # pad string to multiple of 4
+    fmt = "<I" + str(length + pad) + "s"
     return struct.pack(fmt, length, data)
 
 
