@@ -42,7 +42,7 @@ async def test_async_set_circuit(
     result = event_loop.create_future()
     result.set_result(b"")
     with patch(
-        "screenlogicpy.requests.button.ScreenLogicProtocol.await_send_data",
+        "screenlogicpy.requests.button.ScreenLogicProtocol.await_send_message",
         return_value=result,
     ) as mockRequest:
         gateway = MockConnectedGateway
@@ -63,7 +63,7 @@ async def test_async_set_heat_temp(
     result = event_loop.create_future()
     result.set_result(b"")
     with patch(
-        "screenlogicpy.requests.heat.ScreenLogicProtocol.await_send_data",
+        "screenlogicpy.requests.heat.ScreenLogicProtocol.await_send_message",
         return_value=result,
     ) as mockRequest:
         gateway = MockConnectedGateway
@@ -82,7 +82,7 @@ async def test_async_set_heat_mode(
     result = event_loop.create_future()
     result.set_result(b"")
     with patch(
-        "screenlogicpy.requests.heat.ScreenLogicProtocol.await_send_data",
+        "screenlogicpy.requests.heat.ScreenLogicProtocol.await_send_message",
         return_value=result,
     ) as mockRequest:
         gateway = MockConnectedGateway
@@ -100,7 +100,7 @@ async def test_async_set_color_lights(
     result = event_loop.create_future()
     result.set_result(b"")
     with patch(
-        "screenlogicpy.requests.lights.ScreenLogicProtocol.await_send_data",
+        "screenlogicpy.requests.lights.ScreenLogicProtocol.await_send_message",
         return_value=result,
     ) as mockRequest:
         gateway = MockConnectedGateway
@@ -119,7 +119,7 @@ async def test_async_set_scg_config(
     result = event_loop.create_future()
     result.set_result(b"")
     with patch(
-        "screenlogicpy.requests.heat.ScreenLogicProtocol.await_send_data",
+        "screenlogicpy.requests.heat.ScreenLogicProtocol.await_send_message",
         return_value=result,
     ) as mockRequest:
         gateway = MockConnectedGateway

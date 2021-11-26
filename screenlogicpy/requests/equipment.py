@@ -10,7 +10,7 @@ async def async_request_equipment_config(protocol: ScreenLogicProtocol, data):
     try:
         await asyncio.wait_for(
             (
-                request := protocol.await_send_data(
+                request := protocol.await_send_message(
                     CODE.EQUIPMENT_QUERY, struct.pack("<2I", 0, 0)
                 )
             ),

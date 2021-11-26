@@ -1,40 +1,62 @@
 import struct
+from typing import List, Tuple
 
-from ..const import CODE, MESSAGE
+from ..const import CODE, MESSAGE, ScreenLogicError
 
 
-def makeMessage(msgCode, messageData=b"", sndCode=0):
+def makeMessage(msgID: int, msgCode: int, messageData: bytes = b""):
+    """Returns packed bytes formatted as a ready-to-send ScreenLogic message."""
     return struct.pack(
         MESSAGE.HEADER_FORMAT + str(len(messageData)) + "s",
-        sndCode,
+        msgID,
         msgCode,
         len(messageData),
         messageData,
     )
 
 
-def takeMessage(data):
+def takeMessage(data: bytes) -> Tuple[int, int, bytes]:
+    """Return (messageID, messageCode, message) from raw ScreenLogic message bytes."""
     messageBytes = len(data) - MESSAGE.HEADER_LENGTH
-    sndCode, msgCode, msgLen, message = struct.unpack(
+    msgID, msgCode, msgLen, message = struct.unpack(
         MESSAGE.HEADER_FORMAT + str(messageBytes) + "s", data
     )
     if msgLen != messageBytes:
-        pass
+        raise ScreenLogicError(
+            f"Response length invalid. Claimed: {msgLen}. Received: {messageBytes}. Message ID: {msgID}. Message Code: {msgCode}. Data: {data}"
+        )
     if msgCode == CODE.UNKNOWN_ANSWER:
-        pass
-    return msgCode, message, sndCode  # return raw data
+        raise ScreenLogicError("Request rejected")
+    return msgID, msgCode, message  # return raw data
+
+
+def takeMessages(data: bytes) -> List[Tuple[int, int, bytes]]:
+    messages = []
+    pos = 0
+    try:
+        while pos < len(data):
+            msgID, pos = getSome("H", data, pos)
+            msgCode, pos = getSome("H", data, pos)
+            msgLength, pos = getSome("I", data, pos)
+            message, pos = getSome(f"{msgLength}s", data, pos)
+            messages.append([msgID, msgCode, message])
+        return messages
+    except struct.error as err:
+        raise ScreenLogicError(
+            f"Unexpected amount of data received. Data: {data}"
+        ) from err
 
 
 def encodeMessageString(string):
     data = string.encode()
     length = len(data)
-    pad = 4 - (length % 4)  # pad 'x' to multiple of 4
-    fmt = "<I" + str(length) + "s" + str(pad) + "x"
+    over = length % 4
+    pad = (4 - over) if over > 0 else 0  # pad string to multiple of 4
+    fmt = "<I" + str(length + pad) + "s"
     return struct.pack(fmt, length, data)
 
 
 def decodeMessageString(data):
-    # length = len(data)
     size = struct.unpack_from("<I", data, 0)[0]
     return struct.unpack_from("<" + str(size) + "s", data, struct.calcsize("<I"))[
         0

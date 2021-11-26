@@ -21,7 +21,7 @@ async def async_request_chemistry(protocol: ScreenLogicProtocol, data):
     try:
         await asyncio.wait_for(
             (
-                request := protocol.await_send_data(
+                request := protocol.await_send_message(
                     CODE.CHEMISTRY_QUERY, struct.pack("<I", 0)
                 )
             ),

@@ -11,10 +11,9 @@ async def async_request_pool_button_press(
     try:
         await asyncio.wait_for(
             (
-                request := protocol.await_send_data(
+                request := protocol.await_send_message(
                     CODE.BUTTONPRESS_QUERY,
                     struct.pack("<III", 0, circuit_id, circuit_state),
-                    circuit_id,
                 )
             ),
             MESSAGE.COM_TIMEOUT,

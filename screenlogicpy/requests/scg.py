@@ -11,7 +11,7 @@ async def async_request_scg_config(protocol: ScreenLogicProtocol, data):
     try:
         await asyncio.wait_for(
             (
-                request := protocol.await_send_data(
+                request := protocol.await_send_message(
                     CODE.SCGCONFIG_QUERY, struct.pack("<I", 0)
                 )
             ),
@@ -64,7 +64,7 @@ async def async_request_set_scg_config(
     try:
         await asyncio.wait_for(
             (
-                request := protocol.await_send_data(
+                request := protocol.await_send_message(
                     CODE.SETSCG_QUERY,
                     struct.pack("<IIIII", 0, pool_output, spa_output, 0, 0),
                 )

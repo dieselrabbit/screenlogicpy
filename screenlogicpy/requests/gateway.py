@@ -8,7 +8,7 @@ from .utility import decodeMessageString
 async def async_request_gateway_version(protocol: ScreenLogicProtocol):
     try:
         await asyncio.wait_for(
-            (request := protocol.await_send_data(CODE.VERSION_QUERY)),
+            (request := protocol.await_send_message(CODE.VERSION_QUERY)),
             MESSAGE.COM_TIMEOUT,
         )
         if not request.cancelled():

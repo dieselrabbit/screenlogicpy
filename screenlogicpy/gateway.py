@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 from .const import BODY_TYPE, DATA, SCG, ScreenLogicWarning
 from .requests import (
@@ -16,6 +17,8 @@ from .requests import (
     async_request_set_scg_config,
 )
 from .requests.protocol import ScreenLogicProtocol
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class ScreenLogicGateway:
@@ -64,17 +67,24 @@ class ScreenLogicGateway:
         if self.is_connected:
             return True
 
+        _LOGGER.debug("Beginning connection and login sequence")
         connectPkg = await async_connect_to_gateway(self.__ip, self.__port)
         if connectPkg:
             self.__transport, self.__protocol, self.__mac = connectPkg
             self.__version = await async_request_gateway_version(self.__protocol)
             if self.__version:
+                _LOGGER.debug("Login successful")
                 await self._async_get_config()
                 return True
+        _LOGGER.debug("Login failed")
         return False
 
-    async def async_disconnect(self):
+    async def async_disconnect(self, force=False):
         """Disconnects from the ScreenLogic protocol adapter"""
+        if not force:
+            while self.__protocol.requests_pending():
+                await asyncio.sleep(1)
+
         if self.__transport and not self.__transport.is_closing():
             self.__transport.close()
 
@@ -83,15 +93,13 @@ class ScreenLogicGateway:
         if not await self.async_connect() or not self.__data:
             return False
 
-        try:
-            await self._async_get_status()
-            await self._async_get_pumps()
-            await self._async_get_chemistry()
-            await self._async_get_scg()
-            return True
-        except ScreenLogicWarning as warn:
-            await self.async_disconnect()
-            raise warn
+        _LOGGER.debug("Beginning update of all data")
+        await self._async_get_status()
+        await self._async_get_pumps()
+        await self._async_get_chemistry()
+        await self._async_get_scg()
+        _LOGGER.debug("Update complete")
+        return True
 
     def get_data(self) -> dict:
         """Returns the data."""
@@ -164,6 +172,7 @@ class ScreenLogicGateway:
             raise ScreenLogicWarning(
                 "Not connected to protocol adapter. get_config failed."
             )
+        _LOGGER.debug("Requesting config data")
         await async_request_pool_config(self.__protocol, self.__data)
 
     async def _async_get_status(self):
@@ -171,6 +180,7 @@ class ScreenLogicGateway:
             raise ScreenLogicWarning(
                 "Not connected to protocol adapter. get_status failed."
             )
+        _LOGGER.debug("Requesting pool status")
         await async_request_pool_status(self.__protocol, self.__data)
 
     async def _async_get_pumps(self):
@@ -180,6 +190,7 @@ class ScreenLogicGateway:
             )
         for pumpID in self.__data[DATA.KEY_PUMPS]:
             if self.__data[DATA.KEY_PUMPS][pumpID]["data"] != 0:
+                _LOGGER.debug("Requesting pump %i data", pumpID)
                 await async_request_pump_status(self.__protocol, self.__data, pumpID)
 
     async def _async_get_chemistry(self):
@@ -187,6 +198,7 @@ class ScreenLogicGateway:
             raise ScreenLogicWarning(
                 "Not connected to protocol adapter. get_chemistry failed."
             )
+        _LOGGER.debug("Requesting chemistry data")
         await async_request_chemistry(self.__protocol, self.__data)
 
     async def _async_get_scg(self):
@@ -194,6 +206,7 @@ class ScreenLogicGateway:
             raise ScreenLogicWarning(
                 "Not connected to protocol adapter. get_scg failed."
             )
+        _LOGGER.debug("Requesting scg data")
         await async_request_scg_config(self.__protocol, self.__data)
 
     def _is_valid_circuit(self, circuit):

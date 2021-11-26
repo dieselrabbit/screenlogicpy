@@ -11,8 +11,9 @@ async def async_request_pool_config(protocol: ScreenLogicProtocol, data):
     try:
         await asyncio.wait_for(
             (
-                request := protocol.await_send_data(
-                    CODE.CTRLCONFIG_QUERY, struct.pack("<2I", 0, 0)
+                request := protocol.await_send_message(
+                    CODE.CTRLCONFIG_QUERY,
+                    struct.pack("<2I", 0, 0),  # 0,1 may yield different return
                 )
             ),
             MESSAGE.COM_TIMEOUT,

@@ -11,8 +11,8 @@ async def async_request_set_heat_setpoint(
     try:
         await asyncio.wait_for(
             (
-                request := protocol.await_send_data(
-                    CODE.SETHEATTEMP_QUERY, struct.pack("<III", 0, body, setpoint), body
+                request := protocol.await_send_message(
+                    CODE.SETHEATTEMP_QUERY, struct.pack("<III", 0, body, setpoint)
                 )
             ),
             MESSAGE.COM_TIMEOUT,
@@ -26,10 +26,8 @@ async def async_request_set_heat_mode(protocol: ScreenLogicProtocol, body, heat_
     try:
         await asyncio.wait_for(
             (
-                request := protocol.await_send_data(
-                    CODE.SETHEATMODE_QUERY,
-                    struct.pack("<III", 0, body, heat_mode),
-                    body,
+                request := protocol.await_send_message(
+                    CODE.SETHEATMODE_QUERY, struct.pack("<III", 0, body, heat_mode)
                 )
             ),
             MESSAGE.COM_TIMEOUT,

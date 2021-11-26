@@ -11,8 +11,8 @@ async def async_request_pump_status(protocol: ScreenLogicProtocol, data, pumpID)
     try:
         await asyncio.wait_for(
             (
-                request := protocol.await_send_data(
-                    CODE.PUMPSTATUS_QUERY, struct.pack("<II", 0, pumpID), pumpID
+                request := protocol.await_send_message(
+                    CODE.PUMPSTATUS_QUERY, struct.pack("<II", 0, pumpID)
                 )
             ),
             MESSAGE.COM_TIMEOUT,
