@@ -39,10 +39,10 @@ async def async_create_connection(
             MESSAGE.COM_TIMEOUT,
         )
         return transport, protocol
-    except asyncio.TimeoutError:
+    except (OSError, asyncio.TimeoutError) as ex:
         raise ScreenLogicError(
             f"Failed to connect to host at {gateway_ip}:{gateway_port}"
-        )
+        ) from ex
 
 
 async def async_gateway_connect(
