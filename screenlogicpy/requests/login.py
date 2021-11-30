@@ -22,6 +22,15 @@ def create_login_message():
     return struct.pack(fmt, schema, connectionType, clientVersion, passwd, pid)
 
 
+async def async_get_mac_address(gateway_ip, gateway_port):
+    """Connect to a screenlogic gateway and return the mac address only."""
+    transport, protocol = await async_create_connection(gateway_ip, gateway_port)
+    mac = await async_gateway_connect(transport, protocol)
+    if transport and not transport.is_closing():
+        transport.close()
+    return mac
+
+
 async def async_create_connection(
     gateway_ip, gateway_port, connection_lost_callback: Callable = None
 ):
