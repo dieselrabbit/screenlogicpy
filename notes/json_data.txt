@@ -1,18 +1,18 @@
 {
   "config": {
-    "controler_id": {
-      "name": "Controler ID",     
+    "controller_id": {        
+      "name": "Controller ID",
       "value": 100
     },
-    "is_celcius": {
-      "name": "Is Celcius",       
+    "is_celsius": {
+      "name": "Is Celsius",   
       "value": 0
     },
-    "controler_type": 13,
+    "controller_type": 13,
     "hardware_type": 0,
-    "controler_buffer": 0,        
+    "controller_buffer": 0,
     "equipment_flags": 4294934584,
-    "generic_circuit_name": {     
+    "generic_circuit_name": {
       "name": "Default Circuit Name",
       "value": "Water Features"
     },
@@ -133,11 +133,11 @@
         "name": "Type of body of water",
         "value": 0
       },
-      "current_temperature": {
-        "name": "Current Pool Temperature",
-        "value": 54,
+      "last_temperature": {
+        "name": "Last Pool Temperature",
+        "value": 56,
         "unit": "\u00b0F",
-        "hass_device_class": "temperature"
+        "device_type": "temperature"
       },
       "heat_status": {
         "name": "Pool Heat",
@@ -145,9 +145,9 @@
       },
       "heat_set_point": {
         "name": "Pool Heat Set Point",
-        "value": 86,
+        "value": 84,
         "unit": "\u00b0F",
-        "hass_device_class": "temperature"
+        "device_type": "temperature"
       },
       "cool_set_point": {
         "name": "Pool Cool Set Point",
@@ -174,11 +174,11 @@
         "name": "Type of body of water",
         "value": 1
       },
-      "current_temperature": {
-        "name": "Current Spa Temperature",
-        "value": 97,
+      "last_temperature": {
+        "name": "Last Spa Temperature",
+        "value": 57,
         "unit": "\u00b0F",
-        "hass_device_class": "temperature"
+        "device_type": "temperature"
       },
       "heat_status": {
         "name": "Spa Heat",
@@ -186,13 +186,13 @@
       },
       "heat_set_point": {
         "name": "Spa Heat Set Point",
-        "value": 97,
+        "value": 98,
         "unit": "\u00b0F",
-        "hass_device_class": "temperature"
+        "device_type": "temperature"
       },
       "cool_set_point": {
         "name": "Spa Cool Set Point",
-        "value": 49,
+        "value": 56,
         "unit": "\u00b0F"
       },
       "heat_mode": {
@@ -273,7 +273,7 @@
       "color_position": 0,
       "color_stagger": 0,
       "device_id": 5,
-      "default_rt": 720,
+      "default_rt": 240,
       "value": 0,
       "delay": 0
     },
@@ -289,15 +289,15 @@
       "color_stagger": 0,
       "device_id": 6,
       "default_rt": 720,
-      "value": 0,
+      "value": 1,
       "delay": 0
     },
     "506": {
       "id": 506,
       "name": "Yard Light",
       "name_index": 91,
-      "function": 0,
-      "interface": 2,
+      "function": 7,
+      "interface": 4,
       "flags": 0,
       "color_set": 0,
       "color_position": 0,
@@ -334,14 +334,14 @@
       "color_stagger": 0,
       "device_id": 9,
       "default_rt": 720,
-      "value": 0,
+      "value": 1,
       "delay": 0
     },
     "510": {
       "id": 510,
-      "name": "Feature 1",
-      "name_index": 93,
-      "function": 0,
+      "name": "Spillway",
+      "name_index": 78,
+      "function": 14,
       "interface": 2,
       "flags": 0,
       "color_set": 0,
@@ -478,33 +478,33 @@
       "data": 70,
       "name": "Pool Low Pump",
       "pumpType": 3,
-      "state": 0,
+      "state": 1,
       "currentWatts": {
         "name": "Pool Low Pump Current Watts",
-        "value": 0,
+        "value": 1815,
         "unit": "W",
-        "hass_device_class": "power"
+        "device_type": "energy"
       },
       "currentRPM": {
         "name": "Pool Low Pump Current RPM",
-        "value": 0,
+        "value": 3072,
         "unit": "rpm"
       },
       "currentGPM": {
         "name": "Pool Low Pump Current GPM",
-        "value": 0,
+        "value": 73,
         "unit": "gpm"
       },
       "presets": {
         "0": {
           "cid": 6,
-          "setPoint": 2500,
-          "isRPM": 1
+          "setPoint": 60,
+          "isRPM": 0
         },
         "1": {
           "cid": 9,
-          "setPoint": 2800,
-          "isRPM": 1
+          "setPoint": 80,
+          "isRPM": 0
         },
         "2": {
           "cid": 1,
@@ -547,7 +547,7 @@
         "name": "Waterfall Pump Current Watts",
         "value": 0,
         "unit": "W",
-        "hass_device_class": "power"
+        "device_type": "energy"
       },
       "currentRPM": {
         "name": "Waterfall Pump Current RPM",
@@ -562,7 +562,7 @@
       "presets": {
         "0": {
           "cid": 2,
-          "setPoint": 2000,
+          "setPoint": 2200,
           "isRPM": 1
         },
         "1": {
@@ -624,23 +624,23 @@
   "sensors": {
     "air_temperature": {
       "name": "Air Temperature",
-      "value": 49,
+      "value": 56,
       "unit": "\u00b0F",
-      "hass_device_class": "temperature"
+      "device_type": "temperature"
     },
     "ph": {
       "name": "pH",
-      "value": 7.41,
+      "value": 7.49,
       "unit": "pH"
     },
     "orp": {
       "name": "ORP",
-      "value": 718,
+      "value": 743,
       "unit": "mV"
     },
     "saturation": {
       "name": "Saturation Index",
-      "value": -0.35,
+      "value": -0.18,
       "unit": "lsi"
     },
     "salt_ppm": {
@@ -650,70 +650,70 @@
     },
     "ph_supply_level": {
       "name": "pH Supply Level",
-      "value": 5
+      "value": 2
     },
     "orp_supply_level": {
       "name": "ORP Supply Level",
-      "value": 1
+      "value": 6
     },
     "chem_alarm": {
       "name": "Chemistry Alarm",
-      "value": 1,
-      "hass_device_class": "problem"
+      "value": 0,
+      "device_type": "alarm"
     }
   },
   "chemistry": {
-    "unknown": {
-      "unknown1": 0,
-      "skipped": [
-        0,
-        0,
-        0,
-        4,
-        0,
-        0,
-        0,
-        5,
-        0,
-        8,
-        0,
-        10
-      ],
-      "unknown2": 65,
-      "last1": 32,
-      "last2": 60
-    },
-    "ph": {
-      "name": "pH",
-      "value": 0.0,
+    "current_ph": {
+      "name": "Current pH",
+      "value": 7.49,
       "unit": "pH"
     },
-    "orp": {
-      "name": "ORP",
-      "value": 0,
+    "current_orp": {
+      "name": "Current ORP",
+      "value": 743,
       "unit": "mV"
     },
     "ph_setpoint": {
-      "name": "pH",
+      "name": "pH Setpoint",
       "value": 7.5,
       "unit": "pH"
     },
     "orp_setpoint": {
-      "name": "ORP",
-      "value": 720,
+      "name": "ORP Setpoint",
+      "value": 700,
       "unit": "mV"
+    },
+    "ph_last_dose_time": {
+      "name": "Last pH Dose Time",
+      "value": 4,
+      "unit": "Sec"
+    },
+    "orp_last_dose_time": {
+      "name": "Last ORP Dose Time",
+      "value": 4,
+      "unit": "Sec"
+    },
+    "ph_last_dose_volume": {
+      "name": "Last pH Dose Volume",
+      "value": 8,
+      "unit": "mL"
+    },
+    "orp_last_dose_volume": {
+      "name": "Last ORP Dose Volume",
+      "value": 9,
+      "unit": "mL"
     },
     "ph_supply_level": {
       "name": "pH Supply Level",
-      "value": 5
+      "value": 2
     },
     "orp_supply_level": {
       "name": "ORP Supply Level",
-      "value": 1
+      "value": 6
     },
     "saturation": {
       "name": "Saturation Index",
-      "value": -0.35,
+      "value": -0.18,
       "unit": "lsi"
     },
     "calcium_harness": {
@@ -723,28 +723,111 @@
     },
     "cya": {
       "name": "Cyanuric Acid",
-      "value": 36,
+      "value": 60,
       "unit": "ppm"
     },
     "total_alkalinity": {
       "name": "Total Alkalinity",
-      "value": 55,
+      "value": 70,
       "unit": "ppm"
     },
-    "salt_ppm": {
-      "name": "Salt",
+    "salt_tds_ppm": {
+      "name": "Salt/TDS",
       "value": 1000,
       "unit": "ppm"
     },
-    "water_temperature": {
-      "name": "Water Temperature",
-      "value": 54,
+    "ph_probe_water_temp": {
+      "name": "pH Probe Water Temperature",
+      "value": 56,
       "unit": "\u00b0F",
-      "hass_device_class": "temperature"
+      "device_type": "temperature"
     },
-    "corosivness": {
-      "name": "Corosiveness",
-      "value": 101
+    "alerts": {
+      "flow_alarm": {
+        "name": "Flow Alarm",
+        "value": 0,
+        "device_type": "alarm"
+      },
+      "ph_alarm": {
+        "name": "pH Alarm",
+        "value": 0,
+        "device_type": "alarm"
+      },
+      "orp_alarm": {
+        "name": "ORP Alarm",
+        "value": 0,
+        "device_type": "alarm"
+      },
+      "ph_supply_alarm": {
+        "name": "pH Supply Alarm",
+        "value": 0,
+        "device_type": "alarm"
+      },
+      "orp_supply_alarm": {
+        "name": "ORP Supply Alarm",
+        "value": 0,
+        "device_type": "alarm"
+      },
+      "probe_fault_alarm": {
+        "name": "Probe Fault",
+        "value": 0,
+        "device_type": "alarm"
+      }
+    },
+    "notifications": {
+      "ph_lockout": {
+        "name": "pH Lockout",
+        "value": 0
+      },
+      "ph_limit": {
+        "name": "pH Daily Limit Reached",
+        "value": 0
+      },
+      "orp_limit": {
+        "name": "ORP Daily Limit Reached",
+        "value": 0
+      }
+    },
+    "status": 165,
+    "ph_dosing_state": {
+      "name": "pH Dosing State",
+      "value": 2
+    },
+    "orp_dosing_state": {
+      "name": "ORP Dosing State",
+      "value": 2
+    },
+    "flags": 32,
+    "firmware": {
+      "name": "IntelliChem Firmware Version",
+      "value": "1.060"
+    }
+  },
+  "scg": {
+    "scg_present": 0,
+    "scg_status": {
+      "name": "SCG Status",
+      "value": 1
+    },
+    "scg_level1": {
+      "name": "SCG Level 1",
+      "value": 50,
+      "unit": "%"
+    },
+    "scg_level2": {
+      "name": "SCG Level 2",
+      "value": 0,
+      "unit": "%"
+    },
+    "scg_salt_ppm": {
+      "name": "SCG Salt",
+      "value": 0,
+      "unit": "ppm"
+    },
+    "scg_flags": 0,
+    "scg_super_chlor_timer": {
+      "name": "SCG Super Chlorination Timer",
+      "value": 0
     }
   }
 }
