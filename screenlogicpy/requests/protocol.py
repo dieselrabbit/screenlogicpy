@@ -91,7 +91,7 @@ class ScreenLogicProtocol(asyncio.Protocol):
 
         def try_get(self, msgID) -> asyncio.Future:
             fut: asyncio.Future
-            if (fut := self._collection.get(msgID)) is not None:
+            if (fut := self._collection.pop(msgID, None)) is not None:
                 if not fut.cancelled():
                     return fut
             return None
