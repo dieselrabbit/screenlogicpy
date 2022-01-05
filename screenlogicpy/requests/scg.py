@@ -38,10 +38,10 @@ def decode_scg_config(buff, data):
     scg["scg_status"] = {"name": "SCG Status", "value": status}
 
     level1, offset = getSome("I", buff, offset)
-    scg["scg_level1"] = {"name": "SCG Level 1", "value": level1, "unit": "%"}
+    scg["scg_level1"] = {"name": "Pool SCG Level", "value": level1, "unit": "%"}
 
     level2, offset = getSome("I", buff, offset)
-    scg["scg_level2"] = {"name": "SCG Level 2", "value": level2, "unit": "%"}
+    scg["scg_level2"] = {"name": "Spa SCG Level", "value": level2, "unit": "%"}
 
     salt, offset = getSome("I", buff, offset)
     scg["scg_salt_ppm"] = {"name": "SCG Salt", "value": (salt * 50), "unit": "ppm"}
