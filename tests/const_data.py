@@ -681,8 +681,8 @@ EXPECTED_SCG_DATA = {
     "scg": {
         "scg_present": 0,
         "scg_status": {"name": "SCG Status", "value": 1},
-        "scg_level1": {"name": "SCG Level 1", "value": 50, "unit": "%"},
-        "scg_level2": {"name": "SCG Level 2", "value": 0, "unit": "%"},
+        "scg_level1": {"name": "Pool SCG Level", "value": 50, "unit": "%"},
+        "scg_level2": {"name": "Spa SCG Level", "value": 0, "unit": "%"},
         "scg_salt_ppm": {"name": "SCG Salt", "value": 0, "unit": "ppm"},
         "scg_flags": 0,
         "scg_super_chlor_timer": {"name": "SCG Super Chlorination Timer", "value": 0},
@@ -1182,8 +1182,8 @@ EXPECTED_COMPLETE_DATA = {
     "scg": {
         "scg_present": 0,
         "scg_status": {"name": "SCG Status", "value": 1},
-        "scg_level1": {"name": "SCG Level 1", "value": 50, "unit": "%"},
-        "scg_level2": {"name": "SCG Level 2", "value": 0, "unit": "%"},
+        "scg_level1": {"name": "Pool SCG Level", "value": 50, "unit": "%"},
+        "scg_level2": {"name": "Spa SCG Level", "value": 0, "unit": "%"},
         "scg_salt_ppm": {"name": "SCG Salt", "value": 0, "unit": "ppm"},
         "scg_flags": 0,
         "scg_super_chlor_timer": {"name": "SCG Super Chlorination Timer", "value": 0},

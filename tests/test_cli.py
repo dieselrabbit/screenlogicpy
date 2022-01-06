@@ -254,7 +254,7 @@ async def test_set_scg(MockProtocolAdapter, capsys):
                 (("set", "salt-generator", "100", "20"), "50 0"),
                 (
                     ("-v", "set", "scg", "20", "0"),
-                    EXPECTED_VERBOSE_PREAMBLE + "SCG Level 1: 50 SCG Level 2: 0",
+                    EXPECTED_VERBOSE_PREAMBLE + "Pool SCG Level: 50 Spa SCG Level: 0",
                 ),
             ]
 
