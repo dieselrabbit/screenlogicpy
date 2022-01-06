@@ -810,12 +810,12 @@
       "value": 1
     },
     "scg_level1": {
-      "name": "SCG Level 1",
+      "name": "Pool SCG Level",
       "value": 50,
       "unit": "%"
     },
     "scg_level2": {
-      "name": "SCG Level 2",
+      "name": "Spa SCG Level",
       "value": 0,
       "unit": "%"
     },
