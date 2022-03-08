@@ -391,12 +391,15 @@ EXPECTED_CONFIG_DATA = {
 
 EXPECTED_STATUS_DATA = {
     "config": {
-        "ok": {"name": "OK Check", "value": 1},
+        "ok": 1,
         "freeze_mode": {"name": "Freeze Mode", "value": 0},
         "remotes": {"name": "Remotes", "value": 0},
         "pool_delay": {"name": "Pool Delay", "value": 0},
         "spa_delay": {"name": "Spa Delay", "value": 0},
         "cleaner_delay": {"name": "Cleaner Delay", "value": 0},
+        "unknown1": 0,
+        "unknown2": 0,
+        "unknown3": 0,
     },
     "sensors": {
         "air_temperature": {
@@ -751,12 +754,15 @@ EXPECTED_COMPLETE_DATA = {
         ],
         "interface_tab_flags": 127,
         "show_alarms": 0,
-        "ok": {"name": "OK Check", "value": 1},
+        "ok": 1,
         "freeze_mode": {"name": "Freeze Mode", "value": 0},
         "remotes": {"name": "Remotes", "value": 0},
         "pool_delay": {"name": "Pool Delay", "value": 0},
         "spa_delay": {"name": "Spa Delay", "value": 0},
         "cleaner_delay": {"name": "Cleaner Delay", "value": 0},
+        "unknown1": 0,
+        "unknown2": 0,
+        "unknown3": 0,
     },
     "bodies": {
         0: {

@@ -3,7 +3,6 @@ import asyncio
 import struct
 
 from ..const import (
-    ADD_UNKNOWN_VALUES,
     CODE,
     BODY_TYPE,
     DATA,
@@ -33,16 +32,11 @@ async def async_request_pool_status(protocol: ScreenLogicProtocol, data):
 
 
 # pylint: disable=unused-variable
-def decode_pool_status(buff, data):
-    # print(buff)
-
-    if DATA.KEY_CONFIG not in data:
-        data[DATA.KEY_CONFIG] = {}
-
-    config = data[DATA.KEY_CONFIG]
+def decode_pool_status(buff, data: dict):
+    config = data.setdefault(DATA.KEY_CONFIG, {})
 
     ok, offset = getSome("I", buff, 0)
-    config["ok"] = {"name": "OK Check", "value": ok}
+    config["ok"] = ok
 
     freezeMode, offset = getSome("B", buff, offset)
     config["freeze_mode"] = {"name": "Freeze Mode", "value": freezeMode}
@@ -59,14 +53,13 @@ def decode_pool_status(buff, data):
     cleanerDelay, offset = getSome("B", buff, offset)
     config["cleaner_delay"] = {"name": "Cleaner Delay", "value": cleanerDelay}
 
-    unknown = {}
     # fast forward 3 bytes. Unknown data.
-    ff1, offset = getSome("B", buff, offset)
-    unknown["ff1"] = ff1
-    ff2, offset = getSome("B", buff, offset)
-    unknown["ff2"] = ff2
-    ff3, offset = getSome("B", buff, offset)
-    unknown["ff3"] = ff3
+    unknown1, offset = getSome("B", buff, offset)
+    config["unknown1"] = unknown1
+    unknown2, offset = getSome("B", buff, offset)
+    config["unknown2"] = unknown2
+    unknown3, offset = getSome("B", buff, offset)
+    config["unknown3"] = unknown3
 
     unit_txt = (
         UNIT.CELSIUS
@@ -74,10 +67,7 @@ def decode_pool_status(buff, data):
         else UNIT.FAHRENHEIT
     )
 
-    if DATA.KEY_SENSORS not in data:
-        data[DATA.KEY_SENSORS] = {}
-
-    sensors = data[DATA.KEY_SENSORS]
+    sensors = data.setdefault(DATA.KEY_SENSORS, {})
 
     airTemp, offset = getSome("i", buff, offset)
     sensors["air_temperature"] = {
@@ -88,33 +78,22 @@ def decode_pool_status(buff, data):
     }
 
     bodiesCount, offset = getSome("I", buff, offset)
+
     # Should this default to 2?
     bodiesCount = min(bodiesCount, 2)
 
-    if DATA.KEY_BODIES not in data:
-        data[DATA.KEY_BODIES] = {}
-
-    bodies = data[DATA.KEY_BODIES]
+    bodies: dict = data.setdefault(DATA.KEY_BODIES, {})
 
     for i in range(bodiesCount):
+        currentBody: dict = bodies.setdefault(i, {})
+
         bodyType, offset = getSome("I", buff, offset)
         if bodyType not in range(2):
             bodyType = 0
 
-        if i not in bodies:
-            bodies[i] = {}
+        currentBody.setdefault("min_set_point", {})["unit"] = unit_txt
 
-        currentBody = bodies[i]
-
-        if "min_set_point" not in currentBody:
-            currentBody["min_set_point"] = {}
-
-        currentBody["min_set_point"]["unit"] = unit_txt
-
-        if "max_set_point" not in currentBody:
-            currentBody["max_set_point"] = {}
-
-        currentBody["max_set_point"]["unit"] = unit_txt
+        currentBody.setdefault("max_set_point", {})["unit"] = unit_txt
 
         currentBody["body_type"] = {"name": "Type of body of water", "value": bodyType}
 
@@ -154,18 +133,12 @@ def decode_pool_status(buff, data):
 
     circuitCount, offset = getSome("I", buff, offset)
 
-    if DATA.KEY_CIRCUITS not in data:
-        data[DATA.KEY_CIRCUITS] = {}
-
-    circuits = data[DATA.KEY_CIRCUITS]
+    circuits: dict = data.setdefault(DATA.KEY_CIRCUITS, {})
 
     for i in range(circuitCount):
         circuitID, offset = getSome("I", buff, offset)
 
-        if circuitID not in circuits:
-            circuits[circuitID] = {}
-
-        currentCircuit = circuits[circuitID]
+        currentCircuit = circuits.setdefault(circuitID, {})
 
         if "id" not in currentCircuit:
             currentCircuit["id"] = circuitID
@@ -213,7 +186,3 @@ def decode_pool_status(buff, data):
         "value": alarm,
         "device_type": DEVICE_TYPE.ALARM,
     }
-
-    if ADD_UNKNOWN_VALUES:
-        sensors["unknown"] = unknown
-    # print(json.dumps(data, indent=4))
