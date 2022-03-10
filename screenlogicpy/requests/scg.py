@@ -23,13 +23,8 @@ async def async_request_scg_config(protocol: ScreenLogicProtocol, data):
         raise ScreenLogicWarning("Timeout polling scg config")
 
 
-def decode_scg_config(buff, data):
-    # print(buff)
-
-    if DATA.KEY_SCG not in data:
-        data[DATA.KEY_SCG] = {}
-
-    scg = data[DATA.KEY_SCG]
+def decode_scg_config(buff, data: dict):
+    scg = data.setdefault(DATA.KEY_SCG, {})
 
     present, offset = getSome("I", buff, 0)
     scg["scg_present"] = present
@@ -54,8 +49,6 @@ def decode_scg_config(buff, data):
         "name": "SCG Super Chlorination Timer",
         "value": superChlorTimer,
     }
-
-    # print(json.dumps(data, indent=2))
 
 
 async def async_request_set_scg_config(
