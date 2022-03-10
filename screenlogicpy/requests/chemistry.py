@@ -3,7 +3,6 @@ import asyncio
 import struct
 
 from ..const import (
-    ADD_UNKNOWN_VALUES,
     CHEMISTRY,
     CODE,
     DATA,
@@ -34,16 +33,13 @@ async def async_request_chemistry(protocol: ScreenLogicProtocol, data):
 
 
 # pylint: disable=unused-variable
-def decode_chemistry(buff, data):
+def decode_chemistry(buff, data: dict):
     # print(buff)
 
     def is_set(bits, mask) -> bool:
         return True if (bits & mask) == mask else False
 
-    if DATA.KEY_CHEMISTRY not in data:
-        data[DATA.KEY_CHEMISTRY] = {}
-
-    chemistry = data[DATA.KEY_CHEMISTRY]
+    chemistry: dict = data.setdefault(DATA.KEY_CHEMISTRY, {})
 
     unit_txt = (
         UNIT.CELSIUS
@@ -53,14 +49,13 @@ def decode_chemistry(buff, data):
         else UNIT.FAHRENHEIT
     )
 
-    unknown = {}
-
+    # size of msg?
     size, offset = getSome("I", buff, 0)
-    unknown["size"] = size
+    chemistry["unknown_size"] = size
 
-    # skip an unknown value
+    # unknown value
     unknown1, offset = getSome("B", buff, offset)  # 0
-    unknown["unknown1"] = unknown1
+    chemistry["unknown1"] = unknown1
 
     pH, offset = getSome(">H", buff, offset)  # 1
     chemistry["current_ph"] = {"name": "Current pH", "value": (pH / 100), "unit": "pH"}
@@ -154,7 +149,7 @@ def decode_chemistry(buff, data):
 
     # Probe temp unit is Celsius?
     probIsC, offset = getSome("B", buff, offset)
-    unknown["probe_is_celsius"] = probIsC
+    chemistry["probe_is_celsius"] = probIsC
 
     waterTemp, offset = getSome("B", buff, offset)  # 32
     chemistry["ph_probe_water_temp"] = {
@@ -164,10 +159,7 @@ def decode_chemistry(buff, data):
         "device_type": DEVICE_TYPE.TEMPERATURE,
     }
 
-    if DATA.KEY_ALERTS not in chemistry:
-        chemistry[DATA.KEY_ALERTS] = {}
-
-    alerts = chemistry[DATA.KEY_ALERTS]
+    alerts = chemistry.setdefault(DATA.KEY_ALERTS, {})
 
     alarms, offset = getSome("B", buff, offset)  # 33 (32)
     alerts["flow_alarm"] = {
@@ -201,13 +193,11 @@ def decode_chemistry(buff, data):
         "device_type": DEVICE_TYPE.ALARM,
     }
 
-    if DATA.KEY_NOTIFICATIONS not in chemistry:
-        chemistry[DATA.KEY_NOTIFICATIONS] = {}
-
-    notifications = chemistry[DATA.KEY_NOTIFICATIONS]
+    notifications = chemistry.setdefault(DATA.KEY_NOTIFICATIONS, {})
 
     warnings, offset = getSome("B", buff, offset)  # 34
-    unknown["warnings"] = warnings
+    chemistry["unknown_warnings"] = warnings
+
     notifications["ph_lockout"] = {
         "name": "pH Lockout",
         "value": ON_OFF.from_bool(is_set(warnings, CHEMISTRY.FLAG_WARNING_PH_LOCKOUT)),
@@ -252,16 +242,11 @@ def decode_chemistry(buff, data):
     }
 
     chemWarnings, offset = getSome("B", buff, offset)  # 39 (38)
-    unknown["warnings"] = chemWarnings
+    chemistry["unknown_chemwarnings"] = chemWarnings
 
     last2, offset = getSome("B", buff, offset)  # 40
-    unknown["last2"] = last2
+    chemistry["unknown2"] = last2
     last3, offset = getSome("B", buff, offset)  # 41
-    unknown["last3"] = last3
+    chemistry["unknown3"] = last3
     last4, offset = getSome("B", buff, offset)  # 42
-    unknown["last4"] = last4
-
-    if ADD_UNKNOWN_VALUES:
-        chemistry["unknown"] = unknown
-
-    # print(json.dumps(data, indent=4))
+    chemistry["unknown4"] = last4

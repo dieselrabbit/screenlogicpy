@@ -652,6 +652,8 @@ EXPECTED_PUMP_DATA = {
 
 EXPECTED_CHEMISTRY_DATA = {
     "chemistry": {
+        "unknown_size": 42,
+        "unknown1": 0,
         "current_ph": {"name": "Current pH", "value": 0.0, "unit": "pH"},
         "current_orp": {"name": "Current ORP", "value": 0, "unit": "mV"},
         "ph_setpoint": {"name": "pH Setpoint", "value": 7.5, "unit": "pH"},
@@ -675,6 +677,7 @@ EXPECTED_CHEMISTRY_DATA = {
         "cya": {"name": "Cyanuric Acid", "value": 36, "unit": "ppm"},
         "total_alkalinity": {"name": "Total Alkalinity", "value": 70, "unit": "ppm"},
         "salt_tds_ppm": {"name": "Salt/TDS", "value": 1000, "unit": "ppm"},
+        "probe_is_celsius": 0,
         "ph_probe_water_temp": {
             "name": "pH Probe Water Temperature",
             "value": 56,
@@ -708,11 +711,16 @@ EXPECTED_CHEMISTRY_DATA = {
             # "corrosive": {"name": "Corrosive", "value": 1},
             # "scaling": {"name": "Scaling", "value": 0},
         },
+        "unknown_warnings": 0,
         "status": 165,
         "ph_dosing_state": {"name": "pH Dosing State", "value": 2},
         "orp_dosing_state": {"name": "ORP Dosing State", "value": 2},
         "flags": 32,
         "firmware": {"name": "IntelliChem Firmware Version", "value": "1.060"},
+        "unknown_chemwarnings": 0,
+        "unknown2": 0,
+        "unknown3": 0,
+        "unknown4": 0,
     }
 }
 
@@ -1195,6 +1203,8 @@ EXPECTED_COMPLETE_DATA = {
         "chem_alarm": {"name": "Chemistry Alarm", "value": 1, "device_type": "alarm"},
     },
     "chemistry": {
+        "unknown_size": 42,
+        "unknown1": 0,
         "current_ph": {"name": "Current pH", "value": 0.0, "unit": "pH"},
         "current_orp": {"name": "Current ORP", "value": 0, "unit": "mV"},
         "ph_setpoint": {"name": "pH Setpoint", "value": 7.5, "unit": "pH"},
@@ -1218,6 +1228,7 @@ EXPECTED_COMPLETE_DATA = {
         "cya": {"name": "Cyanuric Acid", "value": 36, "unit": "ppm"},
         "total_alkalinity": {"name": "Total Alkalinity", "value": 70, "unit": "ppm"},
         "salt_tds_ppm": {"name": "Salt/TDS", "value": 1000, "unit": "ppm"},
+        "probe_is_celsius": 0,
         "ph_probe_water_temp": {
             "name": "pH Probe Water Temperature",
             "value": 56,
@@ -1251,11 +1262,16 @@ EXPECTED_COMPLETE_DATA = {
             # "corrosive": {"name": "Corrosive", "value": 1},
             # "scaling": {"name": "Scaling", "value": 0},
         },
+        "unknown_warnings": 0,
         "status": 165,
         "ph_dosing_state": {"name": "pH Dosing State", "value": 2},
         "orp_dosing_state": {"name": "ORP Dosing State", "value": 2},
         "flags": 32,
         "firmware": {"name": "IntelliChem Firmware Version", "value": "1.060"},
+        "unknown_chemwarnings": 0,
+        "unknown2": 0,
+        "unknown3": 0,
+        "unknown4": 0,
     },
     "scg": {
         "scg_present": 0,
