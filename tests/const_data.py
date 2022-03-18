@@ -1326,4 +1326,5 @@ Spa Heat Mode: Heater
 
 EXPECTED_VERBOSE_PREAMBLE = """Discovered 'Fake: 00-00-00' at 127.0.0.1:6448
 EasyTouch2 8
+Version: fake 0.0.3
 """
