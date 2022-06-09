@@ -37,6 +37,7 @@ class ScreenLogicGateway:
         self.__transport: asyncio.Transport = None
         self.__protocol: ScreenLogicProtocol = None
         self.__data = {}
+        self.__last = {}
 
     @property
     def ip(self) -> str:
@@ -104,6 +105,10 @@ class ScreenLogicGateway:
     def get_data(self) -> dict:
         """Returns the data."""
         return self.__data
+
+    def get_debug(self) -> dict:
+        """Returns the debug last-received data."""
+        return self.__last
 
     async def async_set_circuit(self, circuitID: int, circuitState: int):
         """Sets the circuit state for the specified circuit."""
@@ -199,7 +204,9 @@ class ScreenLogicGateway:
                 "Not connected to protocol adapter. get_chemistry failed."
             )
         _LOGGER.debug("Requesting chemistry data")
-        await async_request_chemistry(self.__protocol, self.__data)
+        response = await async_request_chemistry(self.__protocol, self.__data)
+        self.__last[DATA.KEY_CHEMISTRY] = response
+        self.__data.update(response["data"])
 
     async def _async_get_scg(self):
         if not self.is_connected:

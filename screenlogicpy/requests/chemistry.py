@@ -13,10 +13,10 @@ from ..const import (
     ScreenLogicWarning,
 )
 from .protocol import ScreenLogicProtocol
-from .utility import getSome
+from .utility import getSome, packResponse
 
 
-async def async_request_chemistry(protocol: ScreenLogicProtocol, data):
+async def async_request_chemistry(protocol: ScreenLogicProtocol, data: dict):
     try:
         await asyncio.wait_for(
             (
@@ -27,15 +27,13 @@ async def async_request_chemistry(protocol: ScreenLogicProtocol, data):
             MESSAGE.COM_TIMEOUT,
         )
         if not request.cancelled():
-            decode_chemistry(request.result(), data)
+            return packResponse(*decode_chemistry(request.result(), data))
     except asyncio.TimeoutError:
         raise ScreenLogicWarning("Timeout poiling chemistry status")
 
 
 # pylint: disable=unused-variable
 def decode_chemistry(buff, data: dict):
-    # print(buff)
-
     def is_set(bits, mask) -> bool:
         return True if (bits & mask) == mask else False
 
@@ -49,13 +47,13 @@ def decode_chemistry(buff, data: dict):
         else UNIT.FAHRENHEIT
     )
 
+    offset = 0
+
     # size of msg?
-    size, offset = getSome("I", buff, 0)
-    chemistry["unknown_size"] = size
+    chemistry[f"unknown_at_offset_{offset:02}"], offset = getSome("I", buff, offset)
 
     # unknown value
-    unknown1, offset = getSome("B", buff, offset)  # 0
-    chemistry["unknown1"] = unknown1
+    chemistry[f"unknown_at_offset_{offset:02}"], offset = getSome("B", buff, offset)
 
     pH, offset = getSome(">H", buff, offset)  # 1
     chemistry["current_ph"] = {"name": "Current pH", "value": (pH / 100), "unit": "pH"}
@@ -195,8 +193,9 @@ def decode_chemistry(buff, data: dict):
 
     notifications = chemistry.setdefault(DATA.KEY_NOTIFICATIONS, {})
 
+    unkPos = offset
     warnings, offset = getSome("B", buff, offset)  # 34
-    chemistry["unknown_warnings"] = warnings
+    chemistry[f"unknown_at_offset_{unkPos:02}"] = warnings
 
     notifications["ph_lockout"] = {
         "name": "pH Lockout",
@@ -238,15 +237,12 @@ def decode_chemistry(buff, data: dict):
     vMajor, offset = getSome("B", buff, offset)  # 38 (37)
     chemistry["firmware"] = {
         "name": "IntelliChem Firmware Version",
-        "value": f"{vMajor}.{str(vMinor).zfill(3)}",
+        "value": f"{vMajor}.{vMinor:03}",
     }
 
-    chemWarnings, offset = getSome("B", buff, offset)  # 39 (38)
-    chemistry["unknown_chemwarnings"] = chemWarnings
+    chemistry[f"unknown_at_offset_{offset:02}"], offset = getSome("B", buff, offset)
+    chemistry[f"unknown_at_offset_{offset:02}"], offset = getSome("B", buff, offset)
+    chemistry[f"unknown_at_offset_{offset:02}"], offset = getSome("B", buff, offset)
+    chemistry[f"unknown_at_offset_{offset:02}"], offset = getSome("B", buff, offset)
 
-    last2, offset = getSome("B", buff, offset)  # 40
-    chemistry["unknown2"] = last2
-    last3, offset = getSome("B", buff, offset)  # 41
-    chemistry["unknown3"] = last3
-    last4, offset = getSome("B", buff, offset)  # 42
-    chemistry["unknown4"] = last4
+    return buff, data
