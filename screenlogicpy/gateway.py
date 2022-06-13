@@ -206,7 +206,7 @@ class ScreenLogicGateway:
         _LOGGER.debug("Requesting chemistry data")
         response = await async_request_chemistry(self.__protocol, self.__data)
         self.__last[DATA.KEY_CHEMISTRY] = response
-        self.__data.update(response["data"])
+        self.__data.update(response["parsed"])
 
     async def _async_get_scg(self):
         if not self.is_connected:
