@@ -10,6 +10,7 @@ from .const_data import (
     FAKE_CHEMISTRY_RESPONSE,
     FAKE_SCG_RESPONSE,
 )
+from screenlogicpy.const import UNIT
 from screenlogicpy.requests.config import decode_pool_config
 from screenlogicpy.requests.status import decode_pool_status
 from screenlogicpy.requests.pump import decode_pump_status
@@ -40,9 +41,9 @@ def test_decode_pump():
 
 
 def test_decode_chemistry():
-    data = {}
-    decode_chemistry(FAKE_CHEMISTRY_RESPONSE, data)
+    buff, data = decode_chemistry(FAKE_CHEMISTRY_RESPONSE, UNIT.FAHRENHEIT)
 
+    assert buff == FAKE_CHEMISTRY_RESPONSE
     assert data == EXPECTED_CHEMISTRY_DATA
 
 

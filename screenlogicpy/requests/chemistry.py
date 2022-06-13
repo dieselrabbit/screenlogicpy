@@ -9,11 +9,10 @@ from ..const import (
     DEVICE_TYPE,
     MESSAGE,
     ON_OFF,
-    UNIT,
     ScreenLogicWarning,
 )
 from .protocol import ScreenLogicProtocol
-from .utility import getSome, packResponse
+from .utility import getSome, getTemperatureUnit, packResponse
 
 
 async def async_request_chemistry(protocol: ScreenLogicProtocol, data: dict):
@@ -27,25 +26,21 @@ async def async_request_chemistry(protocol: ScreenLogicProtocol, data: dict):
             MESSAGE.COM_TIMEOUT,
         )
         if not request.cancelled():
-            return packResponse(*decode_chemistry(request.result(), data))
+            return packResponse(
+                *decode_chemistry(request.result(), getTemperatureUnit(data))
+            )
     except asyncio.TimeoutError:
-        raise ScreenLogicWarning("Timeout poiling chemistry status")
+        raise ScreenLogicWarning("Timeout polling chemistry status")
 
 
 # pylint: disable=unused-variable
-def decode_chemistry(buff, data: dict):
+def decode_chemistry(buff, temp_unit):
     def is_set(bits, mask) -> bool:
         return True if (bits & mask) == mask else False
 
-    chemistry: dict = data.setdefault(DATA.KEY_CHEMISTRY, {})
+    data = {}
 
-    unit_txt = (
-        UNIT.CELSIUS
-        if DATA.KEY_CONFIG in data
-        and "is_celsius" in data[DATA.KEY_CONFIG]
-        and data[DATA.KEY_CONFIG]["is_celsius"]["value"]
-        else UNIT.FAHRENHEIT
-    )
+    chemistry: dict = data.setdefault(DATA.KEY_CHEMISTRY, {})
 
     offset = 0
 
@@ -153,7 +148,7 @@ def decode_chemistry(buff, data: dict):
     chemistry["ph_probe_water_temp"] = {
         "name": "pH Probe Water Temperature",
         "value": waterTemp,
-        "unit": unit_txt,
+        "unit": temp_unit,
         "device_type": DEVICE_TYPE.TEMPERATURE,
     }
 
