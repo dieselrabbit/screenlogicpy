@@ -41,13 +41,9 @@ def decode_pool_status(buff: bytes, data: dict) -> None:
     cleanerDelay, offset = getSome("B", buff, offset)
     config["cleaner_delay"] = {"name": "Cleaner Delay", "value": cleanerDelay}
 
-    # fast forward 3 bytes. Unknown data.
-    unknown1, offset = getSome("B", buff, offset)
-    config["unknown1"] = unknown1
-    unknown2, offset = getSome("B", buff, offset)
-    config["unknown2"] = unknown2
-    unknown3, offset = getSome("B", buff, offset)
-    config["unknown3"] = unknown3
+    config[f"unknown_at_offset_{offset:02}"], offset = getSome("B", buff, offset)
+    config[f"unknown_at_offset_{offset:02}"], offset = getSome("B", buff, offset)
+    config[f"unknown_at_offset_{offset:02}"], offset = getSome("B", buff, offset)
 
     sensors = data.setdefault(DATA.KEY_SENSORS, {})
 
