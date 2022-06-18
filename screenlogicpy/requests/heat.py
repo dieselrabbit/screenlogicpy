@@ -1,37 +1,27 @@
-import asyncio
 import struct
 
-from ..const import CODE, MESSAGE, ScreenLogicWarning
+from ..const import CODE
 from .protocol import ScreenLogicProtocol
+from .request import async_make_request
 
 
 async def async_request_set_heat_setpoint(
-    protocol: ScreenLogicProtocol, body, setpoint
-):
-    try:
-        await asyncio.wait_for(
-            (
-                request := protocol.await_send_message(
-                    CODE.SETHEATTEMP_QUERY, struct.pack("<III", 0, body, setpoint)
-                )
-            ),
-            MESSAGE.COM_TIMEOUT,
+    protocol: ScreenLogicProtocol, body: int, set_point: float
+) -> bool:
+    return (
+        await async_make_request(
+            protocol, CODE.SETHEATTEMP_QUERY, struct.pack("<III", 0, body, set_point)
         )
-        return not request.cancelled() and request.result() == b""
-    except asyncio.TimeoutError:
-        raise ScreenLogicWarning("Timeout requesting heat setpoint change")
+        == b""
+    )
 
 
-async def async_request_set_heat_mode(protocol: ScreenLogicProtocol, body, heat_mode):
-    try:
-        await asyncio.wait_for(
-            (
-                request := protocol.await_send_message(
-                    CODE.SETHEATMODE_QUERY, struct.pack("<III", 0, body, heat_mode)
-                )
-            ),
-            MESSAGE.COM_TIMEOUT,
+async def async_request_set_heat_mode(
+    protocol: ScreenLogicProtocol, body: int, heat_mode: int
+) -> bool:
+    return (
+        await async_make_request(
+            protocol, CODE.SETHEATMODE_QUERY, struct.pack("<III", 0, body, heat_mode)
         )
-        return not request.cancelled() and request.result() == b""
-    except asyncio.TimeoutError:
-        raise ScreenLogicWarning("Timeout requesting heat mode change")
+        == b""
+    )

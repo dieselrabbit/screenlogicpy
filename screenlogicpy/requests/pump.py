@@ -1,30 +1,22 @@
-# import json
-import asyncio
 import struct
 
-from ..const import CODE, DATA, DEVICE_TYPE, MESSAGE, ScreenLogicWarning
+from ..const import CODE, DATA, DEVICE_TYPE
 from .protocol import ScreenLogicProtocol
+from .request import async_make_request
 from .utility import getSome
 
 
-async def async_request_pump_status(protocol: ScreenLogicProtocol, data, pumpID):
-    try:
-        await asyncio.wait_for(
-            (
-                request := protocol.await_send_message(
-                    CODE.PUMPSTATUS_QUERY, struct.pack("<II", 0, pumpID)
-                )
-            ),
-            MESSAGE.COM_TIMEOUT,
-        )
-        if not request.cancelled():
-            decode_pump_status(request.result(), data, pumpID)
-    except asyncio.TimeoutError:
-        raise ScreenLogicWarning(f"Timeout poiling pump {pumpID} status")
+async def async_request_pump_status(
+    protocol: ScreenLogicProtocol, data: dict, pumpID: int
+) -> bytes:
+    if result := await async_make_request(
+        protocol, CODE.PUMPSTATUS_QUERY, struct.pack("<II", 0, pumpID)
+    ):
+        decode_pump_status(result, data, pumpID)
+        return result
 
 
-# pylint: disable=unused-variable
-def decode_pump_status(buff, data: dict, pumpID):
+def decode_pump_status(buff: bytes, data: dict, pumpID: int) -> None:
     pumps: dict = data.setdefault(DATA.KEY_PUMPS, {})
 
     pump = pumps.setdefault(pumpID, {})
@@ -39,15 +31,13 @@ def decode_pump_status(buff, data: dict, pumpID):
     curR, offset = getSome("I", buff, offset)
     pump["currentRPM"] = {}  # Need to find value when unsupported.
 
-    unknown1, offset = getSome("I", buff, offset)
-    pump["unknown1"] = unknown1
+    pump[f"unknown_at_offset_{offset:02}"], offset = getSome("I", buff, offset)
 
     curG, offset = getSome("I", buff, offset)
     if curG != 255:  # GPM reads 255 when unsupported.
         pump["currentGPM"] = {}
 
-    unknown2, offset = getSome("I", buff, offset)
-    pump["unknown2"] = unknown2
+    pump[f"unknown_at_offset_{offset:02}"], offset = getSome("I", buff, offset)
 
     pump["presets"] = {}
     name = "Default"

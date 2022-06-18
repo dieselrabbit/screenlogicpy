@@ -1,5 +1,4 @@
 # import json
-import asyncio
 import struct
 
 from ..const import (
@@ -7,38 +6,25 @@ from ..const import (
     CODE,
     DATA,
     DEVICE_TYPE,
-    MESSAGE,
     ON_OFF,
-    ScreenLogicWarning,
 )
 from .protocol import ScreenLogicProtocol
-from .utility import getSome, getTemperatureUnit, packResponse
+from .request import async_make_request
+from .utility import getSome, getTemperatureUnit
 
 
-async def async_request_chemistry(protocol: ScreenLogicProtocol, data: dict):
-    try:
-        await asyncio.wait_for(
-            (
-                request := protocol.await_send_message(
-                    CODE.CHEMISTRY_QUERY, struct.pack("<I", 0)
-                )
-            ),
-            MESSAGE.COM_TIMEOUT,
-        )
-        if not request.cancelled():
-            return packResponse(
-                *decode_chemistry(request.result(), getTemperatureUnit(data))
-            )
-    except asyncio.TimeoutError:
-        raise ScreenLogicWarning("Timeout polling chemistry status")
+async def async_request_chemistry(protocol: ScreenLogicProtocol, data: dict) -> bytes:
+    if result := await async_make_request(
+        protocol, CODE.CHEMISTRY_QUERY, struct.pack("<I", 0)
+    ):
+        decode_chemistry(result, data)
+        return result
 
 
 # pylint: disable=unused-variable
-def decode_chemistry(buff, temp_unit):
+def decode_chemistry(buff: bytes, data: dict) -> None:
     def is_set(bits, mask) -> bool:
         return True if (bits & mask) == mask else False
-
-    data = {}
 
     chemistry: dict = data.setdefault(DATA.KEY_CHEMISTRY, {})
 
@@ -144,11 +130,13 @@ def decode_chemistry(buff, temp_unit):
     probIsC, offset = getSome("B", buff, offset)
     chemistry["probe_is_celsius"] = probIsC
 
+    temperature_unit = getTemperatureUnit(data)
+
     waterTemp, offset = getSome("B", buff, offset)  # 32
     chemistry["ph_probe_water_temp"] = {
         "name": "pH Probe Water Temperature",
         "value": waterTemp,
-        "unit": temp_unit,
+        "unit": temperature_unit,
         "device_type": DEVICE_TYPE.TEMPERATURE,
     }
 
@@ -239,5 +227,3 @@ def decode_chemistry(buff, temp_unit):
     chemistry[f"unknown_at_offset_{offset:02}"], offset = getSome("B", buff, offset)
     chemistry[f"unknown_at_offset_{offset:02}"], offset = getSome("B", buff, offset)
     chemistry[f"unknown_at_offset_{offset:02}"], offset = getSome("B", buff, offset)
-
-    return buff, data

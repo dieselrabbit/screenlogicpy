@@ -113,13 +113,6 @@ def getArray(buff, offset):
     return items, offset
 
 
-def packResponse(buff, data):
-    packed = {}
-    packed["raw"] = buff
-    packed["parsed"] = data
-    return packed
-
-
 def getTemperatureUnit(data: dict):
     return (
         UNIT.CELSIUS

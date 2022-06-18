@@ -631,13 +631,13 @@ EXPECTED_PUMP_DATA = {
                 "value": 0,
                 "unit": "rpm",
             },
-            "unknown1": 0,
+            "unknown_at_offset_16": 0,
             "currentGPM": {
                 "name": "Default Pump Current GPM",
                 "value": 0,
                 "unit": "gpm",
             },
-            "unknown2": 255,
+            "unknown_at_offset_24": 255,
             "presets": {
                 0: {"cid": 6, "setPoint": 2500, "isRPM": 1},
                 1: {"cid": 9, "setPoint": 2800, "isRPM": 1},
@@ -1165,13 +1165,13 @@ EXPECTED_COMPLETE_DATA = {
                 "value": 0,
                 "unit": "rpm",
             },
-            "unknown1": 0,
+            "unknown_at_offset_16": 0,
             "currentGPM": {
                 "name": "Pool Low Pump Current GPM",
                 "value": 0,
                 "unit": "gpm",
             },
-            "unknown2": 255,
+            "unknown_at_offset_24": 255,
             "presets": {
                 0: {"cid": 6, "setPoint": 2500, "isRPM": 1},
                 1: {"cid": 9, "setPoint": 2800, "isRPM": 1},

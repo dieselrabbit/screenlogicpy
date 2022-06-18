@@ -1,5 +1,4 @@
 # import json
-import asyncio
 import struct
 
 from ..const import (
@@ -7,32 +6,21 @@ from ..const import (
     BODY_TYPE,
     DATA,
     DEVICE_TYPE,
-    MESSAGE,
-    UNIT,
-    ScreenLogicWarning,
 )
 from .protocol import ScreenLogicProtocol
-from .utility import getSome
+from .request import async_make_request
+from .utility import getSome, getTemperatureUnit
 
 
-async def async_request_pool_status(protocol: ScreenLogicProtocol, data):
-    try:
-        await asyncio.wait_for(
-            (
-                request := protocol.await_send_message(
-                    CODE.POOLSTATUS_QUERY, struct.pack("<I", 0)
-                )
-            ),
-            MESSAGE.COM_TIMEOUT,
-        )
-        if not request.cancelled():
-            decode_pool_status(request.result(), data)
-    except asyncio.TimeoutError:
-        raise ScreenLogicWarning("Timeout polling pool status")
+async def async_request_pool_status(protocol: ScreenLogicProtocol, data: dict) -> bytes:
+    if result := await async_make_request(
+        protocol, CODE.POOLSTATUS_QUERY, struct.pack("<I", 0)
+    ):
+        decode_pool_status(result, data)
+        return result
 
 
-# pylint: disable=unused-variable
-def decode_pool_status(buff, data: dict):
+def decode_pool_status(buff: bytes, data: dict) -> None:
     config = data.setdefault(DATA.KEY_CONFIG, {})
 
     ok, offset = getSome("I", buff, 0)
@@ -61,19 +49,15 @@ def decode_pool_status(buff, data: dict):
     unknown3, offset = getSome("B", buff, offset)
     config["unknown3"] = unknown3
 
-    unit_txt = (
-        UNIT.CELSIUS
-        if "is_celsius" in config and config["is_celsius"]["value"]
-        else UNIT.FAHRENHEIT
-    )
-
     sensors = data.setdefault(DATA.KEY_SENSORS, {})
+
+    temperature_unit = getTemperatureUnit(data)
 
     airTemp, offset = getSome("i", buff, offset)
     sensors["air_temperature"] = {
         "name": "Air Temperature",
         "value": airTemp,
-        "unit": unit_txt,
+        "unit": temperature_unit,
         "device_type": DEVICE_TYPE.TEMPERATURE,
     }
 
@@ -91,9 +75,9 @@ def decode_pool_status(buff, data: dict):
         if bodyType not in range(2):
             bodyType = 0
 
-        currentBody.setdefault("min_set_point", {})["unit"] = unit_txt
+        currentBody.setdefault("min_set_point", {})["unit"] = temperature_unit
 
-        currentBody.setdefault("max_set_point", {})["unit"] = unit_txt
+        currentBody.setdefault("max_set_point", {})["unit"] = temperature_unit
 
         currentBody["body_type"] = {"name": "Type of body of water", "value": bodyType}
 
@@ -102,7 +86,7 @@ def decode_pool_status(buff, data: dict):
         currentBody["last_temperature"] = {
             "name": bodyName,
             "value": lastTemp,
-            "unit": unit_txt,
+            "unit": temperature_unit,
             "device_type": DEVICE_TYPE.TEMPERATURE,
         }
 
@@ -115,7 +99,7 @@ def decode_pool_status(buff, data: dict):
         currentBody["heat_set_point"] = {
             "name": hspName,
             "value": heatSetPoint,
-            "unit": unit_txt,
+            "unit": temperature_unit,
             "device_type": DEVICE_TYPE.TEMPERATURE,
         }
 
@@ -124,7 +108,7 @@ def decode_pool_status(buff, data: dict):
         currentBody["cool_set_point"] = {
             "name": cspName,
             "value": coolSetPoint,
-            "unit": unit_txt,
+            "unit": temperature_unit,
         }
 
         heatMode, offset = getSome("i", buff, offset)
@@ -143,8 +127,8 @@ def decode_pool_status(buff, data: dict):
         if "id" not in currentCircuit:
             currentCircuit["id"] = circuitID
 
-        circuitstate, offset = getSome("I", buff, offset)
-        currentCircuit["value"] = circuitstate
+        circuitState, offset = getSome("I", buff, offset)
+        currentCircuit["value"] = circuitState
 
         cColorSet, offset = getSome("B", buff, offset)
         currentCircuit["color_set"] = cColorSet

@@ -1,23 +1,18 @@
-import asyncio
 import struct
 
-from ..const import CODE, MESSAGE, ScreenLogicWarning
+from ..const import CODE
 from .protocol import ScreenLogicProtocol
+from .request import async_make_request
 
 
 async def async_request_pool_button_press(
-    protocol: ScreenLogicProtocol, circuit_id, circuit_state
-):
-    try:
-        await asyncio.wait_for(
-            (
-                request := protocol.await_send_message(
-                    CODE.BUTTONPRESS_QUERY,
-                    struct.pack("<III", 0, circuit_id, circuit_state),
-                )
-            ),
-            MESSAGE.COM_TIMEOUT,
+    protocol: ScreenLogicProtocol, circuit_id: int, circuit_state: int
+) -> bool:
+    return (
+        await async_make_request(
+            protocol,
+            CODE.BUTTONPRESS_QUERY,
+            struct.pack("<III", 0, circuit_id, circuit_state),
         )
-        return not request.cancelled() and request.result() == b""
-    except asyncio.TimeoutError:
-        raise ScreenLogicWarning("Timeout requesting button press")
+        == b""
+    )
