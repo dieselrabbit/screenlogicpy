@@ -58,12 +58,15 @@ When done, use `async_disconnect()` to close the connection to the protocol adap
     await gateway.async_disconnect()  
 *New in v0.5.0*
 
+
 ## Gateway Discovery
 
 The `discovery` module's `async_discover()` function can be used to get a list of all discovered ScreenLogic protocol adapters on the local network. Each protocol adapter is represented as a `dict` object that can then be directly used to instanciate a `ScreenLogicGateway` class.
 
     hosts = await discovery.async_discover()
 *Changed in v0.5.0: This method is now an async coroutine.*
+
+Example in `./examples/async_discovery.py`
 
 ## Example
 
@@ -78,6 +81,8 @@ The `discovery` module's `async_discover()` function can be used to get a list o
             data = gateway.get_data()
     else:
         print("No gateways found")
+
+Full example in `./examples/gateway.py`
 
 ## Performing actions
 
@@ -124,6 +129,26 @@ Chlorinator output levels can be set with `async_set_scg_config()`.  `async_set_
     
     success = await gateway.async_set_scg_config(pool_output, spa_output)  
 *New in v0.5.0*
+
+## Handling unsolicited messages
+With the move to asyncio, screenlogicpy can now be handle unsolicited messages from the protocol adapter (messages that are not a direct response to a request from screenlogicpy).
+To do so, you need to tell the `ScreenLogicGateway` what message code to listen for and what to do when it is received. You can register a handler with `register_message_handler()` . This method takes the message code to wait for, the function to schedule, and any parameters you want to pass to your handler. Your handler function needs to take the message itself, and any additional parameters you specified.
+
+**Note:** Currently the `ScreenLogicGateway` must be connected to the protocol adapter before registering a handler.
+
+### Example:
+    WEATHER_UPDATE_CODE = 9806
+    WEATHER_REQUEST_CODE = 9807
+    
+    async def weather_request(message: bytes, userData: dict):
+        result = await gateway.async_send_message(WEATHER_REQUEST_CODE)
+        userData = Process(result)
+        print(result)
+
+    gateway.register_message_handler(WEATHER_UPDATE_CODE, weather_request, userData)
+Full example in `./examples/async_listen.py`
+
+*New in v0.6.0*
 
 # Command line
 

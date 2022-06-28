@@ -1,7 +1,8 @@
 import asyncio
 import logging
+from typing import Callable, Coroutine
 
-from .const import BODY_TYPE, DATA, SCG, ScreenLogicWarning
+from .const import BODY_TYPE, DATA, SCG, ScreenLogicError, ScreenLogicWarning
 from .requests import (
     async_connect_to_gateway,
     async_request_gateway_version,
@@ -15,6 +16,7 @@ from .requests import (
     async_request_chemistry,
     async_request_scg_config,
     async_request_set_scg_config,
+    async_make_request,
 )
 from .requests.protocol import ScreenLogicProtocol
 
@@ -63,13 +65,15 @@ class ScreenLogicGateway:
     def is_connected(self) -> bool:
         return self.__protocol.connected if self.__protocol else False
 
-    async def async_connect(self) -> bool:
+    async def async_connect(self, connection_closed_callback: Callable = None) -> bool:
         """Connects to the ScreenLogic protocol adapter"""
         if self.is_connected:
             return True
 
         _LOGGER.debug("Beginning connection and login sequence")
-        connectPkg = await async_connect_to_gateway(self.__ip, self.__port)
+        connectPkg = await async_connect_to_gateway(
+            self.__ip, self.__port, connection_closed_callback
+        )
         if connectPkg:
             self.__transport, self.__protocol, self.__mac = connectPkg
             self.__version = await async_request_gateway_version(self.__protocol)
@@ -171,6 +175,27 @@ class ScreenLogicGateway:
             ):
                 return True
         return False
+
+    def register_message_handler(
+        self, message_code: int, handler: Coroutine[bytes, any, None], *argv
+    ):
+        """Registers a function to call when a message with the specified message_code is received.
+        Only one handler can be registered per message_code. Subsequent registrations will supersede
+        the previous registration."""
+        if not self.__protocol:
+            raise ScreenLogicError(
+                "Not connected to ScreenLogic gateway. Must connect to gateway before registering handler."
+            )
+        self.__protocol.register_async_message_callback(message_code, handler, *argv)
+
+    async def async_send_message(self, message_code: int, message: bytes = b""):
+        """Sends a message to the protocol adapter."""
+        if not self.is_connected:
+            raise ScreenLogicWarning(
+                "Not connected to protocol adapter. send_message failed."
+            )
+        _LOGGER.debug(f"User requesting {message_code}")
+        return await async_make_request(self.__protocol, message_code, message)
 
     async def _async_get_config(self):
         if not self.is_connected:

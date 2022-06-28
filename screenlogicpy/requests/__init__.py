@@ -10,3 +10,4 @@ from .pump import async_request_pump_status
 from .status import async_request_pool_status
 from .chemistry import async_request_chemistry
 from .scg import async_request_scg_config, async_request_set_scg_config
+from .request import async_make_request

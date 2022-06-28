@@ -1,7 +1,7 @@
 import asyncio
 import itertools
 import logging
-from typing import Callable
+from typing import Callable, Coroutine
 
 from ..const import CODE, ScreenLogicError
 from .utility import makeMessage, takeMessages
@@ -14,8 +14,9 @@ class ScreenLogicProtocol(asyncio.Protocol):
 
     def __init__(self, loop, connection_lost_callback: Callable = None) -> None:
         self.connected = False
+        self._loop: asyncio.BaseEventLoop = loop
         self._connection_lost_callback = connection_lost_callback
-        self._futures = self.FutureManager(loop)
+        self._futures = self.FutureManager(self._loop)
         self._callbacks = {}
         # Adapter-initiated message IDs seem to start at 32767,
         # so we'll use only the lower half of the message ID data size.
@@ -57,10 +58,11 @@ class ScreenLogicProtocol(asyncio.Protocol):
                     message,
                 )
                 # Unsolicited message received. See if there's a callback registered
-                # for the message code and call it.
+                # for the message code and create a task for it.
                 if messageCode in self._callbacks:
-                    callback, target_data = self._callbacks[messageCode]
-                    callback(messageCode, message, target_data)
+                    handler, args = self._callbacks[messageCode]
+                    _LOGGER.debug(f"Calling {handler} with {args}")
+                    self._loop.create_task(handler(message, *args))
 
     def connection_lost(self, exc) -> None:
         _LOGGER.debug("Connection closed")
@@ -71,11 +73,14 @@ class ScreenLogicProtocol(asyncio.Protocol):
     def register_async_message_callback(
         self,
         messageCode,
-        callback: Callable[[int, bytes, dict], None],
-        target_data=None,
+        handler: Callable[[bytes, any], Coroutine[any, any, None]],
+        *args,
     ):
         """Registers a callback function to call for the specified unhandled message code."""
-        self._callbacks[messageCode] = (callback, target_data)
+        _LOGGER.debug(
+            f"registering handler for message code {messageCode} to call with args {args}"
+        )
+        self._callbacks[messageCode] = (handler, args)
 
     def requests_pending(self) -> bool:
         return not self._futures.all_done()
