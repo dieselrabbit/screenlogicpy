@@ -62,6 +62,8 @@ When done, use `async_disconnect()` to close the connection to the protocol adap
 
 The `discovery` module's `async_discover()` function can be used to get a list of all discovered ScreenLogic protocol adapters on the local network. Each protocol adapter is represented as a `dict` object that can then be directly used to instanciate a `ScreenLogicGateway` class.
 
+**Note:** Gateway discovery is limited to discovering ScreenLogic protocol adapters on the same subnet.
+
     hosts = await discovery.async_discover()
 *Changed in v0.5.0: This method is now an async coroutine.*
 
@@ -87,6 +89,7 @@ The following actions can be performed with methods on the `ScreenLogicGateway` 
 - Set a heating mode for a specific body of water (spa/pool)
 - Set a target heating temperature for a specific body of water (spa/pool)
 - Select various color-enabled lighting options
+- Set the chlorinator output levels
 
 Each method will `return True` if the operation reported no exceptions.
 **Note:** The methods do not confirm the requested action is now in effect on the pool controller.
@@ -124,6 +127,14 @@ Chlorinator output levels can be set with `async_set_scg_config()`.  `async_set_
     
     success = await gateway.async_set_scg_config(pool_output, spa_output)  
 *New in v0.5.0*
+
+## Debug Information
+
+A debug function is available in the `ScreenLogicGateway` class: `get_debug`. This will return a dict with the raw bytes for the last response for each request the gateway performs during an update. This can be useful for debugging the actual responses from the protocol adapter.
+
+    last_resonses = gateway.get_debug()
+
+*New in v0.5.5*
 
 # Command line
 
