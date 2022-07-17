@@ -1,66 +1,40 @@
 # import json
-import asyncio
 import struct
 
 from ..const import (
-    ADD_UNKNOWN_VALUES,
     CHEMISTRY,
     CODE,
     DATA,
     DEVICE_TYPE,
-    MESSAGE,
     ON_OFF,
-    UNIT,
-    ScreenLogicWarning,
 )
 from .protocol import ScreenLogicProtocol
-from .utility import getSome
+from .request import async_make_request
+from .utility import getSome, getTemperatureUnit
 
 
-async def async_request_chemistry(protocol: ScreenLogicProtocol, data):
-    try:
-        await asyncio.wait_for(
-            (
-                request := protocol.await_send_message(
-                    CODE.CHEMISTRY_QUERY, struct.pack("<I", 0)
-                )
-            ),
-            MESSAGE.COM_TIMEOUT,
-        )
-        if not request.cancelled():
-            decode_chemistry(request.result(), data)
-    except asyncio.TimeoutError:
-        raise ScreenLogicWarning("Timeout poiling chemistry status")
+async def async_request_chemistry(protocol: ScreenLogicProtocol, data: dict) -> bytes:
+    if result := await async_make_request(
+        protocol, CODE.CHEMISTRY_QUERY, struct.pack("<I", 0)
+    ):
+        decode_chemistry(result, data)
+        return result
 
 
 # pylint: disable=unused-variable
-def decode_chemistry(buff, data):
-    # print(buff)
-
+def decode_chemistry(buff: bytes, data: dict) -> None:
     def is_set(bits, mask) -> bool:
         return True if (bits & mask) == mask else False
 
-    if DATA.KEY_CHEMISTRY not in data:
-        data[DATA.KEY_CHEMISTRY] = {}
+    chemistry: dict = data.setdefault(DATA.KEY_CHEMISTRY, {})
 
-    chemistry = data[DATA.KEY_CHEMISTRY]
+    offset = 0
 
-    unit_txt = (
-        UNIT.CELSIUS
-        if DATA.KEY_CONFIG in data
-        and "is_celsius" in data[DATA.KEY_CONFIG]
-        and data[DATA.KEY_CONFIG]["is_celsius"]["value"]
-        else UNIT.FAHRENHEIT
-    )
+    # size of msg?
+    chemistry[f"unknown_at_offset_{offset:02}"], offset = getSome("I", buff, offset)
 
-    unknown = {}
-
-    size, offset = getSome("I", buff, 0)
-    unknown["size"] = size
-
-    # skip an unknown value
-    unknown1, offset = getSome("B", buff, offset)  # 0
-    unknown["unknown1"] = unknown1
+    # unknown value
+    chemistry[f"unknown_at_offset_{offset:02}"], offset = getSome("B", buff, offset)
 
     pH, offset = getSome(">H", buff, offset)  # 1
     chemistry["current_ph"] = {"name": "Current pH", "value": (pH / 100), "unit": "pH"}
@@ -154,20 +128,19 @@ def decode_chemistry(buff, data):
 
     # Probe temp unit is Celsius?
     probIsC, offset = getSome("B", buff, offset)
-    unknown["probe_is_celsius"] = probIsC
+    chemistry["probe_is_celsius"] = probIsC
+
+    temperature_unit = getTemperatureUnit(data)
 
     waterTemp, offset = getSome("B", buff, offset)  # 32
     chemistry["ph_probe_water_temp"] = {
         "name": "pH Probe Water Temperature",
         "value": waterTemp,
-        "unit": unit_txt,
+        "unit": temperature_unit,
         "device_type": DEVICE_TYPE.TEMPERATURE,
     }
 
-    if DATA.KEY_ALERTS not in chemistry:
-        chemistry[DATA.KEY_ALERTS] = {}
-
-    alerts = chemistry[DATA.KEY_ALERTS]
+    alerts = chemistry.setdefault(DATA.KEY_ALERTS, {})
 
     alarms, offset = getSome("B", buff, offset)  # 33 (32)
     alerts["flow_alarm"] = {
@@ -201,13 +174,12 @@ def decode_chemistry(buff, data):
         "device_type": DEVICE_TYPE.ALARM,
     }
 
-    if DATA.KEY_NOTIFICATIONS not in chemistry:
-        chemistry[DATA.KEY_NOTIFICATIONS] = {}
+    notifications = chemistry.setdefault(DATA.KEY_NOTIFICATIONS, {})
 
-    notifications = chemistry[DATA.KEY_NOTIFICATIONS]
-
+    unkPos = offset
     warnings, offset = getSome("B", buff, offset)  # 34
-    unknown["warnings"] = warnings
+    chemistry[f"unknown_at_offset_{unkPos:02}"] = warnings
+
     notifications["ph_lockout"] = {
         "name": "pH Lockout",
         "value": ON_OFF.from_bool(is_set(warnings, CHEMISTRY.FLAG_WARNING_PH_LOCKOUT)),
@@ -248,20 +220,10 @@ def decode_chemistry(buff, data):
     vMajor, offset = getSome("B", buff, offset)  # 38 (37)
     chemistry["firmware"] = {
         "name": "IntelliChem Firmware Version",
-        "value": f"{vMajor}.{str(vMinor).zfill(3)}",
+        "value": f"{vMajor}.{vMinor:03}",
     }
 
-    chemWarnings, offset = getSome("B", buff, offset)  # 39 (38)
-    unknown["warnings"] = chemWarnings
-
-    last2, offset = getSome("B", buff, offset)  # 40
-    unknown["last2"] = last2
-    last3, offset = getSome("B", buff, offset)  # 41
-    unknown["last3"] = last3
-    last4, offset = getSome("B", buff, offset)  # 42
-    unknown["last4"] = last4
-
-    if ADD_UNKNOWN_VALUES:
-        chemistry["unknown"] = unknown
-
-    # print(json.dumps(data, indent=4))
+    chemistry[f"unknown_at_offset_{offset:02}"], offset = getSome("B", buff, offset)
+    chemistry[f"unknown_at_offset_{offset:02}"], offset = getSome("B", buff, offset)
+    chemistry[f"unknown_at_offset_{offset:02}"], offset = getSome("B", buff, offset)
+    chemistry[f"unknown_at_offset_{offset:02}"], offset = getSome("B", buff, offset)

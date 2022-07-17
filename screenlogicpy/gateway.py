@@ -37,6 +37,7 @@ class ScreenLogicGateway:
         self.__transport: asyncio.Transport = None
         self.__protocol: ScreenLogicProtocol = None
         self.__data = {}
+        self.__last = {}
 
     @property
     def ip(self) -> str:
@@ -104,6 +105,10 @@ class ScreenLogicGateway:
     def get_data(self) -> dict:
         """Returns the data."""
         return self.__data
+
+    def get_debug(self) -> dict:
+        """Returns the debug last-received data."""
+        return self.__last
 
     async def async_set_circuit(self, circuitID: int, circuitState: int):
         """Sets the circuit state for the specified circuit."""
@@ -173,7 +178,9 @@ class ScreenLogicGateway:
                 "Not connected to protocol adapter. get_config failed."
             )
         _LOGGER.debug("Requesting config data")
-        await async_request_pool_config(self.__protocol, self.__data)
+        self.__last[DATA.KEY_CONFIG] = await async_request_pool_config(
+            self.__protocol, self.__data
+        )
 
     async def _async_get_status(self):
         if not self.is_connected:
@@ -181,7 +188,9 @@ class ScreenLogicGateway:
                 "Not connected to protocol adapter. get_status failed."
             )
         _LOGGER.debug("Requesting pool status")
-        await async_request_pool_status(self.__protocol, self.__data)
+        self.__last["status"] = await async_request_pool_status(
+            self.__protocol, self.__data
+        )
 
     async def _async_get_pumps(self):
         if not self.is_connected:
@@ -191,7 +200,10 @@ class ScreenLogicGateway:
         for pumpID in self.__data[DATA.KEY_PUMPS]:
             if self.__data[DATA.KEY_PUMPS][pumpID]["data"] != 0:
                 _LOGGER.debug("Requesting pump %i data", pumpID)
-                await async_request_pump_status(self.__protocol, self.__data, pumpID)
+                last_pumps = self.__last.setdefault(DATA.KEY_PUMPS, {})
+                last_pumps[pumpID] = await async_request_pump_status(
+                    self.__protocol, self.__data, pumpID
+                )
 
     async def _async_get_chemistry(self):
         if not self.is_connected:
@@ -199,7 +211,9 @@ class ScreenLogicGateway:
                 "Not connected to protocol adapter. get_chemistry failed."
             )
         _LOGGER.debug("Requesting chemistry data")
-        await async_request_chemistry(self.__protocol, self.__data)
+        self.__last[DATA.KEY_CHEMISTRY] = await async_request_chemistry(
+            self.__protocol, self.__data
+        )
 
     async def _async_get_scg(self):
         if not self.is_connected:
@@ -207,7 +221,9 @@ class ScreenLogicGateway:
                 "Not connected to protocol adapter. get_scg failed."
             )
         _LOGGER.debug("Requesting scg data")
-        await async_request_scg_config(self.__protocol, self.__data)
+        self.__last[DATA.KEY_SCG] = await async_request_scg_config(
+            self.__protocol, self.__data
+        )
 
     def _is_valid_circuit(self, circuit):
         return circuit in self.__data[DATA.KEY_CIRCUITS]

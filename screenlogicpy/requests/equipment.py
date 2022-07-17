@@ -1,39 +1,29 @@
-import asyncio
 import struct
 
-from ..const import CODE, MESSAGE, ScreenLogicWarning
+from ..const import CODE
 from .protocol import ScreenLogicProtocol
+from .request import async_make_request
 from .utility import getSome, getArray
 
 
-async def async_request_equipment_config(protocol: ScreenLogicProtocol, data):
-    try:
-        await asyncio.wait_for(
-            (
-                request := protocol.await_send_message(
-                    CODE.EQUIPMENT_QUERY, struct.pack("<2I", 0, 0)
-                )
-            ),
-            MESSAGE.COM_TIMEOUT,
-        )
-        if not request.cancelled():
-            decode_equipment_config(request.result(), data)
-    except asyncio.TimeoutError:
-        raise ScreenLogicWarning("Timeout polling equipment config")
+async def async_request_equipment_config(
+    protocol: ScreenLogicProtocol, data: dict
+) -> bytes:
+    if result := await async_make_request(
+        protocol, CODE.EQUIPMENT_QUERY, struct.pack("<2I", 0, 0)
+    ):
+        decode_equipment_config(result, data)
+        return result
 
 
-# pylint: disable=unused-variable
-def decode_equipment_config(buff, data):
-    if "equipment" not in data:
-        data["equipment"] = {}
-
-    equip = data["equipment"]
+def decode_equipment_config(buff: bytes, data: dict) -> None:
+    equip = data.setdefault("equipment", {})
 
     equip["controllerType"], offset = getSome("B", buff, 0)
     equip["hardwareType"], offset = getSome("B", buff, offset)
 
-    skip1, offset = getSome("B", buff, offset)
-    skip2, offset = getSome("B", buff, offset)
+    equip[f"unknown_at_offset_{offset:02}"], offset = getSome("B", buff, offset)
+    equip[f"unknown_at_offset_{offset:02}"], offset = getSome("B", buff, offset)
     equip["controllerData"], offset = getSome("I", buff, offset)
 
     equip["versionDataArray"], offset = getArray(buff, offset)

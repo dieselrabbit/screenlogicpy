@@ -1,5 +1,5 @@
 import asyncio
-import pytest
+import pytest_asyncio
 
 from .const_data import (
     FAKE_GATEWAY_ADDRESS,
@@ -10,7 +10,7 @@ from .fake_gateway import FakeScreenLogicTCPProtocol
 from screenlogicpy import ScreenLogicGateway
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture()
 async def MockProtocolAdapter():
     server = await asyncio.get_event_loop().create_server(
         lambda: FakeScreenLogicTCPProtocol(), FAKE_GATEWAY_ADDRESS, FAKE_GATEWAY_PORT
@@ -22,7 +22,7 @@ async def MockProtocolAdapter():
         server.close()
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture()
 async def MockConnectedGateway(
     event_loop: asyncio.AbstractEventLoop, MockProtocolAdapter
 ):

@@ -1,48 +1,30 @@
 # import json
-import asyncio
 import struct
 
 from ..const import (
-    ADD_UNKNOWN_VALUES,
     CODE,
     BODY_TYPE,
     DATA,
     DEVICE_TYPE,
-    MESSAGE,
-    UNIT,
-    ScreenLogicWarning,
 )
 from .protocol import ScreenLogicProtocol
-from .utility import getSome
+from .request import async_make_request
+from .utility import getSome, getTemperatureUnit
 
 
-async def async_request_pool_status(protocol: ScreenLogicProtocol, data):
-    try:
-        await asyncio.wait_for(
-            (
-                request := protocol.await_send_message(
-                    CODE.POOLSTATUS_QUERY, struct.pack("<I", 0)
-                )
-            ),
-            MESSAGE.COM_TIMEOUT,
-        )
-        if not request.cancelled():
-            decode_pool_status(request.result(), data)
-    except asyncio.TimeoutError:
-        raise ScreenLogicWarning("Timeout polling pool status")
+async def async_request_pool_status(protocol: ScreenLogicProtocol, data: dict) -> bytes:
+    if result := await async_make_request(
+        protocol, CODE.POOLSTATUS_QUERY, struct.pack("<I", 0)
+    ):
+        decode_pool_status(result, data)
+        return result
 
 
-# pylint: disable=unused-variable
-def decode_pool_status(buff, data):
-    # print(buff)
-
-    if DATA.KEY_CONFIG not in data:
-        data[DATA.KEY_CONFIG] = {}
-
-    config = data[DATA.KEY_CONFIG]
+def decode_pool_status(buff: bytes, data: dict) -> None:
+    config = data.setdefault(DATA.KEY_CONFIG, {})
 
     ok, offset = getSome("I", buff, 0)
-    config["ok"] = {"name": "OK Check", "value": ok}
+    config["ok"] = ok
 
     freezeMode, offset = getSome("B", buff, offset)
     config["freeze_mode"] = {"name": "Freeze Mode", "value": freezeMode}
@@ -59,62 +41,39 @@ def decode_pool_status(buff, data):
     cleanerDelay, offset = getSome("B", buff, offset)
     config["cleaner_delay"] = {"name": "Cleaner Delay", "value": cleanerDelay}
 
-    unknown = {}
-    # fast forward 3 bytes. Unknown data.
-    ff1, offset = getSome("B", buff, offset)
-    unknown["ff1"] = ff1
-    ff2, offset = getSome("B", buff, offset)
-    unknown["ff2"] = ff2
-    ff3, offset = getSome("B", buff, offset)
-    unknown["ff3"] = ff3
+    config[f"unknown_at_offset_{offset:02}"], offset = getSome("B", buff, offset)
+    config[f"unknown_at_offset_{offset:02}"], offset = getSome("B", buff, offset)
+    config[f"unknown_at_offset_{offset:02}"], offset = getSome("B", buff, offset)
 
-    unit_txt = (
-        UNIT.CELSIUS
-        if "is_celsius" in config and config["is_celsius"]["value"]
-        else UNIT.FAHRENHEIT
-    )
+    sensors = data.setdefault(DATA.KEY_SENSORS, {})
 
-    if DATA.KEY_SENSORS not in data:
-        data[DATA.KEY_SENSORS] = {}
-
-    sensors = data[DATA.KEY_SENSORS]
+    temperature_unit = getTemperatureUnit(data)
 
     airTemp, offset = getSome("i", buff, offset)
     sensors["air_temperature"] = {
         "name": "Air Temperature",
         "value": airTemp,
-        "unit": unit_txt,
+        "unit": temperature_unit,
         "device_type": DEVICE_TYPE.TEMPERATURE,
     }
 
     bodiesCount, offset = getSome("I", buff, offset)
+
     # Should this default to 2?
     bodiesCount = min(bodiesCount, 2)
 
-    if DATA.KEY_BODIES not in data:
-        data[DATA.KEY_BODIES] = {}
-
-    bodies = data[DATA.KEY_BODIES]
+    bodies: dict = data.setdefault(DATA.KEY_BODIES, {})
 
     for i in range(bodiesCount):
+        currentBody: dict = bodies.setdefault(i, {})
+
         bodyType, offset = getSome("I", buff, offset)
         if bodyType not in range(2):
             bodyType = 0
 
-        if i not in bodies:
-            bodies[i] = {}
+        currentBody.setdefault("min_set_point", {})["unit"] = temperature_unit
 
-        currentBody = bodies[i]
-
-        if "min_set_point" not in currentBody:
-            currentBody["min_set_point"] = {}
-
-        currentBody["min_set_point"]["unit"] = unit_txt
-
-        if "max_set_point" not in currentBody:
-            currentBody["max_set_point"] = {}
-
-        currentBody["max_set_point"]["unit"] = unit_txt
+        currentBody.setdefault("max_set_point", {})["unit"] = temperature_unit
 
         currentBody["body_type"] = {"name": "Type of body of water", "value": bodyType}
 
@@ -123,7 +82,7 @@ def decode_pool_status(buff, data):
         currentBody["last_temperature"] = {
             "name": bodyName,
             "value": lastTemp,
-            "unit": unit_txt,
+            "unit": temperature_unit,
             "device_type": DEVICE_TYPE.TEMPERATURE,
         }
 
@@ -136,7 +95,7 @@ def decode_pool_status(buff, data):
         currentBody["heat_set_point"] = {
             "name": hspName,
             "value": heatSetPoint,
-            "unit": unit_txt,
+            "unit": temperature_unit,
             "device_type": DEVICE_TYPE.TEMPERATURE,
         }
 
@@ -145,7 +104,7 @@ def decode_pool_status(buff, data):
         currentBody["cool_set_point"] = {
             "name": cspName,
             "value": coolSetPoint,
-            "unit": unit_txt,
+            "unit": temperature_unit,
         }
 
         heatMode, offset = getSome("i", buff, offset)
@@ -154,24 +113,18 @@ def decode_pool_status(buff, data):
 
     circuitCount, offset = getSome("I", buff, offset)
 
-    if DATA.KEY_CIRCUITS not in data:
-        data[DATA.KEY_CIRCUITS] = {}
-
-    circuits = data[DATA.KEY_CIRCUITS]
+    circuits: dict = data.setdefault(DATA.KEY_CIRCUITS, {})
 
     for i in range(circuitCount):
         circuitID, offset = getSome("I", buff, offset)
 
-        if circuitID not in circuits:
-            circuits[circuitID] = {}
-
-        currentCircuit = circuits[circuitID]
+        currentCircuit = circuits.setdefault(circuitID, {})
 
         if "id" not in currentCircuit:
             currentCircuit["id"] = circuitID
 
-        circuitstate, offset = getSome("I", buff, offset)
-        currentCircuit["value"] = circuitstate
+        circuitState, offset = getSome("I", buff, offset)
+        currentCircuit["value"] = circuitState
 
         cColorSet, offset = getSome("B", buff, offset)
         currentCircuit["color_set"] = cColorSet
@@ -213,7 +166,3 @@ def decode_pool_status(buff, data):
         "value": alarm,
         "device_type": DEVICE_TYPE.ALARM,
     }
-
-    if ADD_UNKNOWN_VALUES:
-        sensors["unknown"] = unknown
-    # print(json.dumps(data, indent=4))

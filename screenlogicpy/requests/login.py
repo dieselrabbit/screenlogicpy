@@ -22,6 +22,19 @@ def create_login_message():
     return struct.pack(fmt, schema, connectionType, clientVersion, passwd, pid)
 
 
+def create_local_login_message():
+    schema = 348
+    connectionType = 0
+    clientVersion = encodeMessageString("Local Config")
+    passwdPayload = b"\x10\x00\x00\x00\x48\x9e\x60\x3a\xc3\x1d\xb9\xb1\x0c\xc1\x4a\x37\x50\x97\xa8\x22"
+    mac = encodeMessageString("00-00-00-00-00-00")
+    pid = 2
+    fmt = f"<II{len(clientVersion)}s{len(passwdPayload)}sI{len(mac)}sI"
+    return struct.pack(
+        fmt, schema, connectionType, clientVersion, passwdPayload, pid, mac, 0
+    )
+
+
 async def async_get_mac_address(gateway_ip, gateway_port):
     """Connect to a screenlogic gateway and return the mac address only."""
     transport, protocol = await async_create_connection(gateway_ip, gateway_port)

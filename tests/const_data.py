@@ -98,11 +98,11 @@ EXPECTED_CONFIG_DATA = {
     "bodies": {
         0: {
             "min_set_point": {"name": "Pool Minimum Set Point", "value": 40},
-            "max_set_point": {"name": "Pool Minimum Set Point", "value": 104},
+            "max_set_point": {"name": "Pool Maximum Set Point", "value": 104},
         },
         1: {
             "min_set_point": {"name": "Spa Minimum Set Point", "value": 40},
-            "max_set_point": {"name": "Spa Minimum Set Point", "value": 104},
+            "max_set_point": {"name": "Spa Maximum Set Point", "value": 104},
         },
     },
     "circuits": {
@@ -118,6 +118,8 @@ EXPECTED_CONFIG_DATA = {
             "color_stagger": 0,
             "device_id": 1,
             "default_rt": 720,
+            "unknown1": 0,
+            "unknown2": 0,
         },
         501: {
             "id": 501,
@@ -131,6 +133,8 @@ EXPECTED_CONFIG_DATA = {
             "color_stagger": 0,
             "device_id": 2,
             "default_rt": 720,
+            "unknown1": 0,
+            "unknown2": 0,
         },
         502: {
             "id": 502,
@@ -144,6 +148,8 @@ EXPECTED_CONFIG_DATA = {
             "color_stagger": 10,
             "device_id": 3,
             "default_rt": 720,
+            "unknown1": 0,
+            "unknown2": 0,
         },
         503: {
             "id": 503,
@@ -157,6 +163,8 @@ EXPECTED_CONFIG_DATA = {
             "color_stagger": 10,
             "device_id": 4,
             "default_rt": 720,
+            "unknown1": 0,
+            "unknown2": 0,
         },
         504: {
             "id": 504,
@@ -170,6 +178,8 @@ EXPECTED_CONFIG_DATA = {
             "color_stagger": 0,
             "device_id": 5,
             "default_rt": 720,
+            "unknown1": 0,
+            "unknown2": 0,
         },
         505: {
             "id": 505,
@@ -183,6 +193,8 @@ EXPECTED_CONFIG_DATA = {
             "color_stagger": 0,
             "device_id": 6,
             "default_rt": 720,
+            "unknown1": 0,
+            "unknown2": 0,
         },
         506: {
             "id": 506,
@@ -196,6 +208,8 @@ EXPECTED_CONFIG_DATA = {
             "color_stagger": 0,
             "device_id": 7,
             "default_rt": 720,
+            "unknown1": 0,
+            "unknown2": 0,
         },
         507: {
             "id": 507,
@@ -209,6 +223,8 @@ EXPECTED_CONFIG_DATA = {
             "color_stagger": 0,
             "device_id": 8,
             "default_rt": 720,
+            "unknown1": 0,
+            "unknown2": 0,
         },
         508: {
             "id": 508,
@@ -222,6 +238,8 @@ EXPECTED_CONFIG_DATA = {
             "color_stagger": 0,
             "device_id": 9,
             "default_rt": 720,
+            "unknown1": 0,
+            "unknown2": 0,
         },
         510: {
             "id": 510,
@@ -235,6 +253,8 @@ EXPECTED_CONFIG_DATA = {
             "color_stagger": 0,
             "device_id": 11,
             "default_rt": 720,
+            "unknown1": 0,
+            "unknown2": 0,
         },
         511: {
             "id": 511,
@@ -248,6 +268,8 @@ EXPECTED_CONFIG_DATA = {
             "color_stagger": 0,
             "device_id": 12,
             "default_rt": 720,
+            "unknown1": 0,
+            "unknown2": 0,
         },
         512: {
             "id": 512,
@@ -261,6 +283,8 @@ EXPECTED_CONFIG_DATA = {
             "color_stagger": 0,
             "device_id": 13,
             "default_rt": 720,
+            "unknown1": 0,
+            "unknown2": 0,
         },
         513: {
             "id": 513,
@@ -274,6 +298,8 @@ EXPECTED_CONFIG_DATA = {
             "color_stagger": 0,
             "device_id": 14,
             "default_rt": 720,
+            "unknown1": 0,
+            "unknown2": 0,
         },
         514: {
             "id": 514,
@@ -287,6 +313,8 @@ EXPECTED_CONFIG_DATA = {
             "color_stagger": 0,
             "device_id": 15,
             "default_rt": 720,
+            "unknown1": 0,
+            "unknown2": 0,
         },
         515: {
             "id": 515,
@@ -300,6 +328,8 @@ EXPECTED_CONFIG_DATA = {
             "color_stagger": 0,
             "device_id": 16,
             "default_rt": 720,
+            "unknown1": 0,
+            "unknown2": 0,
         },
         516: {
             "id": 516,
@@ -313,6 +343,8 @@ EXPECTED_CONFIG_DATA = {
             "color_stagger": 0,
             "device_id": 17,
             "default_rt": 720,
+            "unknown1": 0,
+            "unknown2": 0,
         },
         517: {
             "id": 517,
@@ -326,6 +358,8 @@ EXPECTED_CONFIG_DATA = {
             "color_stagger": 0,
             "device_id": 18,
             "default_rt": 720,
+            "unknown1": 0,
+            "unknown2": 0,
         },
         519: {
             "id": 519,
@@ -339,6 +373,8 @@ EXPECTED_CONFIG_DATA = {
             "color_stagger": 0,
             "device_id": 20,
             "default_rt": 720,
+            "unknown1": 0,
+            "unknown2": 0,
         },
     },
     "pumps": {
@@ -355,12 +391,15 @@ EXPECTED_CONFIG_DATA = {
 
 EXPECTED_STATUS_DATA = {
     "config": {
-        "ok": {"name": "OK Check", "value": 1},
+        "ok": 1,
         "freeze_mode": {"name": "Freeze Mode", "value": 0},
         "remotes": {"name": "Remotes", "value": 0},
         "pool_delay": {"name": "Pool Delay", "value": 0},
         "spa_delay": {"name": "Spa Delay", "value": 0},
         "cleaner_delay": {"name": "Cleaner Delay", "value": 0},
+        "unknown_at_offset_09": 0,
+        "unknown_at_offset_10": 0,
+        "unknown_at_offset_11": 0,
     },
     "sensors": {
         "air_temperature": {
@@ -592,11 +631,13 @@ EXPECTED_PUMP_DATA = {
                 "value": 0,
                 "unit": "rpm",
             },
+            "unknown_at_offset_16": 0,
             "currentGPM": {
                 "name": "Default Pump Current GPM",
                 "value": 0,
                 "unit": "gpm",
             },
+            "unknown_at_offset_24": 255,
             "presets": {
                 0: {"cid": 6, "setPoint": 2500, "isRPM": 1},
                 1: {"cid": 9, "setPoint": 2800, "isRPM": 1},
@@ -613,6 +654,8 @@ EXPECTED_PUMP_DATA = {
 
 EXPECTED_CHEMISTRY_DATA = {
     "chemistry": {
+        "unknown_at_offset_00": 42,
+        "unknown_at_offset_04": 0,
         "current_ph": {"name": "Current pH", "value": 0.0, "unit": "pH"},
         "current_orp": {"name": "Current ORP", "value": 0, "unit": "mV"},
         "ph_setpoint": {"name": "pH Setpoint", "value": 7.5, "unit": "pH"},
@@ -636,6 +679,7 @@ EXPECTED_CHEMISTRY_DATA = {
         "cya": {"name": "Cyanuric Acid", "value": 36, "unit": "ppm"},
         "total_alkalinity": {"name": "Total Alkalinity", "value": 70, "unit": "ppm"},
         "salt_tds_ppm": {"name": "Salt/TDS", "value": 1000, "unit": "ppm"},
+        "probe_is_celsius": 0,
         "ph_probe_water_temp": {
             "name": "pH Probe Water Temperature",
             "value": 56,
@@ -669,11 +713,16 @@ EXPECTED_CHEMISTRY_DATA = {
             # "corrosive": {"name": "Corrosive", "value": 1},
             # "scaling": {"name": "Scaling", "value": 0},
         },
+        "unknown_at_offset_38": 0,
         "status": 165,
         "ph_dosing_state": {"name": "pH Dosing State", "value": 2},
         "orp_dosing_state": {"name": "ORP Dosing State", "value": 2},
         "flags": 32,
         "firmware": {"name": "IntelliChem Firmware Version", "value": "1.060"},
+        "unknown_at_offset_43": 0,
+        "unknown_at_offset_44": 0,
+        "unknown_at_offset_45": 0,
+        "unknown_at_offset_46": 0,
     }
 }
 
@@ -715,12 +764,15 @@ EXPECTED_COMPLETE_DATA = {
         ],
         "interface_tab_flags": 127,
         "show_alarms": 0,
-        "ok": {"name": "OK Check", "value": 1},
+        "ok": 1,
         "freeze_mode": {"name": "Freeze Mode", "value": 0},
         "remotes": {"name": "Remotes", "value": 0},
         "pool_delay": {"name": "Pool Delay", "value": 0},
         "spa_delay": {"name": "Spa Delay", "value": 0},
         "cleaner_delay": {"name": "Cleaner Delay", "value": 0},
+        "unknown_at_offset_09": 0,
+        "unknown_at_offset_10": 0,
+        "unknown_at_offset_11": 0,
     },
     "bodies": {
         0: {
@@ -730,7 +782,7 @@ EXPECTED_COMPLETE_DATA = {
                 "unit": "\u00b0F",
             },
             "max_set_point": {
-                "name": "Pool Minimum Set Point",
+                "name": "Pool Maximum Set Point",
                 "value": 104,
                 "unit": "\u00b0F",
             },
@@ -762,7 +814,7 @@ EXPECTED_COMPLETE_DATA = {
                 "unit": "\u00b0F",
             },
             "max_set_point": {
-                "name": "Spa Minimum Set Point",
+                "name": "Spa Maximum Set Point",
                 "value": 104,
                 "unit": "\u00b0F",
             },
@@ -801,6 +853,8 @@ EXPECTED_COMPLETE_DATA = {
             "color_stagger": 0,
             "device_id": 1,
             "default_rt": 720,
+            "unknown1": 0,
+            "unknown2": 0,
             "value": 0,
             "delay": 0,
         },
@@ -816,6 +870,8 @@ EXPECTED_COMPLETE_DATA = {
             "color_stagger": 0,
             "device_id": 2,
             "default_rt": 720,
+            "unknown1": 0,
+            "unknown2": 0,
             "value": 0,
             "delay": 0,
         },
@@ -831,6 +887,8 @@ EXPECTED_COMPLETE_DATA = {
             "color_stagger": 10,
             "device_id": 3,
             "default_rt": 720,
+            "unknown1": 0,
+            "unknown2": 0,
             "value": 1,
             "delay": 0,
         },
@@ -846,6 +904,8 @@ EXPECTED_COMPLETE_DATA = {
             "color_stagger": 10,
             "device_id": 4,
             "default_rt": 720,
+            "unknown1": 0,
+            "unknown2": 0,
             "value": 1,
             "delay": 0,
         },
@@ -861,6 +921,8 @@ EXPECTED_COMPLETE_DATA = {
             "color_stagger": 0,
             "device_id": 5,
             "default_rt": 720,
+            "unknown1": 0,
+            "unknown2": 0,
             "value": 1,
             "delay": 0,
         },
@@ -876,6 +938,8 @@ EXPECTED_COMPLETE_DATA = {
             "color_stagger": 0,
             "device_id": 6,
             "default_rt": 720,
+            "unknown1": 0,
+            "unknown2": 0,
             "value": 0,
             "delay": 0,
         },
@@ -891,6 +955,8 @@ EXPECTED_COMPLETE_DATA = {
             "color_stagger": 0,
             "device_id": 7,
             "default_rt": 720,
+            "unknown1": 0,
+            "unknown2": 0,
             "value": 1,
             "delay": 0,
         },
@@ -906,6 +972,8 @@ EXPECTED_COMPLETE_DATA = {
             "color_stagger": 0,
             "device_id": 8,
             "default_rt": 720,
+            "unknown1": 0,
+            "unknown2": 0,
             "value": 0,
             "delay": 0,
         },
@@ -921,6 +989,8 @@ EXPECTED_COMPLETE_DATA = {
             "color_stagger": 0,
             "device_id": 9,
             "default_rt": 720,
+            "unknown1": 0,
+            "unknown2": 0,
             "value": 0,
             "delay": 0,
         },
@@ -936,6 +1006,8 @@ EXPECTED_COMPLETE_DATA = {
             "color_stagger": 0,
             "device_id": 11,
             "default_rt": 720,
+            "unknown1": 0,
+            "unknown2": 0,
             "value": 0,
             "delay": 0,
         },
@@ -951,6 +1023,8 @@ EXPECTED_COMPLETE_DATA = {
             "color_stagger": 0,
             "device_id": 12,
             "default_rt": 720,
+            "unknown1": 0,
+            "unknown2": 0,
             "value": 0,
             "delay": 0,
         },
@@ -966,6 +1040,8 @@ EXPECTED_COMPLETE_DATA = {
             "color_stagger": 0,
             "device_id": 13,
             "default_rt": 720,
+            "unknown1": 0,
+            "unknown2": 0,
             "value": 0,
             "delay": 0,
         },
@@ -981,6 +1057,8 @@ EXPECTED_COMPLETE_DATA = {
             "color_stagger": 0,
             "device_id": 14,
             "default_rt": 720,
+            "unknown1": 0,
+            "unknown2": 0,
             "value": 0,
             "delay": 0,
         },
@@ -996,6 +1074,8 @@ EXPECTED_COMPLETE_DATA = {
             "color_stagger": 0,
             "device_id": 15,
             "default_rt": 720,
+            "unknown1": 0,
+            "unknown2": 0,
             "value": 0,
             "delay": 0,
         },
@@ -1011,6 +1091,8 @@ EXPECTED_COMPLETE_DATA = {
             "color_stagger": 0,
             "device_id": 16,
             "default_rt": 720,
+            "unknown1": 0,
+            "unknown2": 0,
             "value": 0,
             "delay": 0,
         },
@@ -1026,6 +1108,8 @@ EXPECTED_COMPLETE_DATA = {
             "color_stagger": 0,
             "device_id": 17,
             "default_rt": 720,
+            "unknown1": 0,
+            "unknown2": 0,
             "value": 0,
             "delay": 0,
         },
@@ -1041,6 +1125,8 @@ EXPECTED_COMPLETE_DATA = {
             "color_stagger": 0,
             "device_id": 18,
             "default_rt": 720,
+            "unknown1": 0,
+            "unknown2": 0,
             "value": 0,
             "delay": 0,
         },
@@ -1056,6 +1142,8 @@ EXPECTED_COMPLETE_DATA = {
             "color_stagger": 0,
             "device_id": 20,
             "default_rt": 720,
+            "unknown1": 0,
+            "unknown2": 0,
             "value": 0,
             "delay": 0,
         },
@@ -1077,11 +1165,13 @@ EXPECTED_COMPLETE_DATA = {
                 "value": 0,
                 "unit": "rpm",
             },
+            "unknown_at_offset_16": 0,
             "currentGPM": {
                 "name": "Pool Low Pump Current GPM",
                 "value": 0,
                 "unit": "gpm",
             },
+            "unknown_at_offset_24": 255,
             "presets": {
                 0: {"cid": 6, "setPoint": 2500, "isRPM": 1},
                 1: {"cid": 9, "setPoint": 2800, "isRPM": 1},
@@ -1117,6 +1207,8 @@ EXPECTED_COMPLETE_DATA = {
         "chem_alarm": {"name": "Chemistry Alarm", "value": 1, "device_type": "alarm"},
     },
     "chemistry": {
+        "unknown_at_offset_00": 42,
+        "unknown_at_offset_04": 0,
         "current_ph": {"name": "Current pH", "value": 0.0, "unit": "pH"},
         "current_orp": {"name": "Current ORP", "value": 0, "unit": "mV"},
         "ph_setpoint": {"name": "pH Setpoint", "value": 7.5, "unit": "pH"},
@@ -1140,6 +1232,7 @@ EXPECTED_COMPLETE_DATA = {
         "cya": {"name": "Cyanuric Acid", "value": 36, "unit": "ppm"},
         "total_alkalinity": {"name": "Total Alkalinity", "value": 70, "unit": "ppm"},
         "salt_tds_ppm": {"name": "Salt/TDS", "value": 1000, "unit": "ppm"},
+        "probe_is_celsius": 0,
         "ph_probe_water_temp": {
             "name": "pH Probe Water Temperature",
             "value": 56,
@@ -1173,11 +1266,16 @@ EXPECTED_COMPLETE_DATA = {
             # "corrosive": {"name": "Corrosive", "value": 1},
             # "scaling": {"name": "Scaling", "value": 0},
         },
+        "unknown_at_offset_38": 0,
         "status": 165,
         "ph_dosing_state": {"name": "pH Dosing State", "value": 2},
         "orp_dosing_state": {"name": "ORP Dosing State", "value": 2},
         "flags": 32,
         "firmware": {"name": "IntelliChem Firmware Version", "value": "1.060"},
+        "unknown_at_offset_43": 0,
+        "unknown_at_offset_44": 0,
+        "unknown_at_offset_45": 0,
+        "unknown_at_offset_46": 0,
     },
     "scg": {
         "scg_present": 0,
@@ -1228,4 +1326,5 @@ Spa Heat Mode: Heater
 
 EXPECTED_VERBOSE_PREAMBLE = """Discovered 'Fake: 00-00-00' at 127.0.0.1:6448
 EasyTouch2 8
+Version: fake 0.0.3
 """

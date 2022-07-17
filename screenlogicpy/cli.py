@@ -407,6 +407,8 @@ async def cli(cli_args):
                     gateway.get_data()[DATA.KEY_CONFIG]["controller_type"]
                 ][gateway.get_data()[DATA.KEY_CONFIG]["hardware_type"]]
             )
+            if args.verbose:
+                print(f"Version: {gateway.version}")
 
         def print_circuits():
             print("{}  {}  {}".format("ID".rjust(3), "STATE", "NAME"))
