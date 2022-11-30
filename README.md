@@ -307,6 +307,14 @@ Sets the chlorinator output levels for the pool and spa. Pentair treats spa outp
 **Note:** `[pool_pct]` can be an `int` between `0`-`100`, or `*` to keep the current value. `[spa_pct]` can be an `int` between `0`-`20`, or `*` to keep the current value.  
 *New in v0.5.0*
 
+#### set `chem-data, ch`
+
+    screenlogicpy set chem-data [ph_setpoint] [orp_setpoint]
+
+Sets the pH and/or ORP set points for the IntelliChem system.
+**Note:** `[ph_setpoint]` can be a `float` between `7.2`-`7.6`, or `*` to keep the current value. `[orp_setpoint]` can be an `int` between `400`-`800`, or `*` to keep the current value.  
+*New in v0.6.0*
+
 # Reference
 
 ### Circuit State

@@ -263,3 +263,24 @@ async def test_set_scg(MockProtocolAdapter, capsys):
                 std = capsys.readouterr()
                 assert std.out.strip() == expected
                 assert result == 0
+
+
+@pytest.mark.asyncio
+async def test_set_chemistry(MockProtocolAdapter, capsys):
+    async with MockProtocolAdapter:
+        with patch(
+            "screenlogicpy.cli.async_discover", return_value=[FAKE_CONNECT_INFO]
+        ):
+            test_input = [
+                (("set", "chem-data", "7.5", "700"), "7.5 700"),
+                (
+                    ("-v", "set", "ch", "7.6", "650"),
+                    EXPECTED_VERBOSE_PREAMBLE + "pH Setpoint: 7.5 ORP Setpoint: 700",
+                ),
+            ]
+
+            for args, expected in test_input:
+                result = await cli(args)
+                std = capsys.readouterr()
+                assert std.out.strip() == expected
+                assert result == 0

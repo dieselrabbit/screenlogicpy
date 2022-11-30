@@ -227,3 +227,31 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
     chemistry[f"unknown_at_offset_{offset:02}"], offset = getSome("B", buff, offset)
     chemistry[f"unknown_at_offset_{offset:02}"], offset = getSome("B", buff, offset)
     chemistry[f"unknown_at_offset_{offset:02}"], offset = getSome("B", buff, offset)
+
+
+async def async_request_set_chem_data(
+    protocol: ScreenLogicProtocol,
+    ph_setpoint: int,
+    orp_setpoint: int,
+    calcium: int,
+    alkalinity: int,
+    cyanuric: int,
+    salt: int,
+):
+    return (
+        await async_make_request(
+            protocol,
+            CODE.SETCHEMDATA_QUERY,
+            struct.pack(
+                "<7I",
+                0,
+                ph_setpoint,
+                orp_setpoint,
+                calcium,
+                alkalinity,
+                cyanuric,
+                salt,
+            ),
+        )
+        == b""
+    )
