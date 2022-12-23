@@ -179,8 +179,11 @@ class RANGE:
 
 class DEVICE_TYPE:
     ALARM = "alarm"
+    DURATION = "duration"
     ENERGY = "energy"
+    POWER = "power"
     TEMPERATURE = "temperature"
+    VOLUME = "volume"
 
 
 class UNIT:

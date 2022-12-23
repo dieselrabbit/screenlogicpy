@@ -63,7 +63,7 @@ def decode_pump_status(buff: bytes, data: dict, pumpID: int) -> None:
             "name": pump["name"] + " Current Watts",
             "value": curW,
             "unit": "W",
-            "device_type": DEVICE_TYPE.ENERGY,
+            "device_type": DEVICE_TYPE.POWER,
         }
 
     if "currentRPM" in pump:

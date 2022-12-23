@@ -625,7 +625,7 @@ EXPECTED_PUMP_DATA = {
                 "name": "Default Pump Current Watts",
                 "value": 0,
                 "unit": "W",
-                "device_type": "energy",
+                "device_type": "power",
             },
             "currentRPM": {
                 "name": "Default Pump Current RPM",
@@ -661,17 +661,29 @@ EXPECTED_CHEMISTRY_DATA = {
         "current_orp": {"name": "Current ORP", "value": 0, "unit": "mV"},
         "ph_setpoint": {"name": "pH Setpoint", "value": 7.5, "unit": "pH"},
         "orp_setpoint": {"name": "ORP Setpoint", "value": 700, "unit": "mV"},
-        "ph_last_dose_time": {"name": "Last pH Dose Time", "value": 5, "unit": "Sec"},
-        "orp_last_dose_time": {"name": "Last ORP Dose Time", "value": 2, "unit": "Sec"},
+        "ph_last_dose_time": {
+            "name": "Last pH Dose Time",
+            "value": 5,
+            "unit": "Sec",
+            "device_type": "duration",
+        },
+        "orp_last_dose_time": {
+            "name": "Last ORP Dose Time",
+            "value": 2,
+            "unit": "Sec",
+            "device_type": "duration",
+        },
         "ph_last_dose_volume": {
             "name": "Last pH Dose Volume",
             "value": 10,
             "unit": "mL",
+            "device_type": "volume",
         },
         "orp_last_dose_volume": {
             "name": "Last ORP Dose Volume",
             "value": 4,
             "unit": "mL",
+            "device_type": "volume",
         },
         "ph_supply_level": {"name": "pH Supply Level", "value": 3},
         "orp_supply_level": {"name": "ORP Supply Level", "value": 4},
@@ -738,6 +750,7 @@ EXPECTED_SCG_DATA = {
         "scg_super_chlor_timer": {"name": "SCG Super Chlorination Timer", "value": 0},
     }
 }
+
 
 EXPECTED_COMPLETE_DATA = {
     "config": {
@@ -1159,7 +1172,7 @@ EXPECTED_COMPLETE_DATA = {
                 "name": "Pool Low Pump Current Watts",
                 "value": 0,
                 "unit": "W",
-                "device_type": "energy",
+                "device_type": "power",
             },
             "currentRPM": {
                 "name": "Pool Low Pump Current RPM",
@@ -1214,17 +1227,29 @@ EXPECTED_COMPLETE_DATA = {
         "current_orp": {"name": "Current ORP", "value": 0, "unit": "mV"},
         "ph_setpoint": {"name": "pH Setpoint", "value": 7.5, "unit": "pH"},
         "orp_setpoint": {"name": "ORP Setpoint", "value": 700, "unit": "mV"},
-        "ph_last_dose_time": {"name": "Last pH Dose Time", "value": 5, "unit": "Sec"},
-        "orp_last_dose_time": {"name": "Last ORP Dose Time", "value": 2, "unit": "Sec"},
+        "ph_last_dose_time": {
+            "name": "Last pH Dose Time",
+            "value": 5,
+            "unit": "Sec",
+            "device_type": "duration",
+        },
+        "orp_last_dose_time": {
+            "name": "Last ORP Dose Time",
+            "value": 2,
+            "unit": "Sec",
+            "device_type": "duration",
+        },
         "ph_last_dose_volume": {
             "name": "Last pH Dose Volume",
             "value": 10,
             "unit": "mL",
+            "device_type": "volume",
         },
         "orp_last_dose_volume": {
             "name": "Last ORP Dose Volume",
             "value": 4,
             "unit": "mL",
+            "device_type": "volume",
         },
         "ph_supply_level": {"name": "pH Supply Level", "value": 3},
         "orp_supply_level": {"name": "ORP Supply Level", "value": 4},
