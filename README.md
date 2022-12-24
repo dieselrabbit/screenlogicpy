@@ -147,13 +147,13 @@ Currently all values are required, even if you only want to change one of them. 
 
     success = await gateway.async_set_chem_data(ph, orp, ch, ta, ca, sa)
 
-*Note: Only `ph_setpoint` and `orp_setpoint` are setable through the command line. New in v0.6.0*
+*Note: Only `ph_setpoint` and `orp_setpoint` are settable through the command line. New in v0.6.0*
 
 ## Debug Information
 
 A debug function is available in the `ScreenLogicGateway` class: `get_debug`. This will return a dict with the raw bytes for the last response for each request the gateway performs during an update. This can be useful for debugging the actual responses from the protocol adapter.
 
-    last_resonses = gateway.get_debug()
+    last_responses = gateway.get_debug()
 
 *New in v0.5.5*
 
