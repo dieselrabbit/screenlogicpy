@@ -128,6 +128,27 @@ Chlorinator output levels can be set with `async_set_scg_config()`.  `async_set_
     success = await gateway.async_set_scg_config(pool_output, spa_output)  
 *New in v0.5.0*
 
+## Setting IntelliChem Chemistry values
+Chemistry values used in the IntelliChem system can be set with `async_set_chem_data()`. `async_set_chem_data` takes six arguments, `ph_setpoint`, `orp_setpoint`, `calcium`, `alkalinity`, `cyanuric`, and `salt`.  `ph_setpoint` is a `float` and the rest are `int`. 
+
+    success = await gateway.async_set_chem_data(ph_setpoint, orp_setpoint, calcium, alkalinity, cyanuric, salt)
+
+Currently all values are required, even if you only want to change one of them. For this reason, it is recommended that the calling code gathers all the current values first, then updates whichever value(s) are desired before calling `async_set_chem_data()`.
+
+    chem_data = gateway.get_data()[DATA.KEY_CHEMISTRY]
+    ph = chem_data["ph_setpoint"]["value"]
+    orp = chem_data["orp_setpoint"]["value"]
+    ch = chem_data["calcium_harness"]["value"]
+    ta = chem_data["total_alkalinity"]["value"]
+    ca = chem_data["cya"]["value"]
+    sa = chem_data["salt_tds_ppm"]["value"]
+
+    ph = ...  # Code to update any of the values
+
+    success = await gateway.async_set_chem_data(ph, orp, ch, ta, ca, sa)
+
+*Note: Only `ph_setpoint` and `orp_setpoint` are setable through the command line. New in v0.6.0*
+
 ## Debug Information
 
 A debug function is available in the `ScreenLogicGateway` class: `get_debug`. This will return a dict with the raw bytes for the last response for each request the gateway performs during an update. This can be useful for debugging the actual responses from the protocol adapter.
@@ -304,7 +325,7 @@ Sets a color mode for *all* color-capable lights configured on the pool controll
     screenlogicpy set salt-generator [pool_pct] [spa_pct]
 
 Sets the chlorinator output levels for the pool and spa. Pentair treats spa output level as a percentage of the pool's output level.  
-**Note:** `[pool_pct]` can be an `int` between `0`-`100`, or `*` to keep the current value. `[spa_pct]` can be an `int` between `0`-`20`, or `*` to keep the current value.  
+**Note:** `[pool_pct]` can be an `int` between `0`-`100`, or `*` to keep the current value. `[spa_pct]` can be an `int` between `0`-`100`, or `*` to keep the current value.  
 *New in v0.5.0*
 
 #### set `chem-data, ch`
