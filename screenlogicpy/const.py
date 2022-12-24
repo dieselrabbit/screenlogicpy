@@ -57,6 +57,8 @@ class CODE:
     LIGHTCOMMAND_ANSWER = LIGHTCOMMAND_QUERY + 1
     CHEMISTRY_QUERY = 12592
     CHEMISTRY_ANSWER = CHEMISTRY_QUERY + 1
+    SETCHEMDATA_QUERY = 12594
+    SETCHEMDATA_ANSWER = SETCHEMDATA_QUERY + 1
     SCGCONFIG_QUERY = 12572
     SCGCONFIG_ANSWER = SCGCONFIG_QUERY + 1
     SETSCG_QUERY = 12576
@@ -168,10 +170,20 @@ class COLOR_MODE:
     NUM_FOR_NAME = {name: num for num, name in NAME_FOR_NUM.items()}
 
 
+class RANGE:
+    MIN = 0
+    MAX = 1
+
+    NAME_FOR_NUM = {MIN: "Minimum", MAX: "Maximum"}
+
+
 class DEVICE_TYPE:
     ALARM = "alarm"
+    DURATION = "duration"
     ENERGY = "energy"
+    POWER = "power"
     TEMPERATURE = "temperature"
+    VOLUME = "volume"
 
 
 class UNIT:
@@ -266,6 +278,10 @@ class CHEMISTRY:
     FLAG_WARNING_PH_LIMIT = 0x02
     FLAG_WARNING_ORP_LIMIT = 0x04
 
+    # Valid ranges listed in IntelliChem documentation
+    RANGE_PH_SETPOINT = {RANGE.MIN: 7.2, RANGE.MAX: 7.6}
+    RANGE_ORP_SETPOINT = {RANGE.MIN: 400, RANGE.MAX: 800}
+
 
 class CHEM_DOSING_STATE:
     DOSING = 0
@@ -277,7 +293,7 @@ class CHEM_DOSING_STATE:
 
 
 class SCG:
-    LIMIT_FOR_BODY = {BODY_TYPE.POOL: 100, BODY_TYPE.SPA: 20}
+    LIMIT_FOR_BODY = {BODY_TYPE.POOL: 100, BODY_TYPE.SPA: 100}
 
 
 GENERIC_CIRCUIT_NAMES = [

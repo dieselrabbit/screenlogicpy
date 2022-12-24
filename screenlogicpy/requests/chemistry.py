@@ -61,6 +61,7 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
         "name": "Last pH Dose Time",
         "value": pHDoseTime,
         "unit": "Sec",
+        "device_type": DEVICE_TYPE.DURATION,
     }
 
     orpDoseTime, offset = getSome(">I", buff, offset)  # 13
@@ -68,6 +69,7 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
         "name": "Last ORP Dose Time",
         "value": orpDoseTime,
         "unit": "Sec",
+        "device_type": DEVICE_TYPE.DURATION,
     }
 
     pHDoseVolume, offset = getSome(">H", buff, offset)  # 17
@@ -75,6 +77,7 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
         "name": "Last pH Dose Volume",
         "value": pHDoseVolume,
         "unit": "mL",
+        "device_type": DEVICE_TYPE.VOLUME,
     }
 
     orpDoseVolume, offset = getSome(">H", buff, offset)  # 19
@@ -82,6 +85,7 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
         "name": "Last ORP Dose Volume",
         "value": orpDoseVolume,
         "unit": "mL",
+        "device_type": DEVICE_TYPE.VOLUME,
     }
 
     pHSupplyLevel, offset = getSome("B", buff, offset)  # 21 (20)
@@ -227,3 +231,31 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
     chemistry[f"unknown_at_offset_{offset:02}"], offset = getSome("B", buff, offset)
     chemistry[f"unknown_at_offset_{offset:02}"], offset = getSome("B", buff, offset)
     chemistry[f"unknown_at_offset_{offset:02}"], offset = getSome("B", buff, offset)
+
+
+async def async_request_set_chem_data(
+    protocol: ScreenLogicProtocol,
+    ph_setpoint: int,
+    orp_setpoint: int,
+    calcium: int,
+    alkalinity: int,
+    cyanuric: int,
+    salt: int,
+):
+    return (
+        await async_make_request(
+            protocol,
+            CODE.SETCHEMDATA_QUERY,
+            struct.pack(
+                "<7I",
+                0,
+                ph_setpoint,
+                orp_setpoint,
+                calcium,
+                alkalinity,
+                cyanuric,
+                salt,
+            ),
+        )
+        == b""
+    )

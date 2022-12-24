@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-from .const import BODY_TYPE, DATA, SCG, ScreenLogicWarning
+from .const import BODY_TYPE, CHEMISTRY, DATA, RANGE, SCG, ScreenLogicWarning
 from .requests import (
     async_connect_to_gateway,
     async_request_gateway_version,
@@ -15,6 +15,7 @@ from .requests import (
     async_request_chemistry,
     async_request_scg_config,
     async_request_set_scg_config,
+    async_request_set_chem_data,
 )
 from .requests.protocol import ScreenLogicProtocol
 
@@ -172,6 +173,38 @@ class ScreenLogicGateway:
                 return True
         return False
 
+    async def async_set_chem_data(
+        self,
+        ph_setpoint: float,
+        orp_setpoint: int,
+        calcium: int,
+        alkalinity: int,
+        cyanuric: int,
+        salt: int,
+    ):
+        """Sets the setable chemistry values."""
+        if self._is_valid_ph_setpoint(ph_setpoint):
+            ph_setpoint = int(ph_setpoint * 100)
+        else:
+            raise ValueError(f"Invalid PH Set point: {ph_setpoint}")
+        if not self._is_valid_orp_setpoint(orp_setpoint):
+            raise ValueError(f"Invalid ORP Set point: {orp_setpoint}")
+        if calcium < 0 or alkalinity < 0 or cyanuric < 0 or salt < 0:
+            raise ValueError("Invalid Chemistry setting.")
+
+        if await self.async_connect():
+            if await async_request_set_chem_data(
+                self.__protocol,
+                ph_setpoint,
+                orp_setpoint,
+                calcium,
+                alkalinity,
+                cyanuric,
+                salt,
+            ):
+                return True
+        return False
+
     async def _async_get_config(self):
         if not self.is_connected:
             raise ScreenLogicWarning(
@@ -247,3 +280,17 @@ class ScreenLogicGateway:
 
     def _is_valid_scg_value(self, scg_value, body_type):
         return 0 <= scg_value <= SCG.LIMIT_FOR_BODY[body_type]
+
+    def _is_valid_ph_setpoint(self, ph_setpoint: float):
+        return (
+            CHEMISTRY.RANGE_PH_SETPOINT[RANGE.MIN]
+            <= ph_setpoint
+            <= CHEMISTRY.RANGE_PH_SETPOINT[RANGE.MAX]
+        )
+
+    def _is_valid_orp_setpoint(self, orp_setpoint: int):
+        return (
+            CHEMISTRY.RANGE_ORP_SETPOINT[RANGE.MIN]
+            <= orp_setpoint
+            <= CHEMISTRY.RANGE_ORP_SETPOINT[RANGE.MAX]
+        )
