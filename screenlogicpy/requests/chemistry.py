@@ -60,7 +60,7 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
     chemistry["ph_last_dose_time"] = {
         "name": "Last pH Dose Time",
         "value": pHDoseTime,
-        "unit": "Sec",
+        "unit": "Seconds",
         "device_type": DEVICE_TYPE.DURATION,
     }
 
@@ -68,7 +68,7 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
     chemistry["orp_last_dose_time"] = {
         "name": "Last ORP Dose Time",
         "value": orpDoseTime,
-        "unit": "Sec",
+        "unit": "Seconds",
         "device_type": DEVICE_TYPE.DURATION,
     }
 

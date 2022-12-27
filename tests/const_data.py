@@ -664,13 +664,13 @@ EXPECTED_CHEMISTRY_DATA = {
         "ph_last_dose_time": {
             "name": "Last pH Dose Time",
             "value": 5,
-            "unit": "Sec",
+            "unit": "Seconds",
             "device_type": "duration",
         },
         "orp_last_dose_time": {
             "name": "Last ORP Dose Time",
             "value": 2,
-            "unit": "Sec",
+            "unit": "Seconds",
             "device_type": "duration",
         },
         "ph_last_dose_volume": {
@@ -1230,13 +1230,13 @@ EXPECTED_COMPLETE_DATA = {
         "ph_last_dose_time": {
             "name": "Last pH Dose Time",
             "value": 5,
-            "unit": "Sec",
+            "unit": "Seconds",
             "device_type": "duration",
         },
         "orp_last_dose_time": {
             "name": "Last ORP Dose Time",
             "value": 2,
-            "unit": "Sec",
+            "unit": "Seconds",
             "device_type": "duration",
         },
         "ph_last_dose_volume": {
