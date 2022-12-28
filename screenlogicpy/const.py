@@ -187,8 +187,32 @@ class DEVICE_TYPE:
 
 
 class UNIT:
+    # Chemistry
+    PARTS_PER_MILLION = "ppm"
+    PERCENT = "%"
+    PH = "pH"
+    SATURATION_INDEX = "lsi"
+
+    # Electrical
+    MILLIVOLT = "mV"
+    WATT = "W"
+
+    # Flow
+    GALLONS_PER_MINUTE = "gpm"
+
+    # Speed
+    REVOLUTIONS_PER_MINUTE = "rpm"
+
+    # Temperature
     CELSIUS = "\xb0C"
     FAHRENHEIT = "\xb0F"
+
+    # Time
+    HOUR = "hr"
+    SECOND = "sec"
+
+    # Volume
+    MILLILITER = "mL"
 
 
 class EQUIPMENT:
@@ -294,6 +318,7 @@ class CHEM_DOSING_STATE:
 
 class SCG:
     LIMIT_FOR_BODY = {BODY_TYPE.POOL: 100, BODY_TYPE.SPA: 100}
+    MAX_SC_RUNTIME = 72
 
 
 GENERIC_CIRCUIT_NAMES = [
