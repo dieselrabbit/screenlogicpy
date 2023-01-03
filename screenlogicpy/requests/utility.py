@@ -1,7 +1,13 @@
 import struct
+import sys
 from typing import List, Tuple
 
-from ..const import CODE, DATA, MESSAGE, ScreenLogicError, UNIT
+from ..const import CODE, DATA, MESSAGE, UNIT, ScreenLogicError
+
+if sys.version_info[:2] < (3, 11):
+    from async_timeout import timeout as asyncio_timeout
+else:
+    from asyncio import timeout as asyncio_timeout
 
 
 def makeMessage(msgID: int, msgCode: int, messageData: bytes = b""):
