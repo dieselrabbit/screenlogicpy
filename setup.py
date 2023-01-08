@@ -22,5 +22,8 @@ setuptools.setup(
         "Development Status :: 3 - Alpha",
     ],
     python_requires=">=3.8",
+    install_requires=[
+        "async_timeout>=3.0.0",
+    ],
     entry_points={"console_scripts": ["screenlogicpy=screenlogicpy.__main__:main"]},
 )

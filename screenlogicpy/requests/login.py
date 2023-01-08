@@ -5,7 +5,7 @@ from typing import Callable
 
 from ..const import CODE, MESSAGE, ScreenLogicError
 from .protocol import ScreenLogicProtocol
-from .utility import encodeMessageString, decodeMessageString
+from .utility import asyncio_timeout, decodeMessageString, encodeMessageString
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -52,15 +52,12 @@ async def async_create_connection(
 
         # on_con_lost = loop.create_future()
         _LOGGER.debug("Creating connection")
-        transport, protocol = await asyncio.wait_for(
-            loop.create_connection(
+        async with asyncio_timeout(MESSAGE.COM_TIMEOUT):
+            return await loop.create_connection(
                 lambda: ScreenLogicProtocol(loop, connection_lost_callback),
                 gateway_ip,
                 gateway_port,
-            ),
-            MESSAGE.COM_TIMEOUT,
-        )
-        return transport, protocol
+            )
     except (OSError, asyncio.TimeoutError) as ex:
         raise ScreenLogicError(
             f"Failed to connect to host at {gateway_ip}:{gateway_port}"
@@ -79,34 +76,31 @@ async def async_gateway_connect(
         raise ScreenLogicError("Error sending connect ping") from ex
 
     await asyncio.sleep(0.25)
+    _LOGGER.debug("Sending challenge")
+    request = protocol.await_send_message(CODE.CHALLENGE_QUERY)
 
     try:
-        _LOGGER.debug("Sending challenge")
-        await asyncio.wait_for(
-            (request := protocol.await_send_message(CODE.CHALLENGE_QUERY)),
-            MESSAGE.COM_TIMEOUT,
-        )
-        if not request.cancelled():
-            # mac address
-            return decodeMessageString(request.result())
+
+        async with asyncio_timeout(MESSAGE.COM_TIMEOUT):
+            await request
     except asyncio.TimeoutError:
         raise ScreenLogicError("Host failed to respond to challenge")
 
+    if not request.cancelled():
+        # mac address
+        return decodeMessageString(request.result())
+
 
 async def async_gateway_login(protocol: ScreenLogicProtocol) -> bool:
+    _LOGGER.debug("Logging in")
+    request = protocol.await_send_message(CODE.LOCALLOGIN_QUERY, create_login_message())
     try:
-        _LOGGER.debug("Logging in")
-        await asyncio.wait_for(
-            (
-                request := protocol.await_send_message(
-                    CODE.LOCALLOGIN_QUERY, create_login_message()
-                )
-            ),
-            MESSAGE.COM_TIMEOUT,
-        )
-        return not request.cancelled()
+        async with asyncio_timeout(MESSAGE.COM_TIMEOUT):
+            await request
     except asyncio.TimeoutError:
         raise ScreenLogicError("Failed to logon to gateway")
+
+    return not request.cancelled()
 
 
 async def async_connect_to_gateway(
