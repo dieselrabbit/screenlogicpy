@@ -6,6 +6,7 @@ from ..const import (
     BODY_TYPE,
     DATA,
     DEVICE_TYPE,
+    UNIT,
 )
 from .protocol import ScreenLogicProtocol
 from .request import async_make_request
@@ -109,7 +110,10 @@ def decode_pool_status(buff: bytes, data: dict) -> None:
 
         heatMode, offset = getSome("i", buff, offset)
         hmName = "{} Heat Mode".format(BODY_TYPE.NAME_FOR_NUM[bodyType])
-        currentBody["heat_mode"] = {"name": hmName, "value": heatMode}
+        currentBody["heat_mode"] = {
+            "name": hmName,
+            "value": heatMode,
+        }
 
     circuitCount, offset = getSome("I", buff, offset)
 
@@ -139,26 +143,44 @@ def decode_pool_status(buff: bytes, data: dict) -> None:
         currentCircuit["delay"] = circuitDelay
 
     pH, offset = getSome("i", buff, offset)
-    sensors["ph"] = {"name": "pH", "value": (pH / 100), "unit": "pH"}
+    sensors["ph"] = {
+        "name": "pH",
+        "value": (pH / 100),
+        "unit": UNIT.PH,
+    }
 
     orp, offset = getSome("i", buff, offset)
-    sensors["orp"] = {"name": "ORP", "value": orp, "unit": "mV"}
+    sensors["orp"] = {
+        "name": "ORP",
+        "value": orp,
+        "unit": UNIT.MILLIVOLT,
+    }
 
     saturation, offset = getSome("i", buff, offset)
     sensors["saturation"] = {
         "name": "Saturation Index",
         "value": (saturation / 100),
-        "unit": "lsi",
+        "unit": UNIT.SATURATION_INDEX,
     }
 
     saltPPM, offset = getSome("i", buff, offset)
-    sensors["salt_ppm"] = {"name": "Salt", "value": (saltPPM * 50), "unit": "ppm"}
+    sensors["salt_ppm"] = {
+        "name": "Salt",
+        "value": (saltPPM * 50),
+        "unit": UNIT.PARTS_PER_MILLION,
+    }
 
     pHTank, offset = getSome("i", buff, offset)
-    sensors["ph_supply_level"] = {"name": "pH Supply Level", "value": pHTank}
+    sensors["ph_supply_level"] = {
+        "name": "pH Supply Level",
+        "value": pHTank,
+    }
 
     orpTank, offset = getSome("i", buff, offset)
-    sensors["orp_supply_level"] = {"name": "ORP Supply Level", "value": orpTank}
+    sensors["orp_supply_level"] = {
+        "name": "ORP Supply Level",
+        "value": orpTank,
+    }
 
     alarm, offset = getSome("i", buff, offset)
     sensors["chem_alarm"] = {

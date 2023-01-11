@@ -664,13 +664,13 @@ EXPECTED_CHEMISTRY_DATA = {
         "ph_last_dose_time": {
             "name": "Last pH Dose Time",
             "value": 5,
-            "unit": "Sec",
+            "unit": "sec",
             "device_type": "duration",
         },
         "orp_last_dose_time": {
             "name": "Last ORP Dose Time",
             "value": 2,
-            "unit": "Sec",
+            "unit": "sec",
             "device_type": "duration",
         },
         "ph_last_dose_volume": {
@@ -747,7 +747,11 @@ EXPECTED_SCG_DATA = {
         "scg_level2": {"name": "Spa SCG Level", "value": 0, "unit": "%"},
         "scg_salt_ppm": {"name": "SCG Salt", "value": 0, "unit": "ppm"},
         "scg_flags": 0,
-        "scg_super_chlor_timer": {"name": "SCG Super Chlorination Timer", "value": 0},
+        "scg_super_chlor_timer": {
+            "name": "SCG Super Chlorination Timer",
+            "value": 0,
+            "unit": "hr",
+        },
     }
 }
 
@@ -1230,13 +1234,13 @@ EXPECTED_COMPLETE_DATA = {
         "ph_last_dose_time": {
             "name": "Last pH Dose Time",
             "value": 5,
-            "unit": "Sec",
+            "unit": "sec",
             "device_type": "duration",
         },
         "orp_last_dose_time": {
             "name": "Last ORP Dose Time",
             "value": 2,
-            "unit": "Sec",
+            "unit": "sec",
             "device_type": "duration",
         },
         "ph_last_dose_volume": {
@@ -1310,7 +1314,11 @@ EXPECTED_COMPLETE_DATA = {
         "scg_level2": {"name": "Spa SCG Level", "value": 0, "unit": "%"},
         "scg_salt_ppm": {"name": "SCG Salt", "value": 0, "unit": "ppm"},
         "scg_flags": 0,
-        "scg_super_chlor_timer": {"name": "SCG Super Chlorination Timer", "value": 0},
+        "scg_super_chlor_timer": {
+            "name": "SCG Super Chlorination Timer",
+            "value": 0,
+            "unit": "hr",
+        },
     },
 }
 

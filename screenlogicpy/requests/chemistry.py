@@ -7,6 +7,7 @@ from ..const import (
     DATA,
     DEVICE_TYPE,
     ON_OFF,
+    UNIT,
 )
 from .protocol import ScreenLogicProtocol
 from .request import async_make_request
@@ -37,30 +38,38 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
     chemistry[f"unknown_at_offset_{offset:02}"], offset = getSome("B", buff, offset)
 
     pH, offset = getSome(">H", buff, offset)  # 1
-    chemistry["current_ph"] = {"name": "Current pH", "value": (pH / 100), "unit": "pH"}
+    chemistry["current_ph"] = {
+        "name": "Current pH",
+        "value": (pH / 100),
+        "unit": UNIT.PH,
+    }
 
     orp, offset = getSome(">H", buff, offset)  # 3
-    chemistry["current_orp"] = {"name": "Current ORP", "value": orp, "unit": "mV"}
+    chemistry["current_orp"] = {
+        "name": "Current ORP",
+        "value": orp,
+        "unit": UNIT.MILLIVOLT,
+    }
 
     pHSetpoint, offset = getSome(">H", buff, offset)  # 5
     chemistry["ph_setpoint"] = {
         "name": "pH Setpoint",
         "value": (pHSetpoint / 100),
-        "unit": "pH",
+        "unit": UNIT.PH,
     }
 
     orpSetpoint, offset = getSome(">H", buff, offset)  # 7
     chemistry["orp_setpoint"] = {
         "name": "ORP Setpoint",
         "value": orpSetpoint,
-        "unit": "mV",
+        "unit": UNIT.MILLIVOLT,
     }
 
     pHDoseTime, offset = getSome(">I", buff, offset)  # 9
     chemistry["ph_last_dose_time"] = {
         "name": "Last pH Dose Time",
         "value": pHDoseTime,
-        "unit": "Sec",
+        "unit": UNIT.SECOND,
         "device_type": DEVICE_TYPE.DURATION,
     }
 
@@ -68,7 +77,7 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
     chemistry["orp_last_dose_time"] = {
         "name": "Last ORP Dose Time",
         "value": orpDoseTime,
-        "unit": "Sec",
+        "unit": UNIT.SECOND,
         "device_type": DEVICE_TYPE.DURATION,
     }
 
@@ -76,7 +85,7 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
     chemistry["ph_last_dose_volume"] = {
         "name": "Last pH Dose Volume",
         "value": pHDoseVolume,
-        "unit": "mL",
+        "unit": UNIT.MILLILITER,
         "device_type": DEVICE_TYPE.VOLUME,
     }
 
@@ -84,7 +93,7 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
     chemistry["orp_last_dose_volume"] = {
         "name": "Last ORP Dose Volume",
         "value": orpDoseVolume,
-        "unit": "mL",
+        "unit": UNIT.MILLILITER,
         "device_type": DEVICE_TYPE.VOLUME,
     }
 
@@ -103,14 +112,14 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
         "value": (saturation - 256) / 100
         if is_set(saturation, 0x80)
         else saturation / 100,
-        "unit": "lsi",
+        "unit": UNIT.SATURATION_INDEX,
     }
 
     cal, offset = getSome(">H", buff, offset)  # 24
     chemistry["calcium_harness"] = {
         "name": "Calcium Hardness",
         "value": cal,
-        "unit": "ppm",
+        "unit": UNIT.PARTS_PER_MILLION,
     }
 
     cya, offset = getSome(">H", buff, offset)  # 26
@@ -120,14 +129,14 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
     chemistry["total_alkalinity"] = {
         "name": "Total Alkalinity",
         "value": alk,
-        "unit": "ppm",
+        "unit": UNIT.PARTS_PER_MILLION,
     }
 
     saltPPM, offset = getSome("B", buff, offset)  # 30
     chemistry["salt_tds_ppm"] = {
         "name": "Salt/TDS",
         "value": (saltPPM * 50),
-        "unit": "ppm",
+        "unit": UNIT.PARTS_PER_MILLION,
     }
 
     # Probe temp unit is Celsius?

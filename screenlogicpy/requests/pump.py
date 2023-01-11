@@ -1,6 +1,6 @@
 import struct
 
-from ..const import CODE, DATA, DEVICE_TYPE
+from ..const import CODE, DATA, DEVICE_TYPE, UNIT
 from .protocol import ScreenLogicProtocol
 from .request import async_make_request
 from .utility import getSome
@@ -62,7 +62,7 @@ def decode_pump_status(buff: bytes, data: dict, pumpID: int) -> None:
         pump["currentWatts"] = {
             "name": pump["name"] + " Current Watts",
             "value": curW,
-            "unit": "W",
+            "unit": UNIT.WATT,
             "device_type": DEVICE_TYPE.POWER,
         }
 
@@ -70,12 +70,12 @@ def decode_pump_status(buff: bytes, data: dict, pumpID: int) -> None:
         pump["currentRPM"] = {
             "name": pump["name"] + " Current RPM",
             "value": curR,
-            "unit": "rpm",
+            "unit": UNIT.REVOLUTIONS_PER_MINUTE,
         }
 
     if "currentGPM" in pump:
         pump["currentGPM"] = {
             "name": pump["name"] + " Current GPM",
             "value": curG,
-            "unit": "gpm",
+            "unit": UNIT.GALLONS_PER_MINUTE,
         }
