@@ -32,40 +32,44 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
     offset = 0
 
     # size of msg?
-    chemistry[f"unknown_at_offset_{offset:02}"], offset = getSome("I", buff, offset)
+    chemistry[f"unknown_at_offset_{offset:02}"], offset = getSome(
+        "I", buff, offset
+    )  # byte offset 0
 
     # unknown value
-    chemistry[f"unknown_at_offset_{offset:02}"], offset = getSome("B", buff, offset)
+    chemistry[f"unknown_at_offset_{offset:02}"], offset = getSome(
+        "B", buff, offset
+    )  # byte offset 4
 
-    pH, offset = getSome(">H", buff, offset)  # 1
+    pH, offset = getSome(">H", buff, offset)  # 5
     chemistry["current_ph"] = {
         "name": "Current pH",
         "value": (pH / 100),
         "unit": UNIT.PH,
     }
 
-    orp, offset = getSome(">H", buff, offset)  # 3
+    orp, offset = getSome(">H", buff, offset)  # 7
     chemistry["current_orp"] = {
         "name": "Current ORP",
         "value": orp,
         "unit": UNIT.MILLIVOLT,
     }
 
-    pHSetpoint, offset = getSome(">H", buff, offset)  # 5
+    pHSetpoint, offset = getSome(">H", buff, offset)  # 9
     chemistry["ph_setpoint"] = {
         "name": "pH Setpoint",
         "value": (pHSetpoint / 100),
         "unit": UNIT.PH,
     }
 
-    orpSetpoint, offset = getSome(">H", buff, offset)  # 7
+    orpSetpoint, offset = getSome(">H", buff, offset)  # 11
     chemistry["orp_setpoint"] = {
         "name": "ORP Setpoint",
         "value": orpSetpoint,
         "unit": UNIT.MILLIVOLT,
     }
 
-    pHDoseTime, offset = getSome(">I", buff, offset)  # 9
+    pHDoseTime, offset = getSome(">I", buff, offset)  # 13
     chemistry["ph_last_dose_time"] = {
         "name": "Last pH Dose Time",
         "value": pHDoseTime,
@@ -73,7 +77,7 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
         "device_type": DEVICE_TYPE.DURATION,
     }
 
-    orpDoseTime, offset = getSome(">I", buff, offset)  # 13
+    orpDoseTime, offset = getSome(">I", buff, offset)  # 17
     chemistry["orp_last_dose_time"] = {
         "name": "Last ORP Dose Time",
         "value": orpDoseTime,
@@ -81,7 +85,7 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
         "device_type": DEVICE_TYPE.DURATION,
     }
 
-    pHDoseVolume, offset = getSome(">H", buff, offset)  # 17
+    pHDoseVolume, offset = getSome(">H", buff, offset)  # 21
     chemistry["ph_last_dose_volume"] = {
         "name": "Last pH Dose Volume",
         "value": pHDoseVolume,
@@ -89,7 +93,7 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
         "device_type": DEVICE_TYPE.VOLUME,
     }
 
-    orpDoseVolume, offset = getSome(">H", buff, offset)  # 19
+    orpDoseVolume, offset = getSome(">H", buff, offset)  # 23
     chemistry["orp_last_dose_volume"] = {
         "name": "Last ORP Dose Volume",
         "value": orpDoseVolume,
@@ -97,16 +101,16 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
         "device_type": DEVICE_TYPE.VOLUME,
     }
 
-    pHSupplyLevel, offset = getSome("B", buff, offset)  # 21 (20)
+    pHSupplyLevel, offset = getSome("B", buff, offset)  # 25
     chemistry["ph_supply_level"] = {"name": "pH Supply Level", "value": pHSupplyLevel}
 
-    orpSupplyLevel, offset = getSome("B", buff, offset)  # 22 (21)
+    orpSupplyLevel, offset = getSome("B", buff, offset)  # 26 (21)
     chemistry["orp_supply_level"] = {
         "name": "ORP Supply Level",
         "value": orpSupplyLevel,
     }
 
-    saturation, offset = getSome("B", buff, offset)  # 23
+    saturation, offset = getSome("B", buff, offset)  # 27
     chemistry["saturation"] = {
         "name": "Saturation Index",
         "value": (saturation - 256) / 100
@@ -115,24 +119,24 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
         "unit": UNIT.SATURATION_INDEX,
     }
 
-    cal, offset = getSome(">H", buff, offset)  # 24
+    cal, offset = getSome(">H", buff, offset)  # 28
     chemistry["calcium_harness"] = {
         "name": "Calcium Hardness",
         "value": cal,
         "unit": UNIT.PARTS_PER_MILLION,
     }
 
-    cya, offset = getSome(">H", buff, offset)  # 26
+    cya, offset = getSome(">H", buff, offset)  # 30
     chemistry["cya"] = {"name": "Cyanuric Acid", "value": cya, "unit": "ppm"}
 
-    alk, offset = getSome(">H", buff, offset)  # 28
+    alk, offset = getSome(">H", buff, offset)  # 32
     chemistry["total_alkalinity"] = {
         "name": "Total Alkalinity",
         "value": alk,
         "unit": UNIT.PARTS_PER_MILLION,
     }
 
-    saltPPM, offset = getSome("B", buff, offset)  # 30
+    saltPPM, offset = getSome("B", buff, offset)  # 34
     chemistry["salt_tds_ppm"] = {
         "name": "Salt/TDS",
         "value": (saltPPM * 50),
@@ -140,12 +144,12 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
     }
 
     # Probe temp unit is Celsius?
-    probIsC, offset = getSome("B", buff, offset)
+    probIsC, offset = getSome("B", buff, offset)  # 35
     chemistry["probe_is_celsius"] = probIsC
 
     temperature_unit = getTemperatureUnit(data)
 
-    waterTemp, offset = getSome("B", buff, offset)  # 32
+    waterTemp, offset = getSome("B", buff, offset)  # 36
     chemistry["ph_probe_water_temp"] = {
         "name": "pH Probe Water Temperature",
         "value": waterTemp,
@@ -155,7 +159,7 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
 
     alerts = chemistry.setdefault(DATA.KEY_ALERTS, {})
 
-    alarms, offset = getSome("B", buff, offset)  # 33 (32)
+    alarms, offset = getSome("B", buff, offset)  # 37 (32)
     alerts["flow_alarm"] = {
         "name": "Flow Alarm",
         "value": ON_OFF.from_bool(is_set(alarms, CHEMISTRY.FLAG_ALARM_FLOW)),
@@ -190,7 +194,7 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
     notifications = chemistry.setdefault(DATA.KEY_NOTIFICATIONS, {})
 
     unkPos = offset
-    warnings, offset = getSome("B", buff, offset)  # 34
+    warnings, offset = getSome("B", buff, offset)  # 38
     chemistry[f"unknown_at_offset_{unkPos:02}"] = warnings
 
     notifications["ph_lockout"] = {
@@ -206,7 +210,7 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
         "value": ON_OFF.from_bool(is_set(warnings, CHEMISTRY.FLAG_WARNING_ORP_LIMIT)),
     }
 
-    status, offset = getSome("B", buff, offset)  # 35 (34)
+    status, offset = getSome("B", buff, offset)  # 39 (34)
     chemistry["status"] = status
     # notifications["corrosive"] = {
     #    "name": "Corrosive",
@@ -226,11 +230,11 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
         "value": (status & CHEMISTRY.MASK_STATUS_ORP_DOSING) >> 6,
     }
 
-    flags, offset = getSome("B", buff, offset)  # 36 (35)
+    flags, offset = getSome("B", buff, offset)  # 40 (35)
     chemistry["flags"] = flags
 
-    vMinor, offset = getSome("B", buff, offset)  # 37 (36)
-    vMajor, offset = getSome("B", buff, offset)  # 38 (37)
+    vMinor, offset = getSome("B", buff, offset)  # 41 (36)
+    vMajor, offset = getSome("B", buff, offset)  # 42 (37)
     chemistry["firmware"] = {
         "name": "IntelliChem Firmware Version",
         "value": f"{vMajor}.{vMinor:03}",
