@@ -31,7 +31,7 @@ def decode_pool_status(buff: bytes, data: dict) -> None:
     freezeMode, offset = getSome("B", buff, offset)  # byte offset 4
     config["freeze_mode"] = {
         "name": "Freeze Mode",
-        "value": ON_OFF.from_bool((freezeMode & 0x08) == 0x08),
+        "value": ON_OFF.from_bool(freezeMode & 0x08),
     }
 
     remotes, offset = getSome("B", buff, offset)  # 5
