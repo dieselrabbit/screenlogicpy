@@ -7,10 +7,14 @@ from .const import (
     CHEMISTRY,
     DATA,
     RANGE,
+    CLIENT_ID,
+    CODE,
     SCG,
     ScreenLogicError,
     ScreenLogicWarning,
 )
+from .requests.client import async_request_add_client, async_request_remove_client
+
 from .requests import (
     async_connect_to_gateway,
     async_request_gateway_version,
@@ -27,7 +31,10 @@ from .requests import (
     async_request_set_chem_data,
     async_make_request,
 )
+from .requests.chemistry import decode_chemistry
+from .requests.status import decode_pool_status
 from .requests.protocol import ScreenLogicProtocol
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -47,6 +54,7 @@ class ScreenLogicGateway:
         self.__version = ""
         self.__transport: asyncio.Transport = None
         self.__protocol: ScreenLogicProtocol = None
+        self.__is_client = False
         self.__data = {}
         self.__last = {}
 
@@ -89,12 +97,17 @@ class ScreenLogicGateway:
             if self.__version:
                 _LOGGER.debug("Login successful")
                 await self._async_get_config()
+                if not self.__is_client:
+                    self.__is_client = await self._async_add_client()
                 return True
         _LOGGER.debug("Login failed")
         return False
 
     async def async_disconnect(self, force=False):
         """Disconnects from the ScreenLogic protocol adapter"""
+        if self.__is_client:
+            self.__is_client = await self._async_remove_client()
+
         if not force:
             while self.__protocol.requests_pending():
                 await asyncio.sleep(1)
@@ -290,6 +303,32 @@ class ScreenLogicGateway:
         self.__last[DATA.KEY_SCG] = await async_request_scg_config(
             self.__protocol, self.__data
         )
+
+    async def _async_add_client(self):
+        if not self.is_connected:
+            raise ScreenLogicWarning(
+                "Not connected to protocol adapter. add_client failed."
+            )
+        _LOGGER.debug("Requesting add client")
+        return await async_request_add_client(self.__protocol, CLIENT_ID)
+
+    async def _async_remove_client(self):
+        if not self.is_connected:
+            raise ScreenLogicWarning(
+                "Not connected to protocol adapter. remove_client failed."
+            )
+        _LOGGER.debug("Requesting remove client")
+        return await async_request_remove_client(self.__protocol, CLIENT_ID)
+
+    async def _async_setup_push(self):
+        if await self._async_add_client():
+            self.register_message_handler(
+                CODE.STATUS_CHANGED, decode_pool_status, self.__data
+            )
+            self.register_message_handler(
+                CODE.CHEMISTRY_CHANGED, decode_chemistry, self.__data
+            )
+            # self.register_message_handler(CODE.COLOR_UPDATE, decode_color, self.__data)
 
     def _is_valid_circuit(self, circuit):
         return circuit in self.__data[DATA.KEY_CIRCUITS]
