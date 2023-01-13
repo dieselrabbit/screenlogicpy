@@ -24,8 +24,8 @@ from .requests import (
     async_request_chemistry,
     async_request_scg_config,
     async_request_set_scg_config,
-    async_make_request,
     async_request_set_chem_data,
+    async_make_request,
 )
 from .requests.protocol import ScreenLogicProtocol
 
