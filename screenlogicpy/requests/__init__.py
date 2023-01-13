@@ -8,6 +8,6 @@ from .lights import async_request_pool_lights_command
 from .login import async_connect_to_gateway
 from .pump import async_request_pump_status
 from .status import async_request_pool_status
-from .chemistry import async_request_chemistry
+from .chemistry import async_request_chemistry, async_request_set_chem_data
 from .scg import async_request_scg_config, async_request_set_scg_config
 from .request import async_make_request

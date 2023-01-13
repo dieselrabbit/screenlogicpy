@@ -14,252 +14,180 @@ from .const_data import (
 )
 
 
-@pytest.mark.asyncio
-async def test_cli_dashboard(MockProtocolAdapter, capsys):
-    async with MockProtocolAdapter:
+async def run_cli_test(
+    protocol_adapter, system_out, arguments, return_code, expected_output
+):
+    async with protocol_adapter:
         with patch(
             "screenlogicpy.cli.async_discover", return_value=[FAKE_CONNECT_INFO]
         ):
-            result = await cli(())
-            std = capsys.readouterr()
-            assert std.out.strip() == EXPECTED_DASHBOARD
-            assert result == 0
+            assert await cli(arguments.split()) == return_code
+            assert system_out.readouterr().out.strip() == expected_output
 
 
 @pytest.mark.asyncio
-async def test_cli_discover(MockProtocolAdapter, capsys):
-    async with MockProtocolAdapter:
-        with patch(
-            "screenlogicpy.cli.async_discover", return_value=[FAKE_CONNECT_INFO]
-        ):
-            test_input = [
-                (
-                    ("discover",),
-                    f"{FAKE_GATEWAY_ADDRESS}:{FAKE_GATEWAY_PORT} '{FAKE_GATEWAY_NAME}'",
-                ),
-                (
-                    ("-v", "discover"),
-                    f"Discovered:\n'{FAKE_GATEWAY_NAME}' at {FAKE_GATEWAY_ADDRESS}:{FAKE_GATEWAY_PORT}",
-                ),
-            ]
-            for args, expected in test_input:
-                result = await cli(args)
-                std = capsys.readouterr()
-                assert std.out.strip() == expected
-                assert result == 0
+async def test_dashboard(MockProtocolAdapter, capsys):
+    await run_cli_test(MockProtocolAdapter, capsys, "", 0, EXPECTED_DASHBOARD)
 
 
 @pytest.mark.asyncio
-async def test_get_circuit(MockProtocolAdapter, capsys):
-    async with MockProtocolAdapter:
-        with patch(
-            "screenlogicpy.cli.async_discover", return_value=[FAKE_CONNECT_INFO]
-        ):
-            test_input = [
-                (("get", "circuit", "500"), "0"),
-                (("get", "c", "502"), "1"),
-                (
-                    ("-v", "get", "c", "502"),
-                    EXPECTED_VERBOSE_PREAMBLE + "Pool Light: On",
-                ),
-            ]
-
-            for args, expected in test_input:
-                result = await cli(args)
-                std = capsys.readouterr()
-                assert std.out.strip() == expected
-                assert result == 0
+@pytest.mark.parametrize(
+    "args, ret, expected",
+    [
+        (
+            "discover",
+            0,
+            f"{FAKE_GATEWAY_ADDRESS}:{FAKE_GATEWAY_PORT} '{FAKE_GATEWAY_NAME}'",
+        ),
+        (
+            "-v discover",
+            0,
+            f"Discovered:\n'{FAKE_GATEWAY_NAME}' at {FAKE_GATEWAY_ADDRESS}:{FAKE_GATEWAY_PORT}",
+        ),
+    ],
+)
+async def test_discover(MockProtocolAdapter, capsys, args, ret, expected):
+    await run_cli_test(MockProtocolAdapter, capsys, args, ret, expected)
 
 
 @pytest.mark.asyncio
-async def test_get_current_temp(MockProtocolAdapter, capsys):
-    async with MockProtocolAdapter:
-        with patch(
-            "screenlogicpy.cli.async_discover", return_value=[FAKE_CONNECT_INFO]
-        ):
-            test_input = [
-                (("get", "current-temp", "0"), "56"),
-                (("get", "t", "spa"), "97"),
-            ]
-
-            for args, expected in test_input:
-                result = await cli(args)
-                std = capsys.readouterr()
-                assert std.out.strip() == expected
-                assert result == 0
-
-
-@pytest.mark.asyncio
-async def test_get_heat_mode(MockProtocolAdapter, capsys):
-    async with MockProtocolAdapter:
-        with patch(
-            "screenlogicpy.cli.async_discover", return_value=[FAKE_CONNECT_INFO]
-        ):
-            test_input = [
-                (("get", "heat-mode", "pool"), "0"),
-                (("get", "hm", "1"), "3"),
-            ]
-
-            for args, expected in test_input:
-                result = await cli(args)
-                std = capsys.readouterr()
-                assert std.out.strip() == expected
-                assert result == 0
+@pytest.mark.parametrize(
+    "args, ret, expected",
+    [
+        ("get circuit 500", 0, "0"),
+        ("get c 502", 0, "1"),
+        (
+            "-v get c 502",
+            0,
+            EXPECTED_VERBOSE_PREAMBLE + "Pool Light: On",
+        ),
+        ("set circuit 500 off", 0, "0"),
+        (
+            "-v set circuit 502 1",
+            0,
+            EXPECTED_VERBOSE_PREAMBLE + "Pool Light: On",
+        ),
+    ],
+)
+async def test_circuit(MockProtocolAdapter, capsys, args, ret, expected):
+    await run_cli_test(MockProtocolAdapter, capsys, args, ret, expected)
 
 
 @pytest.mark.asyncio
-async def test_get_heat_temp(MockProtocolAdapter, capsys):
-    async with MockProtocolAdapter:
-        with patch(
-            "screenlogicpy.cli.async_discover", return_value=[FAKE_CONNECT_INFO]
-        ):
-            test_input = [
-                (("get", "heat-temp", "0"), "86"),
-                (("get", "ht", "spa"), "97"),
-            ]
-
-            for args, expected in test_input:
-                result = await cli(args)
-                std = capsys.readouterr()
-                assert std.out.strip() == expected
-                assert result == 0
+@pytest.mark.parametrize(
+    "args, ret, expected",
+    [
+        ("get current-temp 0", 0, "56"),
+        ("get t spa", 0, "97"),
+    ],
+)
+async def test_get_current_temp(MockProtocolAdapter, capsys, args, ret, expected):
+    await run_cli_test(MockProtocolAdapter, capsys, args, ret, expected)
 
 
 @pytest.mark.asyncio
-async def test_get_heat_state(MockProtocolAdapter, capsys):
-    async with MockProtocolAdapter:
-        with patch(
-            "screenlogicpy.cli.async_discover", return_value=[FAKE_CONNECT_INFO]
-        ):
-            test_input = [
-                (("get", "heat-state", "0"), "0"),
-                (("get", "hs", "spa"), "0"),
-            ]
-
-            for args, expected in test_input:
-                result = await cli(args)
-                std = capsys.readouterr()
-                assert std.out.strip() == expected
-                assert result == 0
-
-
-@pytest.mark.asyncio
-async def test_get_json(MockProtocolAdapter, capsys):
-    async with MockProtocolAdapter:
-        with patch(
-            "screenlogicpy.cli.async_discover", return_value=[FAKE_CONNECT_INFO]
-        ):
-            test_input = [
-                (("get", "json"), json.dumps(EXPECTED_COMPLETE_DATA, indent=2)),
-            ]
-
-            for args, expected in test_input:
-                result = await cli(args)
-                std = capsys.readouterr()
-                assert std.out.strip() == expected
-                assert result == 0
+@pytest.mark.parametrize(
+    "args, ret, expected",
+    [
+        ("get heat-mode pool", 0, "0"),
+        ("get hm 1", 0, "3"),
+        ("set heat-mode pool 0", 0, "0"),
+        (
+            "-v set hm 1 heater",
+            0,
+            EXPECTED_VERBOSE_PREAMBLE + "Spa Heat Mode: Heater",
+        ),
+    ],
+)
+async def test_heat_mode(MockProtocolAdapter, capsys, args, ret, expected):
+    await run_cli_test(MockProtocolAdapter, capsys, args, ret, expected)
 
 
 @pytest.mark.asyncio
-async def test_set_circuit(MockProtocolAdapter, capsys):
-    async with MockProtocolAdapter:
-        with patch(
-            "screenlogicpy.cli.async_discover", return_value=[FAKE_CONNECT_INFO]
-        ):
-            test_input = [
-                (("set", "circuit", "500", "off"), "0"),
-                (
-                    ("-v", "set", "circuit", "502", "1"),
-                    EXPECTED_VERBOSE_PREAMBLE + "Pool Light: On",
-                ),
-            ]
-
-            for args, expected in test_input:
-                result = await cli(args)
-                std = capsys.readouterr()
-                assert std.out.strip() == expected
-                assert result == 0
+@pytest.mark.parametrize(
+    "args, ret, expected",
+    [
+        ("get heat-temp 0", 0, "86"),
+        ("get ht spa", 0, "97"),
+        ("set heat-temp pool 86", 0, "86"),
+        (
+            "-v set ht 1 97",
+            0,
+            EXPECTED_VERBOSE_PREAMBLE + "Spa Heat Set Point: 97",
+        ),
+    ],
+)
+async def test_heat_temp(MockProtocolAdapter, capsys, args, ret, expected):
+    await run_cli_test(MockProtocolAdapter, capsys, args, ret, expected)
 
 
 @pytest.mark.asyncio
-async def test_set_heat_mode(MockProtocolAdapter, capsys):
-    async with MockProtocolAdapter:
-        with patch(
-            "screenlogicpy.cli.async_discover", return_value=[FAKE_CONNECT_INFO]
-        ):
-            test_input = [
-                (("set", "heat-mode", "pool", "0"), "0"),
-                (
-                    ("-v", "set", "hm", "1", "heater"),
-                    EXPECTED_VERBOSE_PREAMBLE + "Spa Heat Mode: Heater",
-                ),
-            ]
-
-            for args, expected in test_input:
-                result = await cli(args)
-                std = capsys.readouterr()
-                assert std.out.strip() == expected
-                assert result == 0
+@pytest.mark.parametrize(
+    "args, ret, expected",
+    [
+        ("get heat-state 0", 0, "0"),
+        ("get hs spa", 0, "0"),
+    ],
+)
+async def test_get_heat_state(MockProtocolAdapter, capsys, args, ret, expected):
+    await run_cli_test(MockProtocolAdapter, capsys, args, ret, expected)
 
 
 @pytest.mark.asyncio
-async def test_set_heat_temp(MockProtocolAdapter, capsys):
-    async with MockProtocolAdapter:
-        with patch(
-            "screenlogicpy.cli.async_discover", return_value=[FAKE_CONNECT_INFO]
-        ):
-            test_input = [
-                (("set", "heat-temp", "pool", "86"), "86"),
-                (
-                    ("-v", "set", "ht", "1", "97"),
-                    EXPECTED_VERBOSE_PREAMBLE + "Spa Heat Set Point: 97",
-                ),
-            ]
-
-            for args, expected in test_input:
-                result = await cli(args)
-                std = capsys.readouterr()
-                assert std.out.strip() == expected
-                assert result == 0
+@pytest.mark.parametrize(
+    "args, ret, expected",
+    [
+        ("get json", 0, json.dumps(EXPECTED_COMPLETE_DATA, indent=2)),
+    ],
+)
+async def test_get_json(MockProtocolAdapter, capsys, args, ret, expected):
+    await run_cli_test(MockProtocolAdapter, capsys, args, ret, expected)
 
 
 @pytest.mark.asyncio
-async def test_set_color_lights(MockProtocolAdapter, capsys):
-    async with MockProtocolAdapter:
-        with patch(
-            "screenlogicpy.cli.async_discover", return_value=[FAKE_CONNECT_INFO]
-        ):
-            test_input = [
-                (("set", "color-lights", "romance"), "6"),
-                (
-                    ("-v", "set", "cl", "0"),
-                    EXPECTED_VERBOSE_PREAMBLE + "Set color mode to All Off",
-                ),
-            ]
-
-            for args, expected in test_input:
-                result = await cli(args)
-                std = capsys.readouterr()
-                assert std.out.strip() == expected
-                assert result == 0
+@pytest.mark.parametrize(
+    "args, ret, expected",
+    [
+        ("set color-lights romance", 0, "6"),
+        (
+            "-v set cl 0",
+            0,
+            EXPECTED_VERBOSE_PREAMBLE + "Set color mode to All Off",
+        ),
+    ],
+)
+async def test_set_color_lights(MockProtocolAdapter, capsys, args, ret, expected):
+    await run_cli_test(MockProtocolAdapter, capsys, args, ret, expected)
 
 
 @pytest.mark.asyncio
-async def test_set_scg(MockProtocolAdapter, capsys):
-    async with MockProtocolAdapter:
-        with patch(
-            "screenlogicpy.cli.async_discover", return_value=[FAKE_CONNECT_INFO]
-        ):
-            test_input = [
-                (("set", "salt-generator", "100", "20"), "50 0"),
-                (
-                    ("-v", "set", "scg", "20", "0"),
-                    EXPECTED_VERBOSE_PREAMBLE + "Pool SCG Level: 50 Spa SCG Level: 0",
-                ),
-            ]
+@pytest.mark.parametrize(
+    "args, ret, expected",
+    [
+        ("set salt-generator 100 20", 0, "50 0"),
+        (
+            "-v set scg 20 0",
+            0,
+            EXPECTED_VERBOSE_PREAMBLE + "Pool SCG Level: 50 Spa SCG Level: 0",
+        ),
+    ],
+)
+async def test_set_scg(MockProtocolAdapter, capsys, args, ret, expected):
+    await run_cli_test(MockProtocolAdapter, capsys, args, ret, expected)
 
-            for args, expected in test_input:
-                result = await cli(args)
-                std = capsys.readouterr()
-                assert std.out.strip() == expected
-                assert result == 0
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "args, ret, expected",
+    [
+        ("set chem-data 7.5 700", 0, "7.5 700"),
+        (
+            "-v set ch 7.6 650",
+            0,
+            EXPECTED_VERBOSE_PREAMBLE + "pH Setpoint: 7.5 ORP Setpoint: 700",
+        ),
+        ("set ch * *", 129, "No new setpoint values. Nothing to do."),
+    ],
+)
+async def test_set_chemistry(MockProtocolAdapter, capsys, args, ret, expected):
+    await run_cli_test(MockProtocolAdapter, capsys, args, ret, expected)

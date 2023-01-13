@@ -63,6 +63,8 @@ When done, use `async_disconnect()` to close the connection to the protocol adap
 
 The `discovery` module's `async_discover()` function can be used to get a list of all discovered ScreenLogic protocol adapters on the local network. Each protocol adapter is represented as a `dict` object that can then be directly used to instanciate a `ScreenLogicGateway` class.
 
+**Note:** Gateway discovery is limited to discovering ScreenLogic protocol adapters on the same subnet.
+
     hosts = await discovery.async_discover()
 *Changed in v0.5.0: This method is now an async coroutine.*
 
@@ -92,6 +94,7 @@ The following actions can be performed with methods on the `ScreenLogicGateway` 
 - Set a heating mode for a specific body of water (spa/pool)
 - Set a target heating temperature for a specific body of water (spa/pool)
 - Select various color-enabled lighting options
+- Set the chlorinator output levels
 
 Each method will `return True` if the operation reported no exceptions.
 **Note:** The methods do not confirm the requested action is now in effect on the pool controller.
@@ -130,6 +133,27 @@ Chlorinator output levels can be set with `async_set_scg_config()`.  `async_set_
     success = await gateway.async_set_scg_config(pool_output, spa_output)  
 *New in v0.5.0*
 
+## Setting IntelliChem Chemistry values
+Chemistry values used in the IntelliChem system can be set with `async_set_chem_data()`. `async_set_chem_data` takes six arguments, `ph_setpoint`, `orp_setpoint`, `calcium`, `alkalinity`, `cyanuric`, and `salt`.  `ph_setpoint` is a `float` and the rest are `int`. 
+
+    success = await gateway.async_set_chem_data(ph_setpoint, orp_setpoint, calcium, alkalinity, cyanuric, salt)
+
+Currently all values are required, even if you only want to change one of them. For this reason, it is recommended that the calling code gathers all the current values first, then updates whichever value(s) are desired before calling `async_set_chem_data()`.
+
+    chem_data = gateway.get_data()[DATA.KEY_CHEMISTRY]
+    ph = chem_data["ph_setpoint"]["value"]
+    orp = chem_data["orp_setpoint"]["value"]
+    ch = chem_data["calcium_harness"]["value"]
+    ta = chem_data["total_alkalinity"]["value"]
+    ca = chem_data["cya"]["value"]
+    sa = chem_data["salt_tds_ppm"]["value"]
+
+    ph = ...  # Code to update any of the values
+
+    success = await gateway.async_set_chem_data(ph, orp, ch, ta, ca, sa)
+
+*Note: Only `ph_setpoint` and `orp_setpoint` are settable through the command line. New in v0.6.0*
+
 ## Handling unsolicited messages
 With the move to asyncio, screenlogicpy can now be handle unsolicited messages from the protocol adapter (messages that are not a direct response to a request from screenlogicpy).
 To do so, you need to tell the `ScreenLogicGateway` what message code to listen for and what to do when it is received. You can register a handler with `register_message_handler()` . This method takes the message code to wait for, the function to schedule, and any parameters you want to pass to your handler. Your handler function needs to take the message itself, and any additional parameters you specified.
@@ -148,7 +172,15 @@ To do so, you need to tell the `ScreenLogicGateway` what message code to listen 
     gateway.register_message_handler(WEATHER_UPDATE_CODE, weather_request, userData)
 Full example in `./examples/async_listen.py`
 
-*New in v0.6.0*
+*New in v0.7.0*
+
+## Debug Information
+
+A debug function is available in the `ScreenLogicGateway` class: `get_debug`. This will return a dict with the raw bytes for the last response for each request the gateway performs during an update. This can be useful for debugging the actual responses from the protocol adapter.
+
+    last_responses = gateway.get_debug()
+
+*New in v0.5.5*
 
 # Command line
 
@@ -318,8 +350,16 @@ Sets a color mode for *all* color-capable lights configured on the pool controll
     screenlogicpy set salt-generator [pool_pct] [spa_pct]
 
 Sets the chlorinator output levels for the pool and spa. Pentair treats spa output level as a percentage of the pool's output level.  
-**Note:** `[pool_pct]` can be an `int` between `0`-`100`, or `*` to keep the current value. `[spa_pct]` can be an `int` between `0`-`20`, or `*` to keep the current value.  
+**Note:** `[pool_pct]` can be an `int` between `0`-`100`, or `*` to keep the current value. `[spa_pct]` can be an `int` between `0`-`100`, or `*` to keep the current value.  
 *New in v0.5.0*
+
+#### set `chem-data, ch`
+
+    screenlogicpy set chem-data [ph_setpoint] [orp_setpoint]
+
+Sets the pH and/or ORP set points for the IntelliChem system.
+**Note:** `[ph_setpoint]` can be a `float` between `7.2`-`7.6`, or `*` to keep the current value. `[orp_setpoint]` can be an `int` between `400`-`800`, or `*` to keep the current value.  
+*New in v0.6.0*
 
 # Reference
 

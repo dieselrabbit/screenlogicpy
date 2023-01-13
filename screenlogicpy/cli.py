@@ -1,3 +1,4 @@
+import asyncio
 import string
 import json
 import argparse
@@ -6,10 +7,12 @@ from screenlogicpy.gateway import ScreenLogicGateway
 from screenlogicpy.const import (
     BODY_TYPE,
     COLOR_MODE,
+    CHEMISTRY,
     DATA,
     EQUIPMENT,
     HEAT_MODE,
     ON_OFF,
+    RANGE,
     SL_GATEWAY_IP,
     SL_GATEWAY_NAME,
     SL_GATEWAY_PORT,
@@ -207,12 +210,50 @@ async def cli(cli_args):
 
         if await gateway.async_set_scg_config(scg_1, scg_2):
             await gateway.async_update()
+            new_data = gateway.get_data()
             print(
-                vFormat(gateway.get_data()[DATA.KEY_SCG]["scg_level1"]),
-                vFormat(gateway.get_data()[DATA.KEY_SCG]["scg_level2"]),
+                vFormat(new_data[DATA.KEY_SCG]["scg_level1"]),
+                vFormat(new_data[DATA.KEY_SCG]["scg_level2"]),
             )
             return 0
         return 64
+
+    async def async_set_chem_data():
+        if args.ph_setpoint == "*" and args.orp_setpoint == "*":
+            print("No new setpoint values. Nothing to do.")
+            return 129
+
+        chem_data = gateway.get_data()[DATA.KEY_CHEMISTRY]
+        try:
+            ph = (
+                chem_data["ph_setpoint"]["value"]
+                if args.ph_setpoint == "*"
+                else float(args.ph_setpoint)
+            )
+            orp = (
+                chem_data["orp_setpoint"]["value"]
+                if args.orp_setpoint == "*"
+                else int(args.orp_setpoint)
+            )
+        except ValueError:
+            print("Invalid Chemistry Setpoint value")
+            return 130
+
+        ch = chem_data["calcium_harness"]["value"]
+        ta = chem_data["total_alkalinity"]["value"]
+        ca = chem_data["cya"]["value"]
+        sa = chem_data["salt_tds_ppm"]["value"]
+
+        if await gateway.async_set_chem_data(ph, orp, ch, ta, ca, sa):
+            await asyncio.sleep(3)
+            await gateway.async_update()
+            new_data = gateway.get_data()
+            print(
+                vFormat(new_data[DATA.KEY_CHEMISTRY]["ph_setpoint"]),
+                vFormat(new_data[DATA.KEY_CHEMISTRY]["orp_setpoint"]),
+            )
+            return 0
+        return 128
 
     async def async_get_json():
         print(json.dumps(gateway.get_data(), indent=2))
@@ -344,6 +385,23 @@ async def cli(cli_args):
         help="Chlorinator output for when system is in SPA mode. 0-20, or * to keep current value.",
     )
     set_scg_config_parser.set_defaults(async_func=async_set_scg_config)
+
+    set_chem_data_parser = set_subparsers.add_parser("chem-data", aliases=["ch"])
+    set_chem_data_parser.add_argument(
+        "ph_setpoint",
+        type=str,
+        metavar="PH_SETPOINT",
+        default=None,
+        help=f"PH set point for IntelliChem. {CHEMISTRY.RANGE_PH_SETPOINT[RANGE.MIN]}-{CHEMISTRY.RANGE_PH_SETPOINT[RANGE.MAX]}, or * to keep current value.",
+    )
+    set_chem_data_parser.add_argument(
+        "orp_setpoint",
+        type=str,
+        metavar="ORP_SETPOINT",
+        default=None,
+        help=f"ORP set point for IntelliChem. {CHEMISTRY.RANGE_ORP_SETPOINT[RANGE.MIN]}-{CHEMISTRY.RANGE_ORP_SETPOINT[RANGE.MAX]}, or * to keep current value.",
+    )
+    set_chem_data_parser.set_defaults(async_func=async_set_chem_data)
 
     args = option_parser.parse_args(cli_args)
 
