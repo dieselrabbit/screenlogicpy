@@ -1,12 +1,12 @@
 import struct
 
-from ..const import CODE
+from ..const import CODE, CLIENT_ID
 from .protocol import ScreenLogicProtocol
 from .request import async_make_request
 
 
 async def async_request_add_client(
-    protocol: ScreenLogicProtocol, clientID: int
+    protocol: ScreenLogicProtocol, clientID: int = CLIENT_ID
 ) -> bool:
     return (
         await async_make_request(
@@ -17,7 +17,7 @@ async def async_request_add_client(
 
 
 async def async_request_remove_client(
-    protocol: ScreenLogicProtocol, clientID: int
+    protocol: ScreenLogicProtocol, clientID: int = CLIENT_ID
 ) -> bool:
     return (
         await async_make_request(

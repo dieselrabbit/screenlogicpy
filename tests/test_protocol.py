@@ -1,3 +1,4 @@
+import asyncio
 import pytest
 
 from screenlogicpy.requests.protocol import ScreenLogicProtocol
@@ -11,14 +12,20 @@ async def test_async_data_received(event_loop):
 
     data = {}
 
-    def callback(messageCode, message, target_data):
+    callback_triggered: asyncio.Future
+    callback_triggered = event_loop.create_future()
+
+    async def callback(message, target_data):
         target_data["result"] = message
+        callback_triggered.set_result(True)
 
     protocol = ScreenLogicProtocol(event_loop)
     protocol.register_async_message_callback(CODE, callback, data)
 
     payload = makeMessage(0, CODE, MESSAGE)
     protocol.data_received(payload)
+
+    await callback_triggered
 
     assert data.get("result") == MESSAGE
 

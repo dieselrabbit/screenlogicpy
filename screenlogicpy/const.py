@@ -1,8 +1,6 @@
 import struct
 
-ADD_UNKNOWN_VALUES = False
-
-CLIENT_ID = 512
+CLIENT_ID = 49151
 
 SL_GATEWAY_IP = "ip"
 SL_GATEWAY_PORT = "port"

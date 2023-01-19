@@ -1,13 +1,12 @@
 import asyncio
 import logging
-from typing import Callable, Coroutine
+from typing import Awaitable, Callable
 
 from .const import (
     BODY_TYPE,
     CHEMISTRY,
     DATA,
     RANGE,
-    CLIENT_ID,
     CODE,
     SCG,
     ScreenLogicError,
@@ -55,6 +54,8 @@ class ScreenLogicGateway:
         self.__transport: asyncio.Transport = None
         self.__protocol: ScreenLogicProtocol = None
         self.__is_client = False
+        self.__client_desired = False
+        self.__async_data_updated_callback = None
         self.__data = {}
         self.__last = {}
 
@@ -82,6 +83,10 @@ class ScreenLogicGateway:
     def is_connected(self) -> bool:
         return self.__protocol.connected if self.__protocol else False
 
+    @property
+    def is_client(self) -> bool:
+        return self.__is_client
+
     async def async_connect(self, connection_closed_callback: Callable = None) -> bool:
         """Connects to the ScreenLogic protocol adapter"""
         if self.is_connected:
@@ -97,7 +102,7 @@ class ScreenLogicGateway:
             if self.__version:
                 _LOGGER.debug("Login successful")
                 await self._async_get_config()
-                if not self.__is_client:
+                if not self.__is_client and self.__client_desired:
                     self.__is_client = await self._async_add_client()
                 return True
         _LOGGER.debug("Login failed")
@@ -106,7 +111,7 @@ class ScreenLogicGateway:
     async def async_disconnect(self, force=False):
         """Disconnects from the ScreenLogic protocol adapter"""
         if self.__is_client:
-            self.__is_client = await self._async_remove_client()
+            self.__is_client = not await self._async_remove_client()
 
         if not force:
             while self.__protocol.requests_pending():
@@ -114,6 +119,24 @@ class ScreenLogicGateway:
 
         if self.__transport and not self.__transport.is_closing():
             self.__transport.close()
+
+    async def async_subscribe_client(
+        self, async_data_updated_callback: Callable[..., Awaitable[None]] = None
+    ) -> bool:
+        self.__client_desired = True
+        if await self._async_add_client():
+            self.__is_client = True
+            self.__async_data_updated_callback = async_data_updated_callback
+            return await self._async_setup_push()
+        else:
+            return False
+
+    async def async_unsubscribe_client(self) -> bool:
+        self.__client_desired = False
+        self.__is_client = False
+        self.__async_data_updated_callback = None
+        self.__protocol.remove_all_async_message_callbacks()
+        return await self._async_remove_client()
 
     async def async_update(self) -> bool:
         """Updates all ScreenLogic data if already connected. Tries to connect if not."""
@@ -231,10 +254,10 @@ class ScreenLogicGateway:
         return False
 
     def register_message_handler(
-        self, message_code: int, handler: Coroutine[bytes, any, None], *argv
+        self, message_code: int, handler: Callable[[bytes, any], Awaitable[None]], *argv
     ):
         """Registers a function to call when a message with the specified message_code is received.
-        Only one handler can be registered per message_code. Subsequent registrations will supersede
+        Only one handler can be registered per message_code. Subsequent registrations will override
         the previous registration."""
         if not self.__protocol:
             raise ScreenLogicError(
@@ -310,7 +333,7 @@ class ScreenLogicGateway:
                 "Not connected to protocol adapter. add_client failed."
             )
         _LOGGER.debug("Requesting add client")
-        return await async_request_add_client(self.__protocol, CLIENT_ID)
+        return await async_request_add_client(self.__protocol)
 
     async def _async_remove_client(self):
         if not self.is_connected:
@@ -318,17 +341,31 @@ class ScreenLogicGateway:
                 "Not connected to protocol adapter. remove_client failed."
             )
         _LOGGER.debug("Requesting remove client")
-        return await async_request_remove_client(self.__protocol, CLIENT_ID)
+        return await async_request_remove_client(self.__protocol)
 
-    async def _async_setup_push(self):
-        if await self._async_add_client():
-            self.register_message_handler(
-                CODE.STATUS_CHANGED, decode_pool_status, self.__data
+    async def _async_setup_push(self) -> bool:
+        if self.is_connected and self.__is_client:
+            self.__protocol.register_async_message_callback(
+                CODE.STATUS_CHANGED, self._async_status_updated, self.__data
             )
-            self.register_message_handler(
-                CODE.CHEMISTRY_CHANGED, decode_chemistry, self.__data
+            self.__protocol.register_async_message_callback(
+                CODE.CHEMISTRY_CHANGED, self._async_chemistry_updated, self.__data
             )
             # self.register_message_handler(CODE.COLOR_UPDATE, decode_color, self.__data)
+            return True
+        return False
+
+    async def async_data_updated(self):
+        if self.__is_client and self.__async_data_updated_callback:
+            await self.__async_data_updated_callback()
+
+    async def _async_status_updated(self, message: bytes, data: dict):
+        decode_pool_status(message, data)
+        await self.async_data_updated()
+
+    async def _async_chemistry_updated(self, message: bytes, data: dict):
+        decode_chemistry(message, data)
+        await self.async_data_updated()
 
     def _is_valid_circuit(self, circuit):
         return circuit in self.__data[DATA.KEY_CIRCUITS]

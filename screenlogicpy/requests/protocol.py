@@ -1,7 +1,7 @@
 import asyncio
 import itertools
 import logging
-from typing import Callable, Coroutine
+from typing import Awaitable, Callable
 
 from ..const import CODE, ScreenLogicError
 from .utility import makeMessage, takeMessages
@@ -73,14 +73,22 @@ class ScreenLogicProtocol(asyncio.Protocol):
     def register_async_message_callback(
         self,
         messageCode,
-        handler: Callable[[bytes, any], Coroutine[any, any, None]],
+        handler: Callable[[bytes, any], Awaitable[any]],
         *args,
     ):
-        """Registers a callback function to call for the specified unhandled message code."""
+        """Registers an async callback function to call for the specified message code."""
         _LOGGER.debug(
-            f"registering handler for message code {messageCode} to call with args {args}"
+            f"Registering async handler {handler} for message code {messageCode} to call with args {args}"
         )
         self._callbacks[messageCode] = (handler, args)
+
+    def remove_async_message_callback(self, messageCode) -> bool:
+        """Removes the callback for the specified message code."""
+        return True if self._callbacks.pop(messageCode, None) else False
+
+    def remove_all_async_message_callbacks(self):
+        """Removes all saved message callbacks."""
+        self._callbacks.clear()
 
     def requests_pending(self) -> bool:
         return not self._futures.all_done()
