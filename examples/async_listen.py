@@ -3,14 +3,11 @@ import logging
 from pprint import pprint
 
 from screenlogicpy import ScreenLogicGateway, discovery
-from scratchpad.local_host import get_local
 
 
 async def main():
     logging.basicConfig(level=logging.DEBUG)
     hosts = await discovery.async_discover()
-    if len(hosts) == 0:
-        hosts.append(get_local())
 
     if len(hosts) > 0:
 
@@ -21,14 +18,19 @@ async def main():
         def on_connection_lost():
             connection_lost.set_result()
 
+        async def data_updated():
+            print("---- ** DATA UPDATED ** ----")
+
         async def weather_handler(message, data: dict):
             result = await gateway.async_send_message(9807)
             user = data.setdefault("user", {})
             user[9807] = result
+            await data_updated()
 
         gateway = ScreenLogicGateway(**hosts[0])
 
         await gateway.async_connect(on_connection_lost)
+        await gateway.async_subscribe_client(data_updated)
         gateway.register_message_handler(9806, weather_handler, gateway.get_data())
         await gateway.async_update()
 
