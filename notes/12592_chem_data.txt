@@ -93,3 +93,7 @@ MoMo Normal no flow
 1010 0101
 MoMi Normal Flow
 1001 0101
+MoMo Normal Flow
+1010 0101
+MoMi Ideal  Flow
+1001 0101
