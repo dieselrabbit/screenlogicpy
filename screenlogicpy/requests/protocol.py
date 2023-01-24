@@ -58,7 +58,6 @@ class ScreenLogicProtocol(asyncio.Protocol):
             self._buff.extend(data)
             complete = []
             while len(self._buff) >= MESSAGE.HEADER_LENGTH:
-                # dataLenB = bytes(self._buff[4 : MESSAGE.HEADER_LENGTH])
                 dataLen = struct.unpack_from("<I", self._buff, 4)[0]
                 totalLen = MESSAGE.HEADER_LENGTH + dataLen
                 if len(self._buff) >= totalLen:
