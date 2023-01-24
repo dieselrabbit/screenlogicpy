@@ -101,11 +101,13 @@ def decode_pool_config(buff: bytes, data: dict) -> dict:
         cDefaultRT, offset = getSome("H", buff, offset)
         currentCircuit["default_rt"] = cDefaultRT
 
-        unknown1, offset = getSome("B", buff, offset)
-        currentCircuit["unknown1"] = unknown1
+        currentCircuit[f"unknown_at_offset_{offset:02}"], offset = getSome(
+            "B", buff, offset
+        )
 
-        unknown2, offset = getSome("B", buff, offset)
-        currentCircuit["unknown2"] = unknown2
+        currentCircuit[f"unknown_at_offset_{offset:02}"], offset = getSome(
+            "B", buff, offset
+        )
 
     colorCount, offset = getSome("I", buff, offset)
     config["color_count"] = {"name": "Number of Colors", "value": colorCount}
