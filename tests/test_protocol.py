@@ -1,5 +1,7 @@
 import pytest
 
+from .const_data import FAKE_CONFIG_RESPONSE_LARGE
+from screenlogicpy.const import CODE as MSG_CODE, MESSAGE as CONST_MESSAGE
 from screenlogicpy.requests.protocol import ScreenLogicProtocol
 from screenlogicpy.requests.utility import makeMessage
 
@@ -19,6 +21,26 @@ async def test_async_data_received(event_loop):
 
     payload = makeMessage(0, CODE, MESSAGE)
     protocol.data_received(payload)
+
+    assert data.get("result") == MESSAGE
+
+
+@pytest.mark.asyncio
+async def test_async_large_data_received(event_loop):
+    CODE = MSG_CODE.CTRLCONFIG_ANSWER
+    MESSAGE = FAKE_CONFIG_RESPONSE_LARGE[CONST_MESSAGE.HEADER_LENGTH :]
+
+    data = {}
+
+    def callback(messageCode, message, target_data):
+        target_data["result"] = message
+
+    protocol = ScreenLogicProtocol(event_loop)
+    protocol.register_async_message_callback(CODE, callback, data)
+
+    payload = makeMessage(0, CODE, MESSAGE)
+    protocol.data_received(payload[:1024])
+    protocol.data_received(payload[1024:])
 
     assert data.get("result") == MESSAGE
 

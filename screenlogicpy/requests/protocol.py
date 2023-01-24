@@ -1,10 +1,11 @@
 import asyncio
 import itertools
 import logging
-from typing import Callable
+import struct
+from typing import Callable, Tuple
 
-from ..const import CODE, ScreenLogicError
-from .utility import makeMessage, takeMessages
+from ..const import CODE, MESSAGE, ScreenLogicError
+from .utility import makeMessage, takeMessage
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -17,6 +18,7 @@ class ScreenLogicProtocol(asyncio.Protocol):
         self._connection_lost_callback = connection_lost_callback
         self._futures = self.FutureManager(loop)
         self._callbacks = {}
+        self._buff = bytearray()
         # Adapter-initiated message IDs seem to start at 32767,
         # so we'll use only the lower half of the message ID data size.
         self.__msgID = itertools.cycle(range(32767))
@@ -42,7 +44,37 @@ class ScreenLogicProtocol(asyncio.Protocol):
         return fut
 
     def data_received(self, data: bytes) -> None:
-        for messageID, messageCode, message in takeMessages(data):
+        """Called with data is received."""
+
+        def complete_messages(data: bytes) -> Tuple[int, int, bytes]:
+            """Collects all data received and only passes on complete ScreenLogic messages."""
+
+            # Some pool configurations can require SL messages larger than comes through in a
+            # single call to data_received(), so lets wait until we have at least enough data
+            # to make a complete message before we process and pass it on. Conversely,
+            # multiple SL messages may come in a single call to data_received() so we collect
+            # all complete messages before sending on.
+
+            self._buff.extend(data)
+            complete = []
+            while len(self._buff) >= MESSAGE.HEADER_LENGTH:
+                # dataLenB = bytes(self._buff[4 : MESSAGE.HEADER_LENGTH])
+                dataLen = struct.unpack_from("<I", self._buff, 4)[0]
+                totalLen = MESSAGE.HEADER_LENGTH + dataLen
+                if len(self._buff) >= totalLen:
+                    out = bytearray()
+                    for _ in range(totalLen):
+                        out.append(self._buff.pop(0))
+                    complete.append(takeMessage(bytes(out)))
+                else:
+                    break
+            if len(self._buff) > 0:
+                _LOGGER.debug(
+                    f"Returning {len(complete)} messages with {len(self._buff)} bytes in the buffer"
+                )
+            return complete
+
+        for messageID, messageCode, message in complete_messages(data):
 
             if messageCode == CODE.UNKNOWN_ANSWER:
                 raise ScreenLogicError(f"Request explicitly rejected: {messageID}")
