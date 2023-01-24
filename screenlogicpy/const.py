@@ -290,17 +290,30 @@ class CHEMISTRY:
     FLAG_ALARM_ORP_SUPPLY = 0x40
     FLAG_ALARM_PROBE_FAULT = 0x80
 
+    # Unconfirmed
     FLAG_STATUS_NORMAL = 0x01
     FLAG_STATUS_IDEAL = 0x02
     FLAG_STATUS_CORROSIVE = 0x04
     FLAG_STATUS_SCALING = 0x08
 
+    MASK_STATUS_ORP_DOSE_TYPE = 0x03
+    MASK_STATUS_PH_DOSE_TYPE = 0x0C
     MASK_STATUS_PH_DOSING = 0x30
     MASK_STATUS_ORP_DOSING = 0xC0
 
     FLAG_WARNING_PH_LOCKOUT = 0x01
     FLAG_WARNING_PH_LIMIT = 0x02
     FLAG_WARNING_ORP_LIMIT = 0x04
+    FLAG_WARNING_INVALID_SETUP = 0x08
+    FLAG_WARNING_CHLORINATOR_COMM_ERROR = 0x10
+
+    FLAG_FLAGS_FLOW_DELAY = 0x02
+    FLAG_FLAGS_INTELLICHLOR = 0x04
+    FLAG_FLAGS_MANUAL_DOSING = 0x08
+    FLAG_FLAGS_USE_CHLORINATOR = 0x10
+    FLAG_FLAGS_ADVANCED_DISPLAY = 0x20
+    FLAG_FLAGS_PH_SUPPLY_TYPE = 0x40
+    FLAG_FLAGS_COMMS_LOST = 0x80  # ?
 
     # Valid ranges listed in IntelliChem documentation
     RANGE_PH_SETPOINT = {RANGE.MIN: 7.2, RANGE.MAX: 7.6}
@@ -314,6 +327,28 @@ class CHEM_DOSING_STATE:
 
     NAME_FOR_NUM = {DOSING: "Dosing", MIXING: "Mixing", MONITORING: "Monitoring"}
     NUM_FOR_NAME = {name: num for num, name in NAME_FOR_NUM.items()}
+
+
+class CHEM_DOSE_TYPE:
+    class ORP:
+        NONE = 0
+        CHLORINE = 1
+        SCG = 2  # ?
+
+        NAME_FOR_NUM = {
+            NONE: "None",
+            CHLORINE: "Chlorine",
+            SCG: "Salt Chlorine Generator",
+        }
+        NUM_FOR_NAME = {name: num for num, name in NAME_FOR_NUM.items()}
+
+    class PH:
+        NONE = 0
+        ACID = 1
+        CO2 = 2
+
+        NAME_FOR_NUM = {NONE: "None", ACID: "Acid", CO2: "CO2"}
+        NUM_FOR_NAME = {name: num for num, name in NAME_FOR_NUM.items()}
 
 
 class SCG:
