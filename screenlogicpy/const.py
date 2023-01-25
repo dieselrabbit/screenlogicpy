@@ -273,6 +273,22 @@ class CIRCUIT_FUNCTION:
     INTELLIBRITE = 16
     MAGICSTREAM = 17
 
+    GROUP_CORE = [
+        SPA,
+        POOL,
+    ]
+
+    GROUP_LIGHTING = [
+        LIGHT,
+        DIMMER,
+        SAM_LIGHT,
+        SAL_LIGHT,
+        PHOTONGEN,
+        COLOR_WHEEL,
+        INTELLIBRITE,
+        MAGICSTREAM,
+    ]
+
 
 class INTERFACE_GROUP:
     # Known interface groups
