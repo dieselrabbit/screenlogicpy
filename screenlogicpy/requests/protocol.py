@@ -1,6 +1,7 @@
 import asyncio
 import itertools
 import logging
+import time
 from typing import Awaitable, Callable
 
 from ..const import CODE, ScreenLogicError
@@ -18,9 +19,19 @@ class ScreenLogicProtocol(asyncio.Protocol):
         self._connection_lost_callback = connection_lost_callback
         self._futures = self.FutureManager(self._loop)
         self._callbacks = {}
+        self._last_request: float = None
+        self._last_response: float = None
         # Adapter-initiated message IDs seem to start at 32767,
         # so we'll use only the lower half of the message ID data size.
         self.__msgID = itertools.cycle(range(32767))
+
+    @property
+    def last_request(self):
+        return self._last_request
+
+    @property
+    def last_response(self):
+        return self._last_response
 
     def connection_made(self, transport: asyncio.Transport) -> None:
         _LOGGER.debug("Connected to server")
@@ -31,6 +42,7 @@ class ScreenLogicProtocol(asyncio.Protocol):
         """Sends the message via the transport."""
         _LOGGER.debug("Sending: %i, %i, %s", messageID, messageCode, messageData)
         self.transport.write(makeMessage(messageID, messageCode, messageData))
+        self._last_request = time.monotonic()
 
     def await_send_message(self, messageCode, messageData=b"") -> asyncio.Future:
         """
@@ -44,6 +56,7 @@ class ScreenLogicProtocol(asyncio.Protocol):
 
     def data_received(self, data: bytes) -> None:
         for messageID, messageCode, message in takeMessages(data):
+            self._last_response = time.monotonic()
 
             if messageCode == CODE.UNKNOWN_ANSWER:
                 raise ScreenLogicError(f"Request explicitly rejected: {messageID}")
@@ -61,7 +74,7 @@ class ScreenLogicProtocol(asyncio.Protocol):
                 # for the message code and create a task for it.
                 if messageCode in self._callbacks:
                     handler, args = self._callbacks[messageCode]
-                    _LOGGER.debug(f"Calling {handler} with {args}")
+                    _LOGGER.debug(f"Calling {handler}")
                     self._loop.create_task(handler(message, *args))
 
     def connection_lost(self, exc) -> None:
@@ -78,7 +91,7 @@ class ScreenLogicProtocol(asyncio.Protocol):
     ):
         """Registers an async callback function to call for the specified message code."""
         _LOGGER.debug(
-            f"Registering async handler {handler} for message code {messageCode} to call with args {args}"
+            f"Registering async handler {handler} for message code {messageCode}"
         )
         self._callbacks[messageCode] = (handler, args)
 

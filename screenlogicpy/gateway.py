@@ -1,9 +1,11 @@
 import asyncio
 import logging
+import time
 from typing import Awaitable, Callable
 
 from .const import (
     BODY_TYPE,
+    CLIENT_MIN_COMM,
     CHEMISTRY,
     DATA,
     RANGE,
@@ -17,6 +19,7 @@ from .requests.client import async_request_add_client, async_request_remove_clie
 from .requests import (
     async_connect_to_gateway,
     async_request_gateway_version,
+    async_request_ping,
     async_request_pool_button_press,
     async_request_pool_config,
     async_request_pool_lights_command,
@@ -31,6 +34,7 @@ from .requests import (
     async_make_request,
 )
 from .requests.chemistry import decode_chemistry
+from .requests.color import decode_color_update
 from .requests.status import decode_pool_status
 from .requests.protocol import ScreenLogicProtocol
 
@@ -148,6 +152,7 @@ class ScreenLogicGateway:
         await self._async_get_pumps()
         await self._async_get_chemistry()
         await self._async_get_scg()
+        await self.async_data_updated()
         _LOGGER.debug("Update complete")
         return True
 
@@ -351,13 +356,17 @@ class ScreenLogicGateway:
             self.__protocol.register_async_message_callback(
                 CODE.CHEMISTRY_CHANGED, self._async_chemistry_updated, self.__data
             )
-            # self.register_message_handler(CODE.COLOR_UPDATE, decode_color, self.__data)
+            self.__protocol.register_async_message_callback(
+                CODE.COLOR_UPDATE, self._async_color_updated, self.__data
+            )
             return True
         return False
 
     async def async_data_updated(self):
-        if self.__is_client and self.__async_data_updated_callback:
-            await self.__async_data_updated_callback()
+        if self.__is_client:
+            await self.ping_debounce()
+            if self.__async_data_updated_callback:
+                await self.__async_data_updated_callback()
 
     async def _async_status_updated(self, message: bytes, data: dict):
         decode_pool_status(message, data)
@@ -366,6 +375,23 @@ class ScreenLogicGateway:
     async def _async_chemistry_updated(self, message: bytes, data: dict):
         decode_chemistry(message, data)
         await self.async_data_updated()
+
+    async def _async_color_updated(self, message: bytes, data: dict):
+        decode_color_update(message, data)
+        _LOGGER.debug(data[DATA.KEY_CONFIG]["color_state"])
+        await self.async_data_updated()
+
+    async def ping_debounce(self):
+        if (
+            not self.__protocol.last_request
+            or (delta := time.monotonic() - self.__protocol.last_request)
+            > CLIENT_MIN_COMM
+        ):
+            _LOGGER.debug(
+                f"Last communication was longer than {CLIENT_MIN_COMM} seconds ago by {delta} seconds. Pinging."
+            )
+            if await async_request_ping(self.__protocol):
+                _LOGGER.debug("Ping successful.")
 
     def _is_valid_circuit(self, circuit):
         return circuit in self.__data[DATA.KEY_CIRCUITS]

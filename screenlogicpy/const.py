@@ -2,6 +2,11 @@ import struct
 
 CLIENT_ID = 49151
 
+# Protocol adapter closes the connection if it doesn't hear
+# from the client for 10 minutes, but we'll go ahead an make
+# sure it hears something from us well before then.
+CLIENT_MIN_COMM = 300  # Seconds = 5 minutes
+
 SL_GATEWAY_IP = "ip"
 SL_GATEWAY_PORT = "port"
 SL_GATEWAY_TYPE = "gtype"
@@ -29,6 +34,7 @@ class CODE:
     MSG_CODE_1 = 0
     UNKNOWN_ANSWER = 13
     CHALLENGE_QUERY = 14
+    PING_QUERY = 16
     LOCALLOGIN_QUERY = 27
     VERSION_QUERY = 8120
     WEATHER_FORCAST_CHANGED = 9806
