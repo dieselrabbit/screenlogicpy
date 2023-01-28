@@ -3,7 +3,7 @@ import itertools
 import logging
 import struct
 import time
-from typing import Awaitable, Callable
+from typing import Awaitable, Callable, Tuple
 
 from ..const import CODE, MESSAGE, ScreenLogicError
 from .utility import makeMessage, takeMessage
