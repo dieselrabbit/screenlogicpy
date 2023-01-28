@@ -102,7 +102,10 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
     }
 
     pHSupplyLevel, offset = getSome("B", buff, offset)  # 25
-    chemistry["ph_supply_level"] = {"name": "pH Supply Level", "value": pHSupplyLevel}
+    chemistry["ph_supply_level"] = {
+        "name": "pH Supply Level",
+        "value": pHSupplyLevel,
+    }
 
     orpSupplyLevel, offset = getSome("B", buff, offset)  # 26 (21)
     chemistry["orp_supply_level"] = {
@@ -127,7 +130,11 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
     }
 
     cya, offset = getSome(">H", buff, offset)  # 30
-    chemistry["cya"] = {"name": "Cyanuric Acid", "value": cya, "unit": "ppm"}
+    chemistry["cya"] = {
+        "name": "Cyanuric Acid",
+        "value": cya,
+        "unit": "ppm",
+    }
 
     alk, offset = getSome(">H", buff, offset)  # 32
     chemistry["total_alkalinity"] = {
@@ -160,6 +167,8 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
     alerts = chemistry.setdefault(DATA.KEY_ALERTS, {})
 
     alarms, offset = getSome("B", buff, offset)  # 37 (32)
+    alerts["_raw"] = alarms
+
     alerts["flow_alarm"] = {
         "name": "Flow Alarm",
         "value": ON_OFF.from_bool(is_set(alarms, CHEMISTRY.FLAG_ALARM_FLOW)),
@@ -193,9 +202,8 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
 
     notifications = chemistry.setdefault(DATA.KEY_NOTIFICATIONS, {})
 
-    unkPos = offset
-    warnings, offset = getSome("B", buff, offset)  # 38
-    chemistry[f"unknown_at_offset_{unkPos:02}"] = warnings
+    warnings, offset = getSome("B", buff, offset)  # 38 (33)
+    notifications["_raw"] = warnings
 
     notifications["ph_lockout"] = {
         "name": "pH Lockout",

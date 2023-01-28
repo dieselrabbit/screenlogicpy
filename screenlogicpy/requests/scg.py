@@ -17,40 +17,40 @@ async def async_request_scg_config(protocol: ScreenLogicProtocol, data: dict) ->
 def decode_scg_config(buff: bytes, data: dict) -> None:
     scg = data.setdefault(DATA.KEY_SCG, {})
 
-    present, offset = getSome("I", buff, 0)
+    present, offset = getSome("I", buff, 0)  # 0
     scg["scg_present"] = present
 
-    status, offset = getSome("I", buff, offset)
+    status, offset = getSome("I", buff, offset)  # 4
     scg["scg_status"] = {
         "name": "SCG Status",
         "value": status,
     }
 
-    level1, offset = getSome("I", buff, offset)
+    level1, offset = getSome("I", buff, offset)  # 8
     scg["scg_level1"] = {
         "name": "Pool SCG Level",
         "value": level1,
         "unit": UNIT.PERCENT,
     }
 
-    level2, offset = getSome("I", buff, offset)
+    level2, offset = getSome("I", buff, offset)  # 12
     scg["scg_level2"] = {
         "name": "Spa SCG Level",
         "value": level2,
         "unit": UNIT.PERCENT,
     }
 
-    salt, offset = getSome("I", buff, offset)
+    salt, offset = getSome("I", buff, offset)  # 16
     scg["scg_salt_ppm"] = {
         "name": "SCG Salt",
         "value": (salt * 50),
         "unit": UNIT.PARTS_PER_MILLION,
     }
 
-    flags, offset = getSome("I", buff, offset)
+    flags, offset = getSome("I", buff, offset)  # 20
     scg["scg_flags"] = flags
 
-    superChlorTimer, offset = getSome("I", buff, offset)
+    superChlorTimer, offset = getSome("I", buff, offset)  # 24
     scg["scg_super_chlor_timer"] = {
         "name": "SCG Super Chlorination Timer",
         "value": superChlorTimer,
