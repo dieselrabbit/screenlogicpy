@@ -99,3 +99,13 @@ MoMi Ideal  Flow
 1001 0101
 MiMo Normal Flow (-0.42)
 0110 0101
+MiMi Normal Flow 
+0101 0101
+
+
+
+flags:
+startup
+0010 0010
+running
+0010 0000
