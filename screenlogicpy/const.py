@@ -5,7 +5,7 @@ CLIENT_ID = 49151
 # Protocol adapter closes the connection if it doesn't hear
 # from the client for 10 minutes, but we'll go ahead an make
 # sure it hears something from us well before then.
-CLIENT_MIN_COMM = 300  # Seconds = 5 minutes
+COM_KEEPALIVE = 300  # Seconds = 5 minutes
 
 SL_GATEWAY_IP = "ip"
 SL_GATEWAY_PORT = "port"
@@ -268,21 +268,29 @@ class CIRCUIT_FUNCTION:
     INTELLIBRITE = 16
     MAGICSTREAM = 17
 
-    GROUP_CORE = [
+    GROUP_CORE = {
         SPA,
         POOL,
-    ]
+    }
 
-    GROUP_LIGHTING = [
+    GROUP_LIGHTS_BASIC = {
         LIGHT,
         DIMMER,
+    }
+
+    GROUP_LIGHTS_COLOR = {
         SAM_LIGHT,
         SAL_LIGHT,
         PHOTONGEN,
         COLOR_WHEEL,
         INTELLIBRITE,
         MAGICSTREAM,
-    ]
+    }
+
+    GROUP_LIGHTING = {
+        *GROUP_LIGHTS_BASIC,
+        *GROUP_LIGHTS_COLOR,
+    }
 
 
 class INTERFACE_GROUP:
@@ -377,24 +385,66 @@ DEFAULT_CIRCUIT_NAMES = ["Spa", "Pool", *GENERIC_CIRCUIT_NAMES]
 
 
 # COLOR_MODES_* may not be complete
-COLOR_MODES_GENERIC = {num: COLOR_MODE.NAME_FOR_NUM[num] for num in [0, 1]}
+COLOR_MODES_GENERIC = {
+    num: COLOR_MODE.NAME_FOR_NUM[num]
+    for num in [
+        COLOR_MODE.OFF,
+        COLOR_MODE.ON,
+    ]
+}
 
-COLOR_MODES_COLORS = {num: COLOR_MODE.NAME_FOR_NUM[num] for num in [13, 14, 15, 16, 17]}
+COLOR_MODES_COLORS = {
+    num: COLOR_MODE.NAME_FOR_NUM[num]
+    for num in [
+        COLOR_MODE.BLUE,
+        COLOR_MODE.GREEN,
+        COLOR_MODE.RED,
+        COLOR_MODE.WHITE,
+        COLOR_MODE.MAGENTA,
+    ]
+}
 
 COLOR_MODES_SAM = {
     **COLOR_MODES_GENERIC,
-    **{num: COLOR_MODE.NAME_FOR_NUM[num] for num in [2, 3, 4]},
+    **{
+        num: COLOR_MODE.NAME_FOR_NUM[num]
+        for num in [
+            COLOR_MODE.SET,
+            COLOR_MODE.SYNC,
+            COLOR_MODE.SWIM,
+        ]
+    },
     **COLOR_MODES_COLORS,
 }
 
 COLOR_MODES_INTELLIBRITE = {
     **COLOR_MODES_GENERIC,
     **COLOR_MODES_SAM,
-    **{num: COLOR_MODE.NAME_FOR_NUM[num] for num in [5, 6, 7, 8, 9, 10, 11, 12]},
+    **{
+        num: COLOR_MODE.NAME_FOR_NUM[num]
+        for num in [
+            COLOR_MODE.PARTY,
+            COLOR_MODE.ROMANCE,
+            COLOR_MODE.CARIBBEAN,
+            COLOR_MODE.AMERICAN,
+            COLOR_MODE.SUNSET,
+            COLOR_MODE.ROYAL,
+            COLOR_MODE.SAVE,
+            COLOR_MODE.RECALL,
+        ]
+    },
     **COLOR_MODES_COLORS,
 }
 
 COLOR_MODES_MAGICSTREAM = {
     **COLOR_MODES_GENERIC,
-    **{num: COLOR_MODE.NAME_FOR_NUM[num] for num in [18, 19, 20, 21]},
+    **{
+        num: COLOR_MODE.NAME_FOR_NUM[num]
+        for num in [
+            COLOR_MODE.THUMPER,
+            COLOR_MODE.NEXT,
+            COLOR_MODE.RESET,
+            COLOR_MODE.HOLD,
+        ]
+    },
 }

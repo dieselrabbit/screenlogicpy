@@ -5,9 +5,11 @@ from typing import Awaitable, Callable
 
 from .const import (
     BODY_TYPE,
-    CLIENT_MIN_COMM,
     CHEMISTRY,
+    CIRCUIT_FUNCTION,
+    COM_KEEPALIVE,
     DATA,
+    EQUIPMENT,
     RANGE,
     CODE,
     SCG,
@@ -115,7 +117,7 @@ class ScreenLogicGateway:
     async def async_disconnect(self, force=False):
         """Disconnects from the ScreenLogic protocol adapter"""
         if self.__is_client:
-            self.__is_client = not await self._async_remove_client()
+            self.__is_client = not await self.async_unsubscribe_client()
 
         if not force:
             while self.__protocol.requests_pending():
@@ -131,6 +133,7 @@ class ScreenLogicGateway:
         if await self._async_add_client():
             self.__is_client = True
             self.__async_data_updated_callback = async_data_updated_callback
+            self.__protocol.enable_keepalive(self.ping, COM_KEEPALIVE)
             return await self._async_setup_push()
         else:
             return False
@@ -139,6 +142,7 @@ class ScreenLogicGateway:
         self.__client_desired = False
         self.__is_client = False
         self.__async_data_updated_callback = None
+        self.__protocol.disable_keepalive()
         self.__protocol.remove_all_async_message_callbacks()
         return await self._async_remove_client()
 
@@ -348,17 +352,30 @@ class ScreenLogicGateway:
         _LOGGER.debug("Requesting remove client")
         return await async_request_remove_client(self.__protocol)
 
+    async def _async_request_ping(self):
+        if not self.is_connected:
+            raise ScreenLogicWarning(
+                "Not connected to protocol adapter. request_ping failed."
+            )
+        _LOGGER.debug("Requesting ping")
+        return await async_request_ping(self.__protocol)
+
     async def _async_setup_push(self) -> bool:
         if self.is_connected and self.__is_client:
             self.__protocol.register_async_message_callback(
                 CODE.STATUS_CHANGED, self._async_status_updated, self.__data
             )
-            self.__protocol.register_async_message_callback(
-                CODE.CHEMISTRY_CHANGED, self._async_chemistry_updated, self.__data
-            )
-            self.__protocol.register_async_message_callback(
-                CODE.COLOR_UPDATE, self._async_color_updated, self.__data
-            )
+            if (
+                self.__data[DATA.KEY_CONFIG]["equipment_flags"]
+                & EQUIPMENT.FLAG_INTELLICHEM
+            ):
+                self.__protocol.register_async_message_callback(
+                    CODE.CHEMISTRY_CHANGED, self._async_chemistry_updated, self.__data
+                )
+            if self._has_color_lights():
+                self.__protocol.register_async_message_callback(
+                    CODE.COLOR_UPDATE, self._async_color_updated, self.__data
+                )
             return True
         return False
 
@@ -381,17 +398,20 @@ class ScreenLogicGateway:
         _LOGGER.debug(data[DATA.KEY_CONFIG]["color_state"])
         await self.async_data_updated()
 
+    async def ping(self):
+        if await self._async_request_ping():
+            _LOGGER.debug("Ping successful.")
+
     async def ping_debounce(self):
         if (
             not self.__protocol.last_request
-            or (delta := time.monotonic() - self.__protocol.last_request)
-            > CLIENT_MIN_COMM
+            or (delta := (time.monotonic() - self.__protocol.last_request))
+            > COM_KEEPALIVE
         ):
             _LOGGER.debug(
-                f"Last communication was longer than {CLIENT_MIN_COMM} seconds ago by {delta} seconds. Pinging."
+                f"Last communication was longer than {COM_KEEPALIVE} seconds ago by {delta} seconds. Pinging."
             )
-            if await async_request_ping(self.__protocol):
-                _LOGGER.debug("Ping successful.")
+            await self.ping()
 
     def _is_valid_circuit(self, circuit):
         return circuit in self.__data[DATA.KEY_CIRCUITS]
@@ -429,3 +449,10 @@ class ScreenLogicGateway:
             <= orp_setpoint
             <= CHEMISTRY.RANGE_ORP_SETPOINT[RANGE.MAX]
         )
+
+    def _has_color_lights(self):
+        if circuits := self.__data.get(DATA.KEY_CIRCUITS, None):
+            for circuit in circuits.values():
+                if circuit["function"] in CIRCUIT_FUNCTION.GROUP_LIGHTS_COLOR:
+                    return True
+        return False

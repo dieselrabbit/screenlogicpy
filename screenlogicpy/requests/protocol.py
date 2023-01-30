@@ -3,7 +3,7 @@ import itertools
 import logging
 import struct
 import time
-from typing import Awaitable, Callable, Tuple
+from typing import Awaitable, Callable, Tuple, List
 
 from ..const import CODE, MESSAGE, ScreenLogicError
 from .utility import makeMessage, takeMessage
@@ -23,6 +23,10 @@ class ScreenLogicProtocol(asyncio.Protocol):
         self._last_request: float = None
         self._last_response: float = None
         self._buff = bytearray()
+
+        self._keepalive_awaitable: Callable[[any, any], Awaitable[any]] = None
+        self._keepalive_interval: int = None
+        self._stop_keepalive: Callable = None
         # Adapter-initiated message IDs seem to start at 32767,
         # so we'll use only the lower half of the message ID data size.
         self.__msgID = itertools.cycle(range(32767))
@@ -35,16 +39,37 @@ class ScreenLogicProtocol(asyncio.Protocol):
     def last_response(self):
         return self._last_response
 
+    def enable_keepalive(
+        self,
+        keepalive_awaitable: Callable[[any, any], Awaitable[any]],
+        keepalive_interval: int,
+    ) -> None:
+        _LOGGER.debug("Enabling keepalive")
+        self._keepalive_awaitable = keepalive_awaitable
+        self._keepalive_interval = keepalive_interval
+        self._set_keepalive()
+
+    def disable_keepalive(self) -> None:
+        _LOGGER.debug("Disabling keepalive")
+        self._keepalive_awaitable = None
+        if self._stop_keepalive:
+            self._stop_keepalive()
+            self._stop_keepalive = None
+
     def connection_made(self, transport: asyncio.Transport) -> None:
         _LOGGER.debug("Connected to server")
         self.connected = True
         self.transport = transport
 
-    def send_message(self, messageID, messageCode, messageData=b""):
+    def send_message(self, messageID, messageCode, messageData=b"") -> None:
         """Sends the message via the transport."""
         _LOGGER.debug("Sending: %i, %i, %s", messageID, messageCode, messageData)
         self.transport.write(makeMessage(messageID, messageCode, messageData))
+
         self._last_request = time.monotonic()
+
+        if self._keepalive_awaitable:
+            self._set_keepalive()
 
     def await_send_message(self, messageCode, messageData=b"") -> asyncio.Future:
         """
@@ -59,7 +84,7 @@ class ScreenLogicProtocol(asyncio.Protocol):
     def data_received(self, data: bytes) -> None:
         """Called with data is received."""
 
-        def complete_messages(data: bytes) -> Tuple[int, int, bytes]:
+        def complete_messages(data: bytes) -> List[Tuple[int, int, bytes]]:
             """Collects all data received and only passes on complete ScreenLogic messages."""
 
             # Some pool configurations can require SL messages larger than comes through in a
@@ -118,7 +143,7 @@ class ScreenLogicProtocol(asyncio.Protocol):
         messageCode,
         handler: Callable[[bytes, any], Awaitable[any]],
         *args,
-    ):
+    ) -> None:
         """Registers an async callback function to call for the specified message code."""
         _LOGGER.debug(
             f"Registering async handler {handler} for message code {messageCode}"
@@ -129,12 +154,36 @@ class ScreenLogicProtocol(asyncio.Protocol):
         """Removes the callback for the specified message code."""
         return True if self._callbacks.pop(messageCode, None) else False
 
-    def remove_all_async_message_callbacks(self):
+    def remove_all_async_message_callbacks(self) -> None:
         """Removes all saved message callbacks."""
         self._callbacks.clear()
 
     def requests_pending(self) -> bool:
         return not self._futures.all_done()
+
+    def _call_keepalive(self) -> None:
+        _LOGGER.debug("Creating keepalive task")
+        task = self._loop.create_task(self._keepalive_awaitable())
+        _LOGGER.debug(f"keepalive task {task} created")
+
+    def _set_keepalive(self) -> None:
+        if self._stop_keepalive:
+            _LOGGER.debug("Killing current keepalive")
+            self._stop_keepalive()
+            self._stop_keepalive = None
+
+        handle: asyncio.TimerHandle
+
+        _LOGGER.debug("Setting keepalive call_later")
+        handle = self._loop.call_later(self._keepalive_interval, self._call_keepalive)
+
+        def _stop():
+            if handle:
+                _LOGGER.debug(f"Canceling call_later {handle}")
+                handle.cancel()
+
+        _LOGGER.debug("Assigning stop_keepalilve callback")
+        self._stop_keepalive = _stop
 
     class FutureManager:
         def __init__(self, loop: asyncio.AbstractEventLoop) -> None:
