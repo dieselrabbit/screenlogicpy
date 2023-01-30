@@ -43,7 +43,6 @@ async def main():
         await gateway.async_update()
 
         try:
-            await gateway.ping_debounce()
             await connection_lost
         finally:
             pprint(gateway.get_data())
