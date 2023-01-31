@@ -117,7 +117,7 @@ class ScreenLogicGateway:
     async def async_disconnect(self, force=False):
         """Disconnects from the ScreenLogic protocol adapter"""
         if self.__is_client:
-            self.__is_client = not await self.async_unsubscribe_client()
+            self.__is_client = not await self.async_unsubscribe_gateway()
 
         if not force:
             while self.__protocol.requests_pending():
@@ -126,7 +126,7 @@ class ScreenLogicGateway:
         if self.__transport and not self.__transport.is_closing():
             self.__transport.close()
 
-    async def async_subscribe_client(
+    async def async_subscribe_gateway(
         self, async_data_updated_callback: Callable[..., Awaitable[None]] = None
     ) -> bool:
         self.__client_desired = True
@@ -135,10 +135,9 @@ class ScreenLogicGateway:
             self.__async_data_updated_callback = async_data_updated_callback
             self.__protocol.enable_keepalive(self.ping, COM_KEEPALIVE)
             return await self._async_setup_push()
-        else:
-            return False
+        return False
 
-    async def async_unsubscribe_client(self) -> bool:
+    async def async_unsubscribe_gateway(self) -> bool:
         self.__client_desired = False
         self.__is_client = False
         self.__async_data_updated_callback = None

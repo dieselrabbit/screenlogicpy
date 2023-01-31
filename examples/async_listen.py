@@ -38,7 +38,7 @@ async def main():
         gateway = ScreenLogicGateway(**hosts[0])
 
         await gateway.async_connect(on_connection_lost)
-        await gateway.async_subscribe_client(data_updated)
+        await gateway.async_subscribe_gateway(data_updated)
         # gateway.register_message_handler(9806, weather_handler, gateway.get_data())
         await gateway.async_update()
 
