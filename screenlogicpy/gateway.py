@@ -1,3 +1,4 @@
+"""Describes a ScreenLogicGateway class for interacting with a Pentair ScreenLogic system."""
 import asyncio
 import logging
 from typing import Awaitable, Callable
@@ -51,8 +52,6 @@ class ScreenLogicGateway:
         self.__transport: asyncio.Transport = None
         self.__protocol: ScreenLogicProtocol = None
         self.__is_client = False
-        self.__client_desired = False
-        self.__async_data_updated_callback = None
         self.__data = {}
         self.__last = {}
         self.clients = ClientManager()
@@ -86,7 +85,7 @@ class ScreenLogicGateway:
         return self.__is_client
 
     async def async_connect(self, connection_closed_callback: Callable = None) -> bool:
-        """Connects to the ScreenLogic protocol adapter"""
+        """Connect to the ScreenLogic protocol adapter"""
         if self.is_connected:
             return True
 
@@ -108,7 +107,7 @@ class ScreenLogicGateway:
         return False
 
     async def async_disconnect(self, force=False):
-        """Disconnects from the ScreenLogic protocol adapter"""
+        """Disconnect from the ScreenLogic protocol adapter"""
         if self.clients.is_client:
             await self.clients.async_unsubscribe_gateway()
 
@@ -120,7 +119,11 @@ class ScreenLogicGateway:
             self.__transport.close()
 
     async def async_update(self) -> bool:
-        """Updates all ScreenLogic data if already connected. Tries to connect if not."""
+        """
+        Update all ScreenLogic data.
+
+        Try to reconnect to the ScreenLogic protocol adapter if needed.
+        """
         if not await self.async_connect() or not self.__data:
             return False
 
@@ -133,15 +136,15 @@ class ScreenLogicGateway:
         return True
 
     def get_data(self) -> dict:
-        """Returns the data."""
+        """Return the data."""
         return self.__data
 
     def get_debug(self) -> dict:
-        """Returns the debug last-received data."""
+        """Return the debug last-received data."""
         return self.__last
 
     async def async_set_circuit(self, circuitID: int, circuitState: int):
-        """Sets the circuit state for the specified circuit."""
+        """Set the circuit state for the specified circuit."""
         if not self._is_valid_circuit(circuitID):
             raise ValueError(f"Invalid circuitID: {circuitID}")
         if not self._is_valid_circuit_state(circuitState):
@@ -155,7 +158,7 @@ class ScreenLogicGateway:
         return False
 
     async def async_set_heat_temp(self, body: int, temp: int):
-        """Sets the target temperature for the specified body."""
+        """Set the target temperature for the specified body."""
         if not self._is_valid_body(body):
             raise ValueError(f"Invalid body: {body}")
         if not self._is_valid_heattemp(body, temp):
@@ -167,7 +170,7 @@ class ScreenLogicGateway:
         return False
 
     async def async_set_heat_mode(self, body: int, mode: int):
-        """Sets the heating mode for the specified body."""
+        """Set the heating mode for the specified body."""
         if not self._is_valid_body(body):
             raise ValueError(f"Invalid body: {body}")
         if not self._is_valid_heatmode(mode):
@@ -179,7 +182,7 @@ class ScreenLogicGateway:
         return False
 
     async def async_set_color_lights(self, light_command: int):
-        """Sets the light show mode for all capable lights."""
+        """Set the light show mode for all capable lights."""
         if not self._is_valid_color_mode(light_command):
             raise ValueError(f"Invalid light_command: {light_command}")
 
@@ -189,7 +192,7 @@ class ScreenLogicGateway:
         return False
 
     async def async_set_scg_config(self, pool_output: int, spa_output: int):
-        """Sets the salt-chlorine-generator output for both pool and spa."""
+        """Set the salt-chlorine-generator output for both pool and spa."""
         if not self._is_valid_scg_value(pool_output, BODY_TYPE.POOL):
             raise ValueError(f"Invalid pool_output: {pool_output}")
         if not self._is_valid_scg_value(spa_output, BODY_TYPE.SPA):
@@ -211,7 +214,7 @@ class ScreenLogicGateway:
         cyanuric: int,
         salt: int,
     ):
-        """Sets the setable chemistry values."""
+        """Set configurable chemistry values."""
         if self._is_valid_ph_setpoint(ph_setpoint):
             ph_setpoint = int(ph_setpoint * 100)
         else:
@@ -237,9 +240,13 @@ class ScreenLogicGateway:
     def register_message_handler(
         self, message_code: int, handler: Callable[[bytes, any], Awaitable[None]], *argv
     ):
-        """Registers a function to call when a message with the specified message_code is received.
+        """
+        Register callback for message code.
+
+        Registers an async function to call when a message with the specified message_code is received.
         Only one handler can be registered per message_code. Subsequent registrations will override
-        the previous registration."""
+        the previous registration.
+        """
         if not self.__protocol:
             raise ScreenLogicError(
                 "Not connected to ScreenLogic gateway. Must connect to gateway before registering handler."
@@ -247,7 +254,7 @@ class ScreenLogicGateway:
         self.__protocol.register_async_message_callback(message_code, handler, *argv)
 
     async def async_send_message(self, message_code: int, message: bytes = b""):
-        """Sends a custom message to the ScreenLogic protocol adapter."""
+        """Send a message to the ScreenLogic protocol adapter."""
         if not self.is_connected:
             raise ScreenLogicWarning(
                 "Not connected to protocol adapter. send_message failed."
@@ -256,6 +263,7 @@ class ScreenLogicGateway:
         return await async_make_request(self.__protocol, message_code, message)
 
     async def async_get_config(self):
+        """Request pool configuration data."""
         if not self.is_connected:
             raise ScreenLogicWarning(
                 "Not connected to protocol adapter. get_config failed."
@@ -266,6 +274,7 @@ class ScreenLogicGateway:
         )
 
     async def async_get_status(self):
+        """Request pool state data."""
         if not self.is_connected:
             raise ScreenLogicWarning(
                 "Not connected to protocol adapter. get_status failed."
@@ -276,6 +285,7 @@ class ScreenLogicGateway:
         )
 
     async def async_get_pumps(self):
+        """Request all pump state data."""
         if not self.is_connected:
             raise ScreenLogicWarning(
                 "Not connected to protocol adapter. get_pumps failed."
@@ -289,6 +299,7 @@ class ScreenLogicGateway:
                 )
 
     async def async_get_chemistry(self):
+        """Request IntelliChem controller data."""
         if not self.is_connected:
             raise ScreenLogicWarning(
                 "Not connected to protocol adapter. get_chemistry failed."
@@ -299,6 +310,7 @@ class ScreenLogicGateway:
         )
 
     async def async_get_scg(self):
+        """Request salt chlorine generator state data."""
         if not self.is_connected:
             raise ScreenLogicWarning(
                 "Not connected to protocol adapter. get_scg failed."
@@ -309,29 +321,37 @@ class ScreenLogicGateway:
         )
 
     def _is_valid_circuit(self, circuit):
+        """Validate circuit number."""
         return circuit in self.__data[DATA.KEY_CIRCUITS]
 
     def _is_valid_circuit_state(self, state):
+        """Validate circuit state number."""
         return state == 0 or state == 1
 
     def _is_valid_body(self, body):
+        """Validate body of water number."""
         return body in self.__data[DATA.KEY_BODIES]
 
     def _is_valid_heatmode(self, heatmode):
+        """Validate heat mode number."""
         return 0 <= heatmode < 5
 
     def _is_valid_heattemp(self, body, temp):
+        """Validate heat tem for body."""
         min_temp = self.__data[DATA.KEY_BODIES][int(body)]["min_set_point"]["value"]
         max_temp = self.__data[DATA.KEY_BODIES][int(body)]["max_set_point"]["value"]
         return min_temp <= temp <= max_temp
 
     def _is_valid_color_mode(self, mode):
+        """Validate color mode number."""
         return 0 <= mode <= 21
 
     def _is_valid_scg_value(self, scg_value, body_type):
+        """Validate chlorinator value for body."""
         return 0 <= scg_value <= SCG.LIMIT_FOR_BODY[body_type]
 
     def _is_valid_ph_setpoint(self, ph_setpoint: float):
+        """Validate pH setpoint."""
         return (
             CHEMISTRY.RANGE_PH_SETPOINT[RANGE.MIN]
             <= ph_setpoint
@@ -339,6 +359,7 @@ class ScreenLogicGateway:
         )
 
     def _is_valid_orp_setpoint(self, orp_setpoint: int):
+        """Validate ORP setpoint."""
         return (
             CHEMISTRY.RANGE_ORP_SETPOINT[RANGE.MIN]
             <= orp_setpoint
@@ -347,6 +368,7 @@ class ScreenLogicGateway:
 
     # Promote?
     def _has_color_lights(self):
+        """Return if any configured lights support color modes."""
         if circuits := self.__data.get(DATA.KEY_CIRCUITS, None):
             for circuit in circuits.values():
                 if circuit["function"] in CIRCUIT_FUNCTION.GROUP_LIGHTS_COLOR:
