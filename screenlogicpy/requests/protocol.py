@@ -15,11 +15,11 @@ class ScreenLogicProtocol(asyncio.Protocol):
     """asyncio.Protocol for handling the connection to a ScreenLogic protocol adapter."""
 
     def __init__(self, loop, connection_lost_callback: Callable = None) -> None:
-        self.connected = False
         self._loop: asyncio.BaseEventLoop = loop
         self._connection_lost_callback = connection_lost_callback
         self._futures = self.FutureManager(self._loop)
         self._callbacks = {}
+        self._connected = False
         self._last_request: float = None
         self._last_response: float = None
         self._buff = bytearray()
@@ -27,9 +27,14 @@ class ScreenLogicProtocol(asyncio.Protocol):
         self._keepalive_awaitable: Callable[[any, any], Awaitable[any]] = None
         self._keepalive_interval: int = None
         self._stop_keepalive: Callable = None
+
         # Adapter-initiated message IDs seem to start at 32767,
         # so we'll use only the lower half of the message ID data size.
         self.__msgID = itertools.cycle(range(32767))
+
+    @property
+    def is_connected(self):
+        return self._connected
 
     @property
     def last_request(self):
@@ -39,26 +44,9 @@ class ScreenLogicProtocol(asyncio.Protocol):
     def last_response(self):
         return self._last_response
 
-    def enable_keepalive(
-        self,
-        keepalive_awaitable: Callable[[any, any], Awaitable[any]],
-        keepalive_interval: int,
-    ) -> None:
-        _LOGGER.debug("Enabling keepalive")
-        self._keepalive_awaitable = keepalive_awaitable
-        self._keepalive_interval = keepalive_interval
-        self._set_keepalive()
-
-    def disable_keepalive(self) -> None:
-        _LOGGER.debug("Disabling keepalive")
-        self._keepalive_awaitable = None
-        if self._stop_keepalive:
-            self._stop_keepalive()
-            self._stop_keepalive = None
-
     def connection_made(self, transport: asyncio.Transport) -> None:
         _LOGGER.debug("Connected to server")
-        self.connected = True
+        self._connected = True
         self.transport = transport
 
     def send_message(self, messageID, messageCode, messageData=b"") -> None:
@@ -134,7 +122,7 @@ class ScreenLogicProtocol(asyncio.Protocol):
 
     def connection_lost(self, exc) -> None:
         _LOGGER.debug("Connection closed")
-        self.connected = False
+        self._connected = False
         if self._connection_lost_callback is not None:
             self._connection_lost_callback()
 
@@ -184,6 +172,23 @@ class ScreenLogicProtocol(asyncio.Protocol):
 
         _LOGGER.debug("Assigning stop_keepalilve callback")
         self._stop_keepalive = _stop
+
+    def enable_keepalive(
+        self,
+        keepalive_awaitable: Callable[[any, any], Awaitable[any]],
+        keepalive_interval: int,
+    ) -> None:
+        _LOGGER.debug("Enabling keepalive")
+        self._keepalive_awaitable = keepalive_awaitable
+        self._keepalive_interval = keepalive_interval
+        self._set_keepalive()
+
+    def disable_keepalive(self) -> None:
+        _LOGGER.debug("Disabling keepalive")
+        self._keepalive_awaitable = None
+        if self._stop_keepalive:
+            self._stop_keepalive()
+            self._stop_keepalive = None
 
     class FutureManager:
         def __init__(self, loop: asyncio.AbstractEventLoop) -> None:

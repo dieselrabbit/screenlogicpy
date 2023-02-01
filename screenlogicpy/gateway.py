@@ -1,27 +1,21 @@
 import asyncio
 import logging
-import time
 from typing import Awaitable, Callable
 
+from .client import ClientManager
 from .const import (
     BODY_TYPE,
     CHEMISTRY,
     CIRCUIT_FUNCTION,
-    COM_KEEPALIVE,
     DATA,
-    EQUIPMENT,
     RANGE,
-    CODE,
     SCG,
     ScreenLogicError,
     ScreenLogicWarning,
 )
-from .requests.client import async_request_add_client, async_request_remove_client
-
 from .requests import (
     async_connect_to_gateway,
     async_request_gateway_version,
-    async_request_ping,
     async_request_pool_button_press,
     async_request_pool_config,
     async_request_pool_lights_command,
@@ -35,9 +29,6 @@ from .requests import (
     async_request_set_chem_data,
     async_make_request,
 )
-from .requests.chemistry import decode_chemistry
-from .requests.color import decode_color_update
-from .requests.status import decode_pool_status
 from .requests.protocol import ScreenLogicProtocol
 
 
@@ -64,6 +55,7 @@ class ScreenLogicGateway:
         self.__async_data_updated_callback = None
         self.__data = {}
         self.__last = {}
+        self.clients = ClientManager()
 
     @property
     def ip(self) -> str:
@@ -87,7 +79,7 @@ class ScreenLogicGateway:
 
     @property
     def is_connected(self) -> bool:
-        return self.__protocol.connected if self.__protocol else False
+        return self.__protocol._connected if self.__protocol else False
 
     @property
     def is_client(self) -> bool:
@@ -107,17 +99,18 @@ class ScreenLogicGateway:
             self.__version = await async_request_gateway_version(self.__protocol)
             if self.__version:
                 _LOGGER.debug("Login successful")
-                await self._async_get_config()
-                if not self.__is_client and self.__client_desired:
-                    self.__is_client = await self._async_add_client()
+                await self.async_get_config()
+                await self.clients.attach(self.__protocol, self.get_data())
+                if not self.clients.is_client and self.clients.client_desired:
+                    await self.clients.async_subscribe_gateway()
                 return True
         _LOGGER.debug("Login failed")
         return False
 
     async def async_disconnect(self, force=False):
         """Disconnects from the ScreenLogic protocol adapter"""
-        if self.__is_client:
-            self.__is_client = not await self.async_unsubscribe_gateway()
+        if self.clients.is_client:
+            await self.clients.async_unsubscribe_gateway()
 
         if not force:
             while self.__protocol.requests_pending():
@@ -126,36 +119,16 @@ class ScreenLogicGateway:
         if self.__transport and not self.__transport.is_closing():
             self.__transport.close()
 
-    async def async_subscribe_gateway(
-        self, async_data_updated_callback: Callable[..., Awaitable[None]] = None
-    ) -> bool:
-        self.__client_desired = True
-        if await self._async_add_client():
-            self.__is_client = True
-            self.__async_data_updated_callback = async_data_updated_callback
-            self.__protocol.enable_keepalive(self.ping, COM_KEEPALIVE)
-            return await self._async_setup_push()
-        return False
-
-    async def async_unsubscribe_gateway(self) -> bool:
-        self.__client_desired = False
-        self.__is_client = False
-        self.__async_data_updated_callback = None
-        self.__protocol.disable_keepalive()
-        self.__protocol.remove_all_async_message_callbacks()
-        return await self._async_remove_client()
-
     async def async_update(self) -> bool:
         """Updates all ScreenLogic data if already connected. Tries to connect if not."""
         if not await self.async_connect() or not self.__data:
             return False
 
         _LOGGER.debug("Beginning update of all data")
-        await self._async_get_status()
-        await self._async_get_pumps()
-        await self._async_get_chemistry()
-        await self._async_get_scg()
-        await self.async_data_updated()
+        await self.async_get_status()
+        await self.async_get_pumps()
+        await self.async_get_chemistry()
+        await self.async_get_scg()
         _LOGGER.debug("Update complete")
         return True
 
@@ -274,7 +247,7 @@ class ScreenLogicGateway:
         self.__protocol.register_async_message_callback(message_code, handler, *argv)
 
     async def async_send_message(self, message_code: int, message: bytes = b""):
-        """Sends a message to the protocol adapter."""
+        """Sends a custom message to the ScreenLogic protocol adapter."""
         if not self.is_connected:
             raise ScreenLogicWarning(
                 "Not connected to protocol adapter. send_message failed."
@@ -282,7 +255,7 @@ class ScreenLogicGateway:
         _LOGGER.debug(f"User requesting {message_code}")
         return await async_make_request(self.__protocol, message_code, message)
 
-    async def _async_get_config(self):
+    async def async_get_config(self):
         if not self.is_connected:
             raise ScreenLogicWarning(
                 "Not connected to protocol adapter. get_config failed."
@@ -292,7 +265,7 @@ class ScreenLogicGateway:
             self.__protocol, self.__data
         )
 
-    async def _async_get_status(self):
+    async def async_get_status(self):
         if not self.is_connected:
             raise ScreenLogicWarning(
                 "Not connected to protocol adapter. get_status failed."
@@ -302,7 +275,7 @@ class ScreenLogicGateway:
             self.__protocol, self.__data
         )
 
-    async def _async_get_pumps(self):
+    async def async_get_pumps(self):
         if not self.is_connected:
             raise ScreenLogicWarning(
                 "Not connected to protocol adapter. get_pumps failed."
@@ -315,7 +288,7 @@ class ScreenLogicGateway:
                     self.__protocol, self.__data, pumpID
                 )
 
-    async def _async_get_chemistry(self):
+    async def async_get_chemistry(self):
         if not self.is_connected:
             raise ScreenLogicWarning(
                 "Not connected to protocol adapter. get_chemistry failed."
@@ -325,7 +298,7 @@ class ScreenLogicGateway:
             self.__protocol, self.__data
         )
 
-    async def _async_get_scg(self):
+    async def async_get_scg(self):
         if not self.is_connected:
             raise ScreenLogicWarning(
                 "Not connected to protocol adapter. get_scg failed."
@@ -334,83 +307,6 @@ class ScreenLogicGateway:
         self.__last[DATA.KEY_SCG] = await async_request_scg_config(
             self.__protocol, self.__data
         )
-
-    async def _async_add_client(self):
-        if not self.is_connected:
-            raise ScreenLogicWarning(
-                "Not connected to protocol adapter. add_client failed."
-            )
-        _LOGGER.debug("Requesting add client")
-        return await async_request_add_client(self.__protocol)
-
-    async def _async_remove_client(self):
-        if not self.is_connected:
-            raise ScreenLogicWarning(
-                "Not connected to protocol adapter. remove_client failed."
-            )
-        _LOGGER.debug("Requesting remove client")
-        return await async_request_remove_client(self.__protocol)
-
-    async def _async_request_ping(self):
-        if not self.is_connected:
-            raise ScreenLogicWarning(
-                "Not connected to protocol adapter. request_ping failed."
-            )
-        _LOGGER.debug("Requesting ping")
-        return await async_request_ping(self.__protocol)
-
-    async def _async_setup_push(self) -> bool:
-        if self.is_connected and self.__is_client:
-            self.__protocol.register_async_message_callback(
-                CODE.STATUS_CHANGED, self._async_status_updated, self.__data
-            )
-            if (
-                self.__data[DATA.KEY_CONFIG]["equipment_flags"]
-                & EQUIPMENT.FLAG_INTELLICHEM
-            ):
-                self.__protocol.register_async_message_callback(
-                    CODE.CHEMISTRY_CHANGED, self._async_chemistry_updated, self.__data
-                )
-            if self._has_color_lights():
-                self.__protocol.register_async_message_callback(
-                    CODE.COLOR_UPDATE, self._async_color_updated, self.__data
-                )
-            return True
-        return False
-
-    async def async_data_updated(self):
-        if self.__is_client:
-            await self.ping_debounce()
-            if self.__async_data_updated_callback:
-                await self.__async_data_updated_callback()
-
-    async def _async_status_updated(self, message: bytes, data: dict):
-        decode_pool_status(message, data)
-        await self.async_data_updated()
-
-    async def _async_chemistry_updated(self, message: bytes, data: dict):
-        decode_chemistry(message, data)
-        await self.async_data_updated()
-
-    async def _async_color_updated(self, message: bytes, data: dict):
-        decode_color_update(message, data)
-        _LOGGER.debug(data[DATA.KEY_CONFIG]["color_state"])
-        await self.async_data_updated()
-
-    async def ping(self):
-        if await self._async_request_ping():
-            _LOGGER.debug("Ping successful.")
-
-    async def ping_debounce(self):
-        if (
-            not self.__protocol.last_request
-            or (delta := (time.monotonic() - self.__protocol.last_request))
-            > COM_KEEPALIVE
-        ):
-            _LOGGER.debug(
-                f"Last communication was longer than {COM_KEEPALIVE} seconds ago by {delta} seconds. Pinging."
-            )
-            await self.ping()
 
     def _is_valid_circuit(self, circuit):
         return circuit in self.__data[DATA.KEY_CIRCUITS]
@@ -449,6 +345,7 @@ class ScreenLogicGateway:
             <= CHEMISTRY.RANGE_ORP_SETPOINT[RANGE.MAX]
         )
 
+    # Promote?
     def _has_color_lights(self):
         if circuits := self.__data.get(DATA.KEY_CIRCUITS, None):
             for circuit in circuits.values():
