@@ -1,3 +1,4 @@
+"""Client manager for a connection to a ScreenLogic protocol adapter."""
 import asyncio
 import logging
 from typing import Callable, List
@@ -14,6 +15,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class ClientManager:
+    """Class to manage callback subscriptions to specific ScreenLogic messages."""
+
     def __init__(self) -> None:
         self._listeners = {}
         self._is_client = False
@@ -22,13 +25,22 @@ class ClientManager:
 
     @property
     def is_client(self):
+        """Return if connected to ScreenLogic as a client."""
         return self._is_client
 
     @property
     def client_desired(self):
+        """Return if desired to be a client."""
         return self._client_desired
 
     async def attach(self, protocol: ScreenLogicProtocol, data: dict):
+        """
+        Update protocol and data reference.
+
+        Updates this ClientManager's reference to a ScreenLogicProtocol instance
+        and a current data dict. Will attempt to re-register any existing callbacks
+        to the new protocol instance.
+        """
         self._protocol = protocol
         self._data = data
         self._attached = True
@@ -40,10 +52,12 @@ class ClientManager:
                 )
 
     def _notify_listeners(self, code: int) -> None:
+        """Notify all listeners."""
         for callback in self._listeners.get(code):
             callback()
 
     def _callback_factory(self, code) -> Callable:
+        """Return decoding method for known message codes."""
         if code == CODE.STATUS_CHANGED:
             return decode_pool_status
         elif code == CODE.CHEMISTRY_CHANGED:
@@ -54,6 +68,7 @@ class ClientManager:
             return None
 
     async def _async_common_callback(self, message, code, data):
+        """Decode known incoming messages."""
         if decoder := self._callback_factory(code):
             decoder(message, data)
 
@@ -62,6 +77,13 @@ class ClientManager:
     async def async_subscribe(
         self, callback: Callable[..., any], code: int
     ) -> Callable:
+        """
+        Register listener callback.
+
+        Registers a callback method to call when a message with the specified
+        message code is received. Messages with known codes will be processed
+        and applied to gateway data before callback method is called.
+        """
         if not self._attached:
             return None
 
@@ -80,6 +102,7 @@ class ClientManager:
         )
 
         def remove_listener():
+            """Remove listener callback."""
             _LOGGER.debug(f"Removing listener {callback}")
             code_listeners.remove(callback)
             if not code_listeners:
@@ -95,6 +118,7 @@ class ClientManager:
         return remove_listener
 
     async def _async_ping(self):
+        """Check connection before requesting a ping."""
         if not self._protocol.is_connected:
             raise ScreenLogicWarning(
                 "Not connected to protocol adapter. request_ping failed."
@@ -104,6 +128,7 @@ class ClientManager:
             _LOGGER.debug("Ping successful.")
 
     async def _async_add_client(self):
+        """Check connection before sending add client request."""
         if not self._protocol.is_connected:
             raise ScreenLogicWarning(
                 "Not connected to protocol adapter. add_client failed."
@@ -112,6 +137,7 @@ class ClientManager:
         return await async_request_add_client(self._protocol)
 
     async def _async_remove_client(self):
+        """Check connection before sending remove client request."""
         if not self._protocol.is_connected:
             raise ScreenLogicWarning(
                 "Not connected to protocol adapter. remove_client failed."
@@ -120,6 +146,12 @@ class ClientManager:
         return await async_request_remove_client(self._protocol)
 
     async def async_subscribe_gateway(self) -> bool:
+        """
+        Subscribe as ScreenLogic client.
+
+        Adds this gateway as a client on the ScreenLogic protocol adapter. This
+        tells ScreenLogic that we are interested in receiving push update messages.
+        """
         self._client_desired = True
         if await self._async_add_client():
             self._is_client = True
@@ -129,6 +161,12 @@ class ClientManager:
         return False
 
     async def async_unsubscribe_gateway(self) -> bool:
+        """
+        Unsubscribe as ScreenLogic client.
+
+        Removes this gateway as a client on the ScreenLogic protocol adapter.
+        ScreenLogic will no longer push update messages.
+        """
         if self._is_client:
             self._client_desired = False
             self._is_client = False
