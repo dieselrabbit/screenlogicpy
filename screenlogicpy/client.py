@@ -1,7 +1,7 @@
 """Client manager for a connection to a ScreenLogic protocol adapter."""
 import asyncio
 import logging
-from typing import Callable, List
+from typing import Callable
 
 from .const import CODE, COM_KEEPALIVE, ScreenLogicWarning
 from .requests.chemistry import decode_chemistry
@@ -93,9 +93,9 @@ class ClientManager:
                 return None
 
         _LOGGER.debug(f"Adding listener {callback}")
-        code_listeners: List = self._listeners.setdefault(code, [])
-        if callback not in code_listeners:
-            code_listeners.append(callback)
+        code_listeners: set = self._listeners.setdefault(code, set())
+
+        code_listeners.add(callback)
 
         self._protocol.register_async_message_callback(
             code, self._async_common_callback, code, self._data
@@ -103,17 +103,19 @@ class ClientManager:
 
         def remove_listener():
             """Remove listener callback."""
-            _LOGGER.debug(f"Removing listener {callback}")
-            code_listeners.remove(callback)
-            if not code_listeners:
-                _LOGGER.debug(f"No more listeners for code {code}. Removing.")
-                self._listeners.pop(code)
-                self._protocol.remove_async_message_callback(code)
-                if not self._listeners:
-                    _LOGGER.debug(
-                        "No more listeners for any code. Unsubscribing gateway."
-                    )
-                    asyncio.create_task(self.async_unsubscribe_gateway())
+            if callback in code_listeners:
+                _LOGGER.debug(f"Removing listener {callback}")
+                code_listeners.remove(callback)
+                if not code_listeners:
+                    _LOGGER.debug(f"No more listeners for code {code}. Removing.")
+                    if code in self._listeners:
+                        self._listeners.pop(code)
+                        self._protocol.remove_async_message_callback(code)
+                        if not self._listeners:
+                            _LOGGER.debug(
+                                "No more listeners for any code. Unsubscribing gateway."
+                            )
+                            asyncio.create_task(self.async_unsubscribe_gateway())
 
         return remove_listener
 
