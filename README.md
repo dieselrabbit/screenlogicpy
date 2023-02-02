@@ -59,7 +59,7 @@ _Changed in v0.5.0: This method is now an async coroutine and no longer disconne
 
 The preferred method for retrieving updated pool data is to subscribe to updates pushed to the gateway by the ScreenLogic system. This reduces network traffic compared to polling, and improves responsiveness to state changes.
 
-To enable push updates, subscribe to a particular message code using `gateway.clients.async_subscribe(callback, message_code)`, passing a callback method to be called when that message is received, and the message code to subscribe to. This function returns a callback that can be called to unsubscribe that particular subscription.
+To enable push updates, subscribe to a particular message code using `gateway.clients.async_subscribe(callback, message_code)`, passing a callback method to be called when that message is received, and the [message code](#supported-subscribable-messages) to subscribe to. This function returns a callback that can be called to unsubscribe that particular subscription.
 
 `screenlogicpy` will automatically handle subscribing and unsubscribing as a client to the ScreenLogic protocol adapter upon the first callback subscription and last unsub respectively.
 
@@ -276,11 +276,12 @@ gateway.register_async_message_handler(WEATHER_UPDATE_CODE, weather_request, use
 ```
 
 Full example in `./examples/async_client.py`  
-_New in v0.7.0._
+**_New in v0.7.0._**
 
 ## Debug Information
 
-A debug function is available in the `ScreenLogicGateway` class: `get_debug`. This will return a dict with the raw bytes for the last response for each request the gateway performs during an update. This can be useful for debugging the actual responses from the protocol adapter.
+A debug function is available in the `ScreenLogicGateway` class: `get_debug`. This will return a dict with the raw bytes for the last response for each request the gateway performs during an update. This can be useful for debugging the actual responses from the protocol adapter.  
+**Note:** Currently only includes polled data.
 
 ```python
 last_responses = gateway.get_debug()
