@@ -40,7 +40,7 @@ class ScreenLogicGateway:
     """Class for interacting and communicating with a ScreenLogic protocol adapter."""
 
     def __init__(
-        self, ip, port=80, gtype=0, gsubtype=0, name="Unnamed-Screenlogic-Gateway"
+        self, ip=None, port=80, gtype=0, gsubtype=0, name="Unnamed-Screenlogic-Gateway"
     ):
         self._ip = ip
         self._port = port
@@ -84,10 +84,27 @@ class ScreenLogicGateway:
     def is_client(self) -> bool:
         return self._is_client
 
-    async def async_connect(self, connection_closed_callback: Callable = None) -> bool:
+    async def async_connect(
+        self,
+        ip=None,
+        port=None,
+        gtype=None,
+        gsubtype=None,
+        name=None,
+        connection_closed_callback: Callable = None,
+    ) -> bool:
         """Connect to the ScreenLogic protocol adapter"""
         if self.is_connected:
             return True
+
+        self._ip = ip if ip else self._ip
+        self._port = port if port else self._port
+        self._type = gtype if gtype else self._type
+        self._subtype = gsubtype if gsubtype else self._subtype
+        self._name = name if name else self._name
+
+        if not self._ip:
+            raise ScreenLogicError("IP address never provided for connection.")
 
         _LOGGER.debug("Beginning connection and login sequence")
         connectPkg = await async_connect_to_gateway(
