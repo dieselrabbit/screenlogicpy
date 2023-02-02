@@ -39,15 +39,6 @@ async def main():
         def chemistry_updated_2():
             print("-- ** CHEMISTRY UPDATED 2 ** -")
 
-        def weather_updated():
-            print("--- ** WEATHER UPDATED ** ---")
-
-        async def weather_handler(message, data: dict):
-            result = await gateway.async_send_message(9807)
-            weather = data.setdefault("weather", {})
-            weather["_raw"] = result
-            weather_updated()
-
         gateway = ScreenLogicGateway(**hosts[0])
 
         await gateway.async_connect(on_connection_lost)
@@ -66,14 +57,10 @@ async def main():
             chemistry_updated_2, CODE.CHEMISTRY_CHANGED
         )
 
-        #  Can register your own custom message handler
-        gateway.register_message_handler(9806, weather_handler, gateway.get_data())
-
-        # Can update individual sections of data
-        await gateway.async_update()
-        await asyncio.sleep(5)
+        # Can update individual sections of data. NOTE: Some expected
+        # data keys may not be present until all data has been updated at
+        # least once. ex. circuit state in data["circuits"][500]["value"]
         await gateway.async_get_pumps()
-        await asyncio.sleep(5)
         await gateway.async_get_scg()
 
         try:
