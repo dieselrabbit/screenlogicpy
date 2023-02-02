@@ -23,7 +23,7 @@ async def main():
         def on_connection_lost():
             connection_lost.set_result(True)
 
-        gateway = ScreenLogicGateway(**hosts[0])
+        gateway = ScreenLogicGateway()
 
         async def weather_handler(message, data: dict):
             # Sends a request for the actual weather forecast, returns the reply.
@@ -31,7 +31,9 @@ async def main():
             weather = data.setdefault("weather", {})
             weather["_raw"] = result
 
-        await gateway.async_connect(on_connection_lost)
+        await gateway.async_connect(
+            **hosts[0], connection_closed_callback=on_connection_lost
+        )
 
         # Registers the method 'weather_handler' to be called when a weather forecast
         # changed message is received.

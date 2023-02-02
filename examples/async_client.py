@@ -2,7 +2,6 @@ import asyncio
 import logging
 from pprint import pprint
 
-from scratchpad.local_host import get_local
 from screenlogicpy import ScreenLogicGateway, discovery
 from screenlogicpy.const import CODE
 
@@ -14,9 +13,6 @@ async def main():
         datefmt="%Y-%m-%d %H:%M:%S",
     )
     hosts = await discovery.async_discover()
-
-    if not hosts:
-        hosts.append(get_local())
 
     if len(hosts) > 0:
 
@@ -39,9 +35,11 @@ async def main():
         def chemistry_updated_2():
             print("-- ** CHEMISTRY UPDATED 2 ** -")
 
-        gateway = ScreenLogicGateway(**hosts[0])
+        gateway = ScreenLogicGateway()
 
-        await gateway.async_connect(on_connection_lost)
+        await gateway.async_connect(
+            **hosts[0], connection_closed_callback=on_connection_lost
+        )
 
         # Multiple 'clients' can subscribe to different ScreenLogic messages
         data_unsub1 = await gateway.clients.async_subscribe(
