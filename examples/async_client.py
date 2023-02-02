@@ -52,7 +52,7 @@ async def main():
 
         await gateway.async_connect(on_connection_lost)
 
-        # Multiple objects can subscribe to different ScreenLogic messages
+        # Multiple 'clients' can subscribe to different ScreenLogic messages
         data_unsub1 = await gateway.clients.async_subscribe(
             status_updated_1, CODE.STATUS_CHANGED
         )
