@@ -24,7 +24,8 @@ from screenlogicpy import ScreenLogicGateway
     gateway = ScreenLogicGateway()
 ```
 
-_Changed in v0.5.0: Instantiating the gateway no longer automatically connects to the protocol adapter or performs an initial update._  
+_Changed in v0.5.0: Instantiating the gateway no longer automatically connects to the protocol adapter or performs an initial update._
+
 _**Changed in v0.7.0:** Passing adapter connection info when instantiating the gateway is deprecated and will be removed in a future release. Connection info should be passed to `async_connect()` instead._
 
 ## Connecting to a ScreenLogic Protocol Adapter
@@ -38,7 +39,8 @@ success = await gateway.async_connect("192.168.x.x")
 This method also performs the initial polling of the pool controller configuration.  
 **Note:**  This is the preferred location to provide connection information.
 
-_New in v0.5.0._  
+_New in v0.5.0._
+
 _**Changed in v0.7.0:** `async_connect()` now accepts adapter connection info. This supports handling ip changes to the protocol adapter._
 
 ## Polling the pool state
@@ -263,7 +265,8 @@ ph = ...  # Code to update any of the values
 success = await gateway.async_set_chem_data(ph, orp, ch, ta, ca, sa)
 ```
 
-**Note:** Only `ph_setpoint` and `orp_setpoint` are settable through the command line.  
+**Note:** Only `ph_setpoint` and `orp_setpoint` are settable through the command line.
+
 _New in v0.6.0._
 
 ## Handling unsolicited messages
