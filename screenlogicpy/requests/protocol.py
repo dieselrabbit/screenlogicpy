@@ -50,8 +50,8 @@ class ScreenLogicProtocol(asyncio.Protocol):
 
     def connection_made(self, transport: asyncio.Transport) -> None:
         """Called when connection is made."""
-        _LOGGER.debug("Connected to server")
         self._connected = True
+        _LOGGER.debug("Connected to server")
         self.transport = transport
 
     def send_message(self, messageID, messageCode, messageData=b"") -> None:
@@ -130,8 +130,8 @@ class ScreenLogicProtocol(asyncio.Protocol):
 
     def connection_lost(self, exc) -> None:
         """Called when connection is closed/lost."""
-        _LOGGER.debug("Connection closed")
         self._connected = False
+        _LOGGER.debug("Connection closed")
         if self._connection_lost_callback is not None:
             self._connection_lost_callback()
 

@@ -66,7 +66,7 @@ _Changed in v0.5.0: This method is now an async coroutine and no longer disconne
 
 The preferred method for retrieving updated pool data is to subscribe to updates pushed to the gateway by the ScreenLogic system. This reduces network traffic compared to polling, and improves responsiveness to state changes.
 
-To enable push updates, subscribe to a particular message code using `gateway.clients.async_subscribe(callback, message_code)`, passing a callback method to be called when that message is received, and the [message code](#supported-subscribable-messages) to subscribe to. This function returns a callback that can be called to unsubscribe that particular subscription.
+To enable push updates, subscribe to a particular message code using `gateway.async_subscribe_client(callback, message_code)`, passing a callback method to be called when that message is received, and the [message code](#supported-subscribable-messages) to subscribe to. This function returns a callback that can be called to unsubscribe that particular subscription.
 
 `screenlogicpy` will automatically handle subscribing and unsubscribing as a client to the ScreenLogic protocol adapter upon the first callback subscription and last unsub respectively.
 
@@ -76,7 +76,7 @@ from screenlogicpy.const import CODE
 def status_updated():
     # Do something with the updated data    
 
-unsub_method = await gateway.clients.async_subscribe(status_updated, CODE.STATUS_CHANGED)
+unsub_method = await gateway.async_subscribe_client(status_updated, CODE.STATUS_CHANGED)
 ```
 
 Example in `./examples/async_client.py`

@@ -20,18 +20,22 @@ class ClientManager:
     def __init__(self) -> None:
         self._listeners = {}
         self._is_client = False
-        self._client_desired = False
-        self._attached = False
+        self._client_sub_unsub_lock = asyncio.Lock()
+        self._protocol = None
+        self._data = None
 
     @property
     def is_client(self):
         """Return if connected to ScreenLogic as a client."""
-        return self._is_client
+        return self._is_client and self._protocol and self._protocol.is_connected
 
     @property
-    def client_desired(self):
+    def client_needed(self):
         """Return if desired to be a client."""
-        return self._client_desired
+        return self._listeners and not self._is_client
+
+    def _attached(self):
+        return self._protocol and self._protocol.is_connected
 
     async def attach(self, protocol: ScreenLogicProtocol, data: dict):
         """
@@ -43,13 +47,14 @@ class ClientManager:
         """
         self._protocol = protocol
         self._data = data
-        self._attached = True
-        if self._listeners:
+        self._is_client = False
+        if self.client_needed:
             self._protocol.remove_all_async_message_callbacks()
             for code in self._listeners:
                 self._protocol.register_async_message_callback(
                     code, self._async_common_callback, code, self._data
                 )
+            await self.async_subscribe_gateway()
 
     def _notify_listeners(self, code: int) -> None:
         """Notify all listeners."""
@@ -84,22 +89,23 @@ class ClientManager:
         message code is received. Messages with known codes will be processed
         and applied to gateway data before callback method is called.
         """
-        if not self._attached:
+        if not self._attached():
             return None
-
-        if len(self._listeners) == 0:
-            _LOGGER.debug("No previous listeners. Subscribing gateway.")
-            if not await self.async_subscribe_gateway():
-                return None
 
         _LOGGER.debug(f"Adding listener {callback}")
         code_listeners: set = self._listeners.setdefault(code, set())
 
         code_listeners.add(callback)
 
-        self._protocol.register_async_message_callback(
-            code, self._async_common_callback, code, self._data
-        )
+        if self._attached():
+            self._protocol.register_async_message_callback(
+                code, self._async_common_callback, code, self._data
+            )
+
+        if self.client_needed:
+            _LOGGER.debug("Subscribing gateway.")
+            if not await self.async_subscribe_gateway():
+                return None
 
         def remove_listener():
             """Remove listener callback."""
@@ -110,20 +116,21 @@ class ClientManager:
                     _LOGGER.debug(f"No more listeners for code {code}. Removing.")
                     if code in self._listeners:
                         self._listeners.pop(code)
-                        self._protocol.remove_async_message_callback(code)
-                        if not self._listeners:
-                            _LOGGER.debug(
-                                "No more listeners for any code. Unsubscribing gateway."
-                            )
-                            asyncio.create_task(self.async_unsubscribe_gateway())
+                        if self._attached():
+                            self._protocol.remove_async_message_callback(code)
+                            if not self._listeners:
+                                _LOGGER.debug(
+                                    "No more listeners for any code. Unsubscribing gateway."
+                                )
+                                asyncio.create_task(self.async_unsubscribe_gateway())
 
         return remove_listener
 
     async def _async_ping(self):
         """Check connection before requesting a ping."""
-        if not self._protocol.is_connected:
+        if not self._attached():
             raise ScreenLogicWarning(
-                "Not connected to protocol adapter. request_ping failed."
+                "Not attached to protocol adapter. request_ping failed."
             )
         _LOGGER.debug("Requesting ping")
         if await async_request_ping(self._protocol):
@@ -131,18 +138,18 @@ class ClientManager:
 
     async def _async_add_client(self):
         """Check connection before sending add client request."""
-        if not self._protocol.is_connected:
+        if not self._attached():
             raise ScreenLogicWarning(
-                "Not connected to protocol adapter. add_client failed."
+                "Not attached to protocol adapter. add_client failed."
             )
         _LOGGER.debug("Requesting add client")
         return await async_request_add_client(self._protocol)
 
     async def _async_remove_client(self):
         """Check connection before sending remove client request."""
-        if not self._protocol.is_connected:
+        if not self._attached():
             raise ScreenLogicWarning(
-                "Not connected to protocol adapter. remove_client failed."
+                "Not attached to protocol adapter. remove_client failed."
             )
         _LOGGER.debug("Requesting remove client")
         return await async_request_remove_client(self._protocol)
@@ -154,13 +161,16 @@ class ClientManager:
         Adds this gateway as a client on the ScreenLogic protocol adapter. This
         tells ScreenLogic that we are interested in receiving push update messages.
         """
-        self._client_desired = True
-        if await self._async_add_client():
-            self._is_client = True
-            self._protocol.enable_keepalive(self._async_ping, COM_KEEPALIVE)
-            _LOGGER.debug("Gateway subscribed")
-            return True  # await self._async_setup_push()
-        return False
+        if self._attached():
+            async with self._client_sub_unsub_lock:
+                if not self.is_client:
+                    if await self._async_add_client():
+                        self._is_client = True
+                        self._protocol.enable_keepalive(self._async_ping, COM_KEEPALIVE)
+                        _LOGGER.debug("Gateway subscribed")
+                        return True
+                    return False
+                return True
 
     async def async_unsubscribe_gateway(self) -> bool:
         """
@@ -169,11 +179,12 @@ class ClientManager:
         Removes this gateway as a client on the ScreenLogic protocol adapter.
         ScreenLogic will no longer push update messages.
         """
-        if self._is_client:
-            self._client_desired = False
-            self._is_client = False
-            self._protocol.disable_keepalive()
-            self._protocol.remove_all_async_message_callbacks()
-            _LOGGER.debug("Gateway unsubscribing")
-            return await self._async_remove_client()
-        return True
+        if self._attached():
+            async with self._client_sub_unsub_lock:
+                if self._is_client:
+                    self._is_client = False
+                    self._protocol.disable_keepalive()
+                    self._protocol.remove_all_async_message_callbacks()
+                    _LOGGER.debug("Gateway unsubscribing")
+                    return await self._async_remove_client()
+                return True

@@ -42,16 +42,16 @@ async def main():
         )
 
         # Multiple 'clients' can subscribe to different ScreenLogic messages
-        data_unsub1 = await gateway.clients.async_subscribe(
+        data_unsub1 = await gateway.async_subscribe_client(
             status_updated_1, CODE.STATUS_CHANGED
         )
-        data_unsub2 = await gateway.clients.async_subscribe(
+        data_unsub2 = await gateway.async_subscribe_client(
             status_updated_2, CODE.STATUS_CHANGED
         )
-        chem_unsub1 = await gateway.clients.async_subscribe(
+        chem_unsub1 = await gateway.async_subscribe_client(
             chemistry_updated_1, CODE.CHEMISTRY_CHANGED
         )
-        chem_unsub2 = await gateway.clients.async_subscribe(
+        chem_unsub2 = await gateway.async_subscribe_client(
             chemistry_updated_2, CODE.CHEMISTRY_CHANGED
         )
 

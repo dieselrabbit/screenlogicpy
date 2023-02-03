@@ -25,7 +25,7 @@ async def test_sub_unsub(event_loop, MockProtocolAdapter):
         def callback():
             pass
 
-        bad_unsub = await gateway.clients.async_subscribe(callback, code)
+        bad_unsub = await gateway.async_subscribe_client(callback, code)
 
         assert not bad_unsub
 
@@ -37,16 +37,19 @@ async def test_sub_unsub(event_loop, MockProtocolAdapter):
             "screenlogicpy.requests.client.ScreenLogicProtocol.await_send_message",
             return_value=result,
         ) as mockSubRequest:
-            unsub = await gateway.clients.async_subscribe(callback, code)
+            unsub = await gateway.async_subscribe_client(callback, code)
 
             assert callable(unsub)
-            assert gateway.clients._listeners == {
+            assert gateway._client_manager._listeners == {
                 code: {
                     callback,
                 },
             }
             assert gateway._protocol._callbacks == {
-                code: (gateway.clients._async_common_callback, (code, gateway._data)),
+                code: (
+                    gateway._client_manager._async_common_callback,
+                    (code, gateway._data),
+                ),
             }
             assert mockSubRequest.call_args.args[0] == 12522
             assert mockSubRequest.call_args.args[1] == struct.pack("<II", 0, clientID)
@@ -57,7 +60,7 @@ async def test_sub_unsub(event_loop, MockProtocolAdapter):
         ) as mockUnsubRequest:
             unsub()
 
-            assert gateway.clients._listeners == {}
+            assert gateway._client_manager._listeners == {}
             assert gateway._protocol._callbacks == {}
 
             await asyncio.sleep(0)
@@ -140,7 +143,7 @@ async def test_attach_existing(MockProtocolAdapter):
         nonlocal cb3_hit
         cb3_hit = True
 
-    gateway.clients._listeners = {
+    gateway._client_manager._listeners = {
         code1: {
             callback1,
             callback2,
@@ -154,6 +157,12 @@ async def test_attach_existing(MockProtocolAdapter):
         await gateway.async_connect(**FAKE_CONNECT_INFO)
 
         assert gateway._protocol._callbacks == {
-            code1: (gateway.clients._async_common_callback, (code1, gateway._data)),
-            code2: (gateway.clients._async_common_callback, (code2, gateway._data)),
+            code1: (
+                gateway._client_manager._async_common_callback,
+                (code1, gateway._data),
+            ),
+            code2: (
+                gateway._client_manager._async_common_callback,
+                (code2, gateway._data),
+            ),
         }

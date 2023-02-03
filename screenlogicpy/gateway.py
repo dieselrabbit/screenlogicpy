@@ -54,7 +54,7 @@ class ScreenLogicGateway:
         self._is_client = False
         self._data = {}
         self._last = {}
-        self.clients = ClientManager()
+        self._client_manager = ClientManager()
 
     @property
     def ip(self) -> str:
@@ -102,13 +102,14 @@ class ScreenLogicGateway:
         self._type = gtype if gtype else self._type
         self._subtype = gsubtype if gsubtype else self._subtype
         self._name = name if name else self._name
+        self._custom_connection_closed_callback = connection_closed_callback
 
         if not self._ip:
             raise ScreenLogicError("IP address never provided for connection.")
 
         _LOGGER.debug("Beginning connection and login sequence")
         connectPkg = await async_connect_to_gateway(
-            self._ip, self._port, connection_closed_callback
+            self._ip, self._port, self._common_connection_closed_callback
         )
         if connectPkg:
             self._transport, self._protocol, self._mac = connectPkg
@@ -116,17 +117,15 @@ class ScreenLogicGateway:
             if self._version:
                 _LOGGER.debug("Login successful")
                 await self.async_get_config()
-                await self.clients.attach(self._protocol, self.get_data())
-                if not self.clients.is_client and self.clients.client_desired:
-                    await self.clients.async_subscribe_gateway()
+                await self._client_manager.attach(self._protocol, self.get_data())
                 return True
         _LOGGER.debug("Login failed")
         return False
 
     async def async_disconnect(self, force=False):
         """Disconnect from the ScreenLogic protocol adapter"""
-        if self.clients.is_client:
-            await self.clients.async_unsubscribe_gateway()
+        if self._client_manager.is_client:
+            await self._client_manager.async_unsubscribe_gateway()
 
         if not force:
             while self._protocol.requests_pending():
@@ -254,7 +253,21 @@ class ScreenLogicGateway:
                 return True
         return False
 
-    def register_message_handler(
+    async def async_subscribe_client(
+        self, callback: Callable[..., any], code: int
+    ) -> Callable:
+        """
+        Subscribe client listener to message code.
+
+        Subscribe to push messaging from the ScreenLogic protocol adapter and register a
+        callback method to call when a message with the specified message code is received.
+
+        Messages with known codes will be processed to update gateway data before
+        callback method is called.
+        """
+        return await self._client_manager.async_subscribe(callback, code)
+
+    def register_async_message_handler(
         self, message_code: int, handler: Callable[[bytes, any], Awaitable[None]], *argv
     ):
         """
@@ -336,6 +349,12 @@ class ScreenLogicGateway:
         self._last[DATA.KEY_SCG] = await async_request_scg_config(
             self._protocol, self._data
         )
+
+    def _common_connection_closed_callback(self):
+        """Perform any needed cleanup."""
+        # Future internal cleanup tasks
+        if self._custom_connection_closed_callback:
+            self._custom_connection_closed_callback()
 
     def _is_valid_circuit(self, circuit):
         """Validate circuit number."""
