@@ -56,6 +56,7 @@ async def test_discover(MockProtocolAdapter, capsys, args, ret, expected):
     [
         ("get circuit 500", 0, "0"),
         ("get c 502", 0, "1"),
+        ("get c 300", 4, "Invalid circuit number: 300"),
         (
             "-v get c 502",
             0,
@@ -67,6 +68,7 @@ async def test_discover(MockProtocolAdapter, capsys, args, ret, expected):
             0,
             EXPECTED_VERBOSE_PREAMBLE + "Pool Light: On",
         ),
+        ("set circuit 900 1", 4, "Invalid circuit number: 900"),
     ],
 )
 async def test_circuit(MockProtocolAdapter, capsys, args, ret, expected):
@@ -170,6 +172,8 @@ async def test_set_color_lights(MockProtocolAdapter, capsys, args, ret, expected
             0,
             EXPECTED_VERBOSE_PREAMBLE + "Pool SCG Level: 50 Spa SCG Level: 0",
         ),
+        ("set scg * *", 65, "No new SCG values. Nothing to do."),
+        ("set scg f *", 66, "Invalid SCG value"),
     ],
 )
 async def test_set_scg(MockProtocolAdapter, capsys, args, ret, expected):
@@ -187,6 +191,7 @@ async def test_set_scg(MockProtocolAdapter, capsys, args, ret, expected):
             EXPECTED_VERBOSE_PREAMBLE + "pH Setpoint: 7.5 ORP Setpoint: 700",
         ),
         ("set ch * *", 129, "No new setpoint values. Nothing to do."),
+        ("set ch f *", 130, "Invalid Chemistry Setpoint value"),
     ],
 )
 async def test_set_chemistry(MockProtocolAdapter, capsys, args, ret, expected):

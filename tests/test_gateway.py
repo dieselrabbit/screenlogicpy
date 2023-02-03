@@ -19,7 +19,7 @@ from screenlogicpy import ScreenLogicGateway
 
 
 @pytest.mark.asyncio
-async def test_gateway(event_loop: asyncio.AbstractEventLoop, MockConnectedGateway):
+async def test_gateway(MockConnectedGateway):
     gateway = MockConnectedGateway
     assert gateway.ip == FAKE_GATEWAY_ADDRESS
     assert gateway.port == FAKE_GATEWAY_PORT
