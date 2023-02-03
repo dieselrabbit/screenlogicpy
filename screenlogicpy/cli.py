@@ -444,9 +444,9 @@ async def cli(cli_args):
                 print("No ScreenLogic gateways found.")
                 return 1
 
-        gateway = ScreenLogicGateway(**host)
+        gateway = ScreenLogicGateway()
 
-        await gateway.async_connect()
+        await gateway.async_connect(**host)
 
         await gateway.async_update()
 
