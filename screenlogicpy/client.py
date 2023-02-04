@@ -103,7 +103,7 @@ class ClientManager:
             )
 
         if self.client_needed:
-            _LOGGER.debug("Subscribing gateway.")
+            _LOGGER.debug("Client needed.")
             if not await self.async_subscribe_gateway():
                 return None
 
@@ -164,6 +164,7 @@ class ClientManager:
         if self._attached():
             async with self._client_sub_unsub_lock:
                 if not self.is_client:
+                    _LOGGER.debug("Subscribing gateway.")
                     if await self._async_add_client():
                         self._is_client = True
                         self._protocol.enable_keepalive(self._async_ping, COM_KEEPALIVE)
