@@ -82,7 +82,7 @@ class ScreenLogicGateway:
 
     @property
     def is_client(self) -> bool:
-        return self._is_client
+        return self._client_manager.is_client
 
     async def async_connect(
         self,
@@ -124,7 +124,7 @@ class ScreenLogicGateway:
 
     async def async_disconnect(self, force=False):
         """Disconnect from the ScreenLogic protocol adapter"""
-        if self._client_manager.is_client:
+        if self.is_client:
             await self._client_manager.async_unsubscribe_gateway()
 
         if not force:
