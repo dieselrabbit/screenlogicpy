@@ -176,9 +176,16 @@ class DEVICE_TYPE:
     ALARM = "alarm"
     DURATION = "duration"
     ENERGY = "energy"
+    ENUM = "enum"
     POWER = "power"
     TEMPERATURE = "temperature"
     VOLUME = "volume"
+
+
+class STATE_TYPE:
+    MEASUREMENT = "measurement"
+    TOTAL = "total"
+    TOTAL_INCREASING = "total_increasing"
 
 
 class UNIT:

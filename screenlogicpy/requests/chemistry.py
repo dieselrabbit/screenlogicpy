@@ -3,10 +3,12 @@ import struct
 
 from ..const import (
     CHEMISTRY,
+    CHEM_DOSING_STATE,
     CODE,
     DATA,
     DEVICE_TYPE,
     ON_OFF,
+    STATE_TYPE,
     UNIT,
 )
 from .protocol import ScreenLogicProtocol
@@ -75,6 +77,7 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
         "value": pHDoseTime,
         "unit": UNIT.SECOND,
         "device_type": DEVICE_TYPE.DURATION,
+        "state_type": STATE_TYPE.TOTAL_INCREASING,
     }
 
     orpDoseTime, offset = getSome(">I", buff, offset)  # 17
@@ -83,6 +86,7 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
         "value": orpDoseTime,
         "unit": UNIT.SECOND,
         "device_type": DEVICE_TYPE.DURATION,
+        "state_type": STATE_TYPE.TOTAL_INCREASING,
     }
 
     pHDoseVolume, offset = getSome(">H", buff, offset)  # 21
@@ -91,6 +95,7 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
         "value": pHDoseVolume,
         "unit": UNIT.MILLILITER,
         "device_type": DEVICE_TYPE.VOLUME,
+        "state_type": STATE_TYPE.TOTAL_INCREASING,
     }
 
     orpDoseVolume, offset = getSome(">H", buff, offset)  # 23
@@ -99,6 +104,7 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
         "value": orpDoseVolume,
         "unit": UNIT.MILLILITER,
         "device_type": DEVICE_TYPE.VOLUME,
+        "state_type": STATE_TYPE.TOTAL_INCREASING,
     }
 
     pHSupplyLevel, offset = getSome("B", buff, offset)  # 25
@@ -232,10 +238,14 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
     chemistry["ph_dosing_state"] = {
         "name": "pH Dosing State",
         "value": (status & CHEMISTRY.MASK_STATUS_PH_DOSING) >> 4,
+        "device_type": DEVICE_TYPE.ENUM,
+        "enum_options": [v for v in CHEM_DOSING_STATE.NAME_FOR_NUM.values()],
     }
     chemistry["orp_dosing_state"] = {
         "name": "ORP Dosing State",
         "value": (status & CHEMISTRY.MASK_STATUS_ORP_DOSING) >> 6,
+        "device_type": DEVICE_TYPE.ENUM,
+        "enum_options": [v for v in CHEM_DOSING_STATE.NAME_FOR_NUM.values()],
     }
 
     flags, offset = getSome("B", buff, offset)  # 40 (35)
