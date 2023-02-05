@@ -35,9 +35,9 @@ async def main():
             **hosts[0], connection_closed_callback=on_connection_lost
         )
 
-        # Registers the method 'weather_handler' to be called when a weather forecast
-        # changed message is received.
-        gateway.register_message_handler(
+        # Registers the coroutine 'weather_handler' to be scheduled when a 'weather forecast
+        # changed' message is received.
+        gateway.register_async_message_handler(
             CODE.WEATHER_FORECAST_CHANGED, weather_handler, gateway.get_data()
         )
 
@@ -47,6 +47,7 @@ async def main():
         try:
             await connection_lost
         finally:
+            gateway.remove_async_message_handler(CODE.WEATHER_FORECAST_CHANGED)
             pprint(gateway.get_data())
             await gateway.async_disconnect()
 
