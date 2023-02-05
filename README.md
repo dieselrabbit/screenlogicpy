@@ -285,15 +285,21 @@ To do so, you need to tell the `ScreenLogicGateway` what message code to listen 
 WEATHER_UPDATE_CODE = 9806
 WEATHER_REQUEST_CODE = 9807
 
-async def weather_request(message: bytes, userData: dict):
+async def weather_request(message: bytes, data: dict):
     result = await gateway.async_send_message(WEATHER_REQUEST_CODE)
-    data = process(result)
+    decode_weather(result, data)
     print(data)
 
-gateway.register_async_message_handler(WEATHER_UPDATE_CODE, weather_request, userData)
+gateway.register_async_message_handler(WEATHER_UPDATE_CODE, weather_request, data)
 ```
 
-Full example in `./examples/async_client.py`
+Remove the handler with:
+
+```python
+gateway.remove_async_message_handler(WEATHER_UPDATE_CODE)
+```
+
+Example in `./examples/async_listen.py`
 
 **_New in v0.7.0._**
 
