@@ -271,7 +271,7 @@ class ScreenLogicGateway:
         self, message_code: int, handler: Callable[[bytes, any], Awaitable[None]], *argv
     ):
         """
-        Register callback for message code.
+        Register handler for message code.
 
         Registers an async function to call when a message with the specified message_code is received.
         Only one handler can be registered per message_code. Subsequent registrations will override
@@ -282,6 +282,11 @@ class ScreenLogicGateway:
                 "Not connected to ScreenLogic gateway. Must connect to gateway before registering handler."
             )
         self._protocol.register_async_message_callback(message_code, handler, *argv)
+
+    def remove_async_message_handler(self, message_code: int):
+        """Remove handler for message code."""
+        if self._protocol:
+            self._protocol.remove_async_message_callback(message_code)
 
     async def async_send_message(self, message_code: int, message: bytes = b""):
         """Send a message to the ScreenLogic protocol adapter."""
