@@ -1,6 +1,11 @@
 import struct
 
-ADD_UNKNOWN_VALUES = False
+CLIENT_ID = 49151
+
+# Protocol adapter closes the connection if it doesn't hear
+# from the client for 10 minutes, but we'll go ahead an make
+# sure it hears something from us well before then.
+COM_KEEPALIVE = 300  # Seconds = 5 minutes
 
 SL_GATEWAY_IP = "ip"
 SL_GATEWAY_PORT = "port"
@@ -24,45 +29,35 @@ class MESSAGE:
 
 
 # Some of the message codes
+# ANSWERS are QUERY + 1
 class CODE:
     MSG_CODE_1 = 0
     UNKNOWN_ANSWER = 13
     CHALLENGE_QUERY = 14
-    CHALLENGE_ANSWER = CHALLENGE_QUERY + 1
+    PING_QUERY = 16
     LOCALLOGIN_QUERY = 27
-    LOCALLOGIN_ANSWER = LOCALLOGIN_QUERY + 1
     VERSION_QUERY = 8120
-    VERSION_ANSWER = VERSION_QUERY + 1
+    WEATHER_FORECAST_CHANGED = 9806
+    WEATHER_FORECAST_QUERY = 9807
+    STATUS_CHANGED = 12500
+    COLOR_UPDATE = 12504
+    CHEMISTRY_CHANGED = 12505
+    ADD_CLIENT_QUERY = 12522
+    REMOVE_CLIENT_QUERY = 12524
     POOLSTATUS_QUERY = 12526
-    POOLSTATUS_ANSWER = POOLSTATUS_QUERY + 1
     SETHEATTEMP_QUERY = 12528
-    SETHEATTEMP_ANSWER = SETHEATTEMP_QUERY + 1
     BUTTONPRESS_QUERY = 12530
-    BUTTONPRESS_ANSWER = BUTTONPRESS_QUERY + 1
     CTRLCONFIG_QUERY = 12532
-    CTRLCONFIG_ANSWER = CTRLCONFIG_QUERY + 1
     SETHEATMODE_QUERY = 12538
-    SETHEATMODE_ANSWER = SETHEATMODE_QUERY + 1
-    SETCOOLTEMP_QUERY = 12590
-    SETCOOLTEMP_ANSWER = SETCOOLTEMP_QUERY + 1
-    GATEWAYDATA_QUERY = 18003
-    GATEWAYDATA_ANSWER = GATEWAYDATA_QUERY + 1
-    CONTROLLER_QUERY = 12532
-    CONTROLLER_ANSWER = CONTROLLER_QUERY + 1
-    EQUIPMENT_QUERY = 12566
-    EQUIPMENT_ANSWER = EQUIPMENT_QUERY + 1
-    PUMPSTATUS_QUERY = 12584
-    PUMPSTATUS_ANSWER = PUMPSTATUS_QUERY + 1
     LIGHTCOMMAND_QUERY = 12556
-    LIGHTCOMMAND_ANSWER = LIGHTCOMMAND_QUERY + 1
-    CHEMISTRY_QUERY = 12592
-    CHEMISTRY_ANSWER = CHEMISTRY_QUERY + 1
     SETCHEMDATA_QUERY = 12594
-    SETCHEMDATA_ANSWER = SETCHEMDATA_QUERY + 1
+    EQUIPMENT_QUERY = 12566
     SCGCONFIG_QUERY = 12572
-    SCGCONFIG_ANSWER = SCGCONFIG_QUERY + 1
     SETSCG_QUERY = 12576
-    SETSCG_ANSWER = SETSCG_QUERY + 1
+    PUMPSTATUS_QUERY = 12584
+    SETCOOLTEMP_QUERY = 12590
+    CHEMISTRY_QUERY = 12592
+    GATEWAYDATA_QUERY = 18003
 
 
 class DATA:
@@ -181,9 +176,16 @@ class DEVICE_TYPE:
     ALARM = "alarm"
     DURATION = "duration"
     ENERGY = "energy"
+    ENUM = "enum"
     POWER = "power"
     TEMPERATURE = "temperature"
     VOLUME = "volume"
+
+
+class STATE_TYPE:
+    MEASUREMENT = "measurement"
+    TOTAL = "total"
+    TOTAL_INCREASING = "total_increasing"
 
 
 class UNIT:
@@ -273,21 +275,29 @@ class CIRCUIT_FUNCTION:
     INTELLIBRITE = 16
     MAGICSTREAM = 17
 
-    GROUP_CORE = [
+    GROUP_CORE = {
         SPA,
         POOL,
-    ]
+    }
 
-    GROUP_LIGHTING = [
+    GROUP_LIGHTS_BASIC = {
         LIGHT,
         DIMMER,
+    }
+
+    GROUP_LIGHTS_COLOR = {
         SAM_LIGHT,
         SAL_LIGHT,
         PHOTONGEN,
         COLOR_WHEEL,
         INTELLIBRITE,
         MAGICSTREAM,
-    ]
+    }
+
+    GROUP_LIGHTS_ALL = {
+        *GROUP_LIGHTS_BASIC,
+        *GROUP_LIGHTS_COLOR,
+    }
 
 
 class INTERFACE_GROUP:
@@ -382,24 +392,66 @@ DEFAULT_CIRCUIT_NAMES = ["Spa", "Pool", *GENERIC_CIRCUIT_NAMES]
 
 
 # COLOR_MODES_* may not be complete
-COLOR_MODES_GENERIC = {num: COLOR_MODE.NAME_FOR_NUM[num] for num in [0, 1]}
+COLOR_MODES_GENERIC = {
+    num: COLOR_MODE.NAME_FOR_NUM[num]
+    for num in [
+        COLOR_MODE.OFF,
+        COLOR_MODE.ON,
+    ]
+}
 
-COLOR_MODES_COLORS = {num: COLOR_MODE.NAME_FOR_NUM[num] for num in [13, 14, 15, 16, 17]}
+COLOR_MODES_COLORS = {
+    num: COLOR_MODE.NAME_FOR_NUM[num]
+    for num in [
+        COLOR_MODE.BLUE,
+        COLOR_MODE.GREEN,
+        COLOR_MODE.RED,
+        COLOR_MODE.WHITE,
+        COLOR_MODE.MAGENTA,
+    ]
+}
 
 COLOR_MODES_SAM = {
     **COLOR_MODES_GENERIC,
-    **{num: COLOR_MODE.NAME_FOR_NUM[num] for num in [2, 3, 4]},
+    **{
+        num: COLOR_MODE.NAME_FOR_NUM[num]
+        for num in [
+            COLOR_MODE.SET,
+            COLOR_MODE.SYNC,
+            COLOR_MODE.SWIM,
+        ]
+    },
     **COLOR_MODES_COLORS,
 }
 
 COLOR_MODES_INTELLIBRITE = {
     **COLOR_MODES_GENERIC,
     **COLOR_MODES_SAM,
-    **{num: COLOR_MODE.NAME_FOR_NUM[num] for num in [5, 6, 7, 8, 9, 10, 11, 12]},
+    **{
+        num: COLOR_MODE.NAME_FOR_NUM[num]
+        for num in [
+            COLOR_MODE.PARTY,
+            COLOR_MODE.ROMANCE,
+            COLOR_MODE.CARIBBEAN,
+            COLOR_MODE.AMERICAN,
+            COLOR_MODE.SUNSET,
+            COLOR_MODE.ROYAL,
+            COLOR_MODE.SAVE,
+            COLOR_MODE.RECALL,
+        ]
+    },
     **COLOR_MODES_COLORS,
 }
 
 COLOR_MODES_MAGICSTREAM = {
     **COLOR_MODES_GENERIC,
-    **{num: COLOR_MODE.NAME_FOR_NUM[num] for num in [18, 19, 20, 21]},
+    **{
+        num: COLOR_MODE.NAME_FOR_NUM[num]
+        for num in [
+            COLOR_MODE.THUMPER,
+            COLOR_MODE.NEXT,
+            COLOR_MODE.RESET,
+            COLOR_MODE.HOLD,
+        ]
+    },
 }

@@ -1,3 +1,4 @@
+import asyncio
 import pytest
 
 from .const_data import FAKE_CONFIG_RESPONSE_LARGE
@@ -13,8 +14,12 @@ async def test_async_data_received(event_loop):
 
     data = {}
 
-    def callback(messageCode, message, target_data):
+    callback_triggered: asyncio.Future
+    callback_triggered = event_loop.create_future()
+
+    async def callback(message, target_data):
         target_data["result"] = message
+        callback_triggered.set_result(True)
 
     protocol = ScreenLogicProtocol(event_loop)
     protocol.register_async_message_callback(CODE, callback, data)
@@ -22,18 +27,24 @@ async def test_async_data_received(event_loop):
     payload = makeMessage(0, CODE, MESSAGE)
     protocol.data_received(payload)
 
+    await callback_triggered
+
     assert data.get("result") == MESSAGE
 
 
 @pytest.mark.asyncio
 async def test_async_large_data_received(event_loop):
-    CODE = MSG_CODE.CTRLCONFIG_ANSWER
+    CODE = MSG_CODE.CTRLCONFIG_QUERY + 1
     MESSAGE = FAKE_CONFIG_RESPONSE_LARGE[CONST_MESSAGE.HEADER_LENGTH :]
 
     data = {}
 
-    def callback(messageCode, message, target_data):
+    callback_triggered: asyncio.Future
+    callback_triggered = event_loop.create_future()
+
+    async def callback(message, target_data):
         target_data["result"] = message
+        callback_triggered.set_result(True)
 
     protocol = ScreenLogicProtocol(event_loop)
     protocol.register_async_message_callback(CODE, callback, data)
@@ -41,6 +52,8 @@ async def test_async_large_data_received(event_loop):
     payload = makeMessage(0, CODE, MESSAGE)
     protocol.data_received(payload[:1024])
     protocol.data_received(payload[1024:])
+
+    await callback_triggered
 
     assert data.get("result") == MESSAGE
 

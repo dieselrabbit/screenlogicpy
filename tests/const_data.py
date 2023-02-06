@@ -1,4 +1,5 @@
 from copy import deepcopy
+import struct
 
 from screenlogicpy.const import (
     CODE,
@@ -36,20 +37,26 @@ FAKE_STATUS_RESPONSE = b"\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x009\x00\x
 FAKE_PUMP_RESPONSE = b"\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\x00\x00\x00\x06\x00\x00\x00\xc4\t\x00\x00\x01\x00\x00\x00\t\x00\x00\x00\xf0\n\x00\x00\x01\x00\x00\x00\x01\x00\x00\x00z\r\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x1e\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x1e\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x1e\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x1e\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x1e\x00\x00\x00\x00\x00\x00\x00"
 FAKE_CHEMISTRY_RESPONSE = b"*\x00\x00\x00\x00\x00\x00\x00\x00\x02\xee\x02\xbc\x00\x00\x00\x05\x00\x00\x00\x02\x00\n\x00\x04\x03\x04\xf3\x02\xe4\x00$\x00F\x14\x008\x81\x00\xa5 <\x01\x00\x00\x00\x00\x00"
 FAKE_SCG_RESPONSE = b"\x00\x00\x00\x00\x01\x00\x00\x002\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+FAKE_COLOR_UPDATES = [struct.pack("<5I", 12, x, 15, 0, 0) for x in range(15)]
 
 ASYNC_SL_RESPONSES = {
     CODE.VERSION_QUERY: encodeMessageString(FAKE_GATEWAY_VERSION),
     CODE.CTRLCONFIG_QUERY: FAKE_CONFIG_RESPONSE,
     CODE.POOLSTATUS_QUERY: FAKE_STATUS_RESPONSE,
+    CODE.STATUS_CHANGED: FAKE_STATUS_RESPONSE,
     CODE.PUMPSTATUS_QUERY: FAKE_PUMP_RESPONSE,
     CODE.CHEMISTRY_QUERY: FAKE_CHEMISTRY_RESPONSE,
+    CODE.CHEMISTRY_CHANGED: FAKE_CHEMISTRY_RESPONSE,
     CODE.SCGCONFIG_QUERY: FAKE_SCG_RESPONSE,
+    CODE.COLOR_UPDATE: FAKE_COLOR_UPDATES[7],
     CODE.BUTTONPRESS_QUERY: b"",
     CODE.LIGHTCOMMAND_QUERY: b"",
     CODE.SETHEATMODE_QUERY: b"",
     CODE.SETHEATTEMP_QUERY: b"",
     CODE.SETSCG_QUERY: b"",
     CODE.SETCHEMDATA_QUERY: b"",
+    CODE.ADD_CLIENT_QUERY: b"",
+    CODE.REMOVE_CLIENT_QUERY: b"",
 }
 
 
@@ -667,24 +674,28 @@ EXPECTED_CHEMISTRY_DATA = {
             "value": 5,
             "unit": "sec",
             "device_type": "duration",
+            "state_type": "total_increasing",
         },
         "orp_last_dose_time": {
             "name": "Last ORP Dose Time",
             "value": 2,
             "unit": "sec",
             "device_type": "duration",
+            "state_type": "total_increasing",
         },
         "ph_last_dose_volume": {
             "name": "Last pH Dose Volume",
             "value": 10,
             "unit": "mL",
             "device_type": "volume",
+            "state_type": "total_increasing",
         },
         "orp_last_dose_volume": {
             "name": "Last ORP Dose Volume",
             "value": 4,
             "unit": "mL",
             "device_type": "volume",
+            "state_type": "total_increasing",
         },
         "ph_supply_level": {"name": "pH Supply Level", "value": 3},
         "orp_supply_level": {"name": "ORP Supply Level", "value": 4},
@@ -730,8 +741,26 @@ EXPECTED_CHEMISTRY_DATA = {
             # "scaling": {"name": "Scaling", "value": 0},
         },
         "status": 165,
-        "ph_dosing_state": {"name": "pH Dosing State", "value": 2},
-        "orp_dosing_state": {"name": "ORP Dosing State", "value": 2},
+        "ph_dosing_state": {
+            "name": "pH Dosing State",
+            "value": 2,
+            "device_type": "enum",
+            "enum_options": [
+                "Dosing",
+                "Mixing",
+                "Monitoring",
+            ],
+        },
+        "orp_dosing_state": {
+            "name": "ORP Dosing State",
+            "value": 2,
+            "device_type": "enum",
+            "enum_options": [
+                "Dosing",
+                "Mixing",
+                "Monitoring",
+            ],
+        },
         "flags": 32,
         "firmware": {"name": "IntelliChem Firmware Version", "value": "1.060"},
         "unknown_at_offset_43": 0,
@@ -1238,24 +1267,28 @@ EXPECTED_COMPLETE_DATA = {
             "value": 5,
             "unit": "sec",
             "device_type": "duration",
+            "state_type": "total_increasing",
         },
         "orp_last_dose_time": {
             "name": "Last ORP Dose Time",
             "value": 2,
             "unit": "sec",
             "device_type": "duration",
+            "state_type": "total_increasing",
         },
         "ph_last_dose_volume": {
             "name": "Last pH Dose Volume",
             "value": 10,
             "unit": "mL",
             "device_type": "volume",
+            "state_type": "total_increasing",
         },
         "orp_last_dose_volume": {
             "name": "Last ORP Dose Volume",
             "value": 4,
             "unit": "mL",
             "device_type": "volume",
+            "state_type": "total_increasing",
         },
         "ph_supply_level": {"name": "pH Supply Level", "value": 3},
         "orp_supply_level": {"name": "ORP Supply Level", "value": 4},
@@ -1301,8 +1334,26 @@ EXPECTED_COMPLETE_DATA = {
             # "scaling": {"name": "Scaling", "value": 0},
         },
         "status": 165,
-        "ph_dosing_state": {"name": "pH Dosing State", "value": 2},
-        "orp_dosing_state": {"name": "ORP Dosing State", "value": 2},
+        "ph_dosing_state": {
+            "name": "pH Dosing State",
+            "value": 2,
+            "device_type": "enum",
+            "enum_options": [
+                "Dosing",
+                "Mixing",
+                "Monitoring",
+            ],
+        },
+        "orp_dosing_state": {
+            "name": "ORP Dosing State",
+            "value": 2,
+            "device_type": "enum",
+            "enum_options": [
+                "Dosing",
+                "Mixing",
+                "Monitoring",
+            ],
+        },
         "flags": 32,
         "firmware": {"name": "IntelliChem Firmware Version", "value": "1.060"},
         "unknown_at_offset_43": 0,

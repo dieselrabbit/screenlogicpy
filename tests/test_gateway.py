@@ -8,16 +8,18 @@ from unittest.mock import patch
 
 from .const_data import (
     EXPECTED_COMPLETE_DATA,
+    FAKE_CONNECT_INFO,
     FAKE_GATEWAY_ADDRESS,
     FAKE_GATEWAY_MAC,
     FAKE_GATEWAY_NAME,
     FAKE_GATEWAY_PORT,
     FAKE_GATEWAY_VERSION,
 )
+from screenlogicpy import ScreenLogicGateway
 
 
 @pytest.mark.asyncio
-async def test_gateway(event_loop: asyncio.AbstractEventLoop, MockConnectedGateway):
+async def test_gateway(MockConnectedGateway):
     gateway = MockConnectedGateway
     assert gateway.ip == FAKE_GATEWAY_ADDRESS
     assert gateway.port == FAKE_GATEWAY_PORT
@@ -31,6 +33,34 @@ async def test_gateway(event_loop: asyncio.AbstractEventLoop, MockConnectedGatew
     # diff = DeepDiff(data, EXPECTED_COMPLETE_DATA)
     # print(diff)
     assert data == EXPECTED_COMPLETE_DATA
+
+
+@pytest.mark.asyncio
+async def test_gateway_connect(MockProtocolAdapter):
+    async with MockProtocolAdapter:
+        gateway = ScreenLogicGateway(**FAKE_CONNECT_INFO)
+        await gateway.async_connect()
+        assert gateway.ip == FAKE_GATEWAY_ADDRESS
+        assert gateway.port == FAKE_GATEWAY_PORT
+        assert gateway.name == FAKE_GATEWAY_NAME
+        assert gateway.version == FAKE_GATEWAY_VERSION
+        assert gateway.mac == FAKE_GATEWAY_MAC
+        assert gateway.is_connected
+        await gateway.async_disconnect()
+
+
+@pytest.mark.asyncio
+async def test_gateway_late_connect(MockProtocolAdapter):
+    async with MockProtocolAdapter:
+        gateway = ScreenLogicGateway()
+        await gateway.async_connect(**FAKE_CONNECT_INFO)
+        assert gateway.ip == FAKE_GATEWAY_ADDRESS
+        assert gateway.port == FAKE_GATEWAY_PORT
+        assert gateway.name == FAKE_GATEWAY_NAME
+        assert gateway.version == FAKE_GATEWAY_VERSION
+        assert gateway.mac == FAKE_GATEWAY_MAC
+        assert gateway.is_connected
+        await gateway.async_disconnect()
 
 
 @pytest.mark.asyncio

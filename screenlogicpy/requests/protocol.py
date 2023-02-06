@@ -1,8 +1,10 @@
+"""Defines an asyncio.Protocol for communicating with Pentair ScreenLogic systems."""
 import asyncio
 import itertools
 import logging
 import struct
-from typing import Callable, Tuple
+import time
+from typing import Awaitable, Callable, Tuple, List
 
 from ..const import CODE, MESSAGE, ScreenLogicError
 from .utility import makeMessage, takeMessage
@@ -11,32 +13,63 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class ScreenLogicProtocol(asyncio.Protocol):
-    """asyncio.Protocol for handling the connection to a ScreenLogic protocol adapter."""
+    """asyncio.Protocol for handling connection to a ScreenLogic protocol adapter."""
 
     def __init__(self, loop, connection_lost_callback: Callable = None) -> None:
-        self.connected = False
+        self._loop: asyncio.BaseEventLoop = loop
         self._connection_lost_callback = connection_lost_callback
-        self._futures = self.FutureManager(loop)
+        self._futures = self.FutureManager(self._loop)
         self._callbacks = {}
+        self._connected = False
+        self._last_request: float = None
+        self._last_response: float = None
         self._buff = bytearray()
+
+        self._keepalive_awaitable: Callable[[any, any], Awaitable[any]] = None
+        self._keepalive_interval: int = None
+        self._stop_keepalive: Callable = None
+
         # Adapter-initiated message IDs seem to start at 32767,
         # so we'll use only the lower half of the message ID data size.
         self.__msgID = itertools.cycle(range(32767))
 
+    @property
+    def is_connected(self):
+        """Return if protocol is currently connected."""
+        return self._connected
+
+    @property
+    def last_request(self):
+        """Monotonic time for the last message sent."""
+        return self._last_request
+
+    @property
+    def last_response(self):
+        """Monotonic time for last message received."""
+        return self._last_response
+
     def connection_made(self, transport: asyncio.Transport) -> None:
+        """Called when connection is made."""
+        self._connected = True
         _LOGGER.debug("Connected to server")
-        self.connected = True
         self.transport = transport
 
-    def send_message(self, messageID, messageCode, messageData=b""):
-        """Sends the message via the transport."""
+    def send_message(self, messageID, messageCode, messageData=b"") -> None:
+        """Send a message via the transport."""
         _LOGGER.debug("Sending: %i, %i, %s", messageID, messageCode, messageData)
         self.transport.write(makeMessage(messageID, messageCode, messageData))
 
+        self._last_request = time.monotonic()
+
+        if self._keepalive_awaitable:
+            self._set_keepalive()
+
     def await_send_message(self, messageCode, messageData=b"") -> asyncio.Future:
         """
-        Sends the message and returns an awaitable asyncio.Future object that will contain the
-        result of the ScreenLogic protocol adapter's response.
+        Send a message and return an awaitable.
+
+        Sends the message and returns an awaitable asyncio.Future object that will
+        contain the result of the ScreenLogic protocol adapter's response.
         """
         messageID = next(self.__msgID)
         fut = self._futures.create(messageID)
@@ -45,15 +78,17 @@ class ScreenLogicProtocol(asyncio.Protocol):
 
     def data_received(self, data: bytes) -> None:
         """Called with data is received."""
+        _LOGGER.debug(f"{len(data)} bytes received.")
 
-        def complete_messages(data: bytes) -> Tuple[int, int, bytes]:
-            """Collects all data received and only passes on complete ScreenLogic messages."""
+        def complete_messages(data: bytes) -> List[Tuple[int, int, bytes]]:
+            """Return only complete ScreenLogic messages."""
 
-            # Some pool configurations can require SL messages larger than comes through in a
-            # single call to data_received(), so lets wait until we have at least enough data
-            # to make a complete message before we process and pass it on. Conversely,
-            # multiple SL messages may come in a single call to data_received() so we collect
-            # all complete messages before sending on.
+            # Some pool configurations can require SL messages larger than can
+            # come through in a single call to data_received(), so lets wait until
+            # we have at least enough data to make a complete message before we
+            # process and pass it on. Conversely, multiple SL messages may come in
+            # a single call to data_received() so we collect all complete messages
+            # before sending on.
 
             self._buff.extend(data)
             complete = []
@@ -88,39 +123,108 @@ class ScreenLogicProtocol(asyncio.Protocol):
                     message,
                 )
                 # Unsolicited message received. See if there's a callback registered
-                # for the message code and call it.
+                # for the message code and create a task for it.
                 if messageCode in self._callbacks:
-                    callback, target_data = self._callbacks[messageCode]
-                    callback(messageCode, message, target_data)
+                    handler, args = self._callbacks[messageCode]
+                    _LOGGER.debug(f"Calling {handler}")
+                    self._loop.create_task(handler(message, *args))
 
     def connection_lost(self, exc) -> None:
+        """Called when connection is closed/lost."""
+        self._connected = False
         _LOGGER.debug("Connection closed")
-        self.connected = False
         if self._connection_lost_callback is not None:
             self._connection_lost_callback()
 
     def register_async_message_callback(
         self,
         messageCode,
-        callback: Callable[[int, bytes, dict], None],
-        target_data=None,
-    ):
-        """Registers a callback function to call for the specified unhandled message code."""
-        self._callbacks[messageCode] = (callback, target_data)
+        handler: Callable[[bytes, any], Awaitable[any]],
+        *args,
+    ) -> None:
+        """
+        Register callback for async ScreenLogic message.
+
+        Registers an async callback function to call for the specified message code.
+        Callback will be scheduled to run with loop.create_task()
+        """
+        _LOGGER.debug(
+            f"Registering async handler {handler} for message code {messageCode}"
+        )
+        self._callbacks[messageCode] = (handler, args)
+
+    def remove_async_message_callback(self, messageCode) -> bool:
+        """Remove callback for message code."""
+        return True if self._callbacks.pop(messageCode, None) else False
+
+    def remove_all_async_message_callbacks(self) -> None:
+        """Remove all message callbacks."""
+        self._callbacks.clear()
 
     def requests_pending(self) -> bool:
+        """Return if requests are pending."""
         return not self._futures.all_done()
 
+    def _call_keepalive(self) -> None:
+        """Schedule keepalive callback."""
+        _LOGGER.debug("Creating keepalive task")
+        task = self._loop.create_task(self._keepalive_awaitable())
+        _LOGGER.debug(f"keepalive task {task} created")
+
+    def _set_keepalive(self) -> None:
+        """Call keepalive scheduler after set delay."""
+        if self._stop_keepalive:
+            _LOGGER.debug("Killing current keepalive")
+            self._stop_keepalive()
+            self._stop_keepalive = None
+
+        handle: asyncio.TimerHandle
+
+        _LOGGER.debug("Setting keepalive call_later")
+        handle = self._loop.call_later(self._keepalive_interval, self._call_keepalive)
+
+        def _stop():
+            """Stop current keepalive timer."""
+            if handle:
+                _LOGGER.debug(f"Canceling call_later {handle}")
+                handle.cancel()
+
+        _LOGGER.debug("Assigning stop_keepalilve callback")
+        self._stop_keepalive = _stop
+
+    def enable_keepalive(
+        self,
+        keepalive_awaitable: Callable[[any, any], Awaitable[any]],
+        keepalive_interval: int,
+    ) -> None:
+        """Enable connection keepalive."""
+        _LOGGER.debug("Enabling keepalive")
+        self._keepalive_awaitable = keepalive_awaitable
+        self._keepalive_interval = keepalive_interval
+        self._set_keepalive()
+
+    def disable_keepalive(self) -> None:
+        """Disable connection keepalive"""
+        _LOGGER.debug("Disabling keepalive")
+        self._keepalive_awaitable = None
+        if self._stop_keepalive:
+            self._stop_keepalive()
+            self._stop_keepalive = None
+
     class FutureManager:
+        """Class to manage responses for pending ScreenLogic requests."""
+
         def __init__(self, loop: asyncio.AbstractEventLoop) -> None:
             self._collection = {}
             self.loop = loop
 
         def create(self, msgID) -> asyncio.Future:
+            """Create future for response."""
             self._collection[msgID] = self.loop.create_future()
             return self._collection[msgID]
 
         def try_get(self, msgID) -> asyncio.Future:
+            """Get response future for message ID."""
             fut: asyncio.Future
             if (fut := self._collection.pop(msgID, None)) is not None:
                 if not fut.cancelled():
@@ -128,6 +232,7 @@ class ScreenLogicProtocol(asyncio.Protocol):
             return None
 
         def mark_done(self, msgID, result=True) -> bool:
+            """Mark future done and add response."""
             if (fut := self.try_get(msgID)) is not None:
                 try:
                     fut.set_result(result)
@@ -139,6 +244,7 @@ class ScreenLogicProtocol(asyncio.Protocol):
             return False
 
         def all_done(self) -> bool:
+            """Return if outstanding still futures exist."""
             fut: asyncio.Future
             for fut in self._collection.values():
                 if not fut.done():

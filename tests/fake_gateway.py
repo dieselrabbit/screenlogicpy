@@ -50,7 +50,9 @@ class FakeScreenLogicTCPProtocol(asyncio.Protocol):
         ):
             self._connection_stage = CONNECTION_STAGE.CHALLENGE
             return makeMessage(
-                messageID, CODE.CHALLENGE_ANSWER, encodeMessageString(FAKE_GATEWAY_MAC)
+                messageID,
+                CODE.CHALLENGE_QUERY + 1,
+                encodeMessageString(FAKE_GATEWAY_MAC),
             )
 
         if (
@@ -58,7 +60,7 @@ class FakeScreenLogicTCPProtocol(asyncio.Protocol):
             and self._connection_stage == CONNECTION_STAGE.CHALLENGE
         ):
             self._connection_stage = CONNECTION_STAGE.LOGIN
-            return makeMessage(messageID, CODE.LOCALLOGIN_ANSWER, b"")
+            return makeMessage(messageID, CODE.LOCALLOGIN_QUERY + 1, b"")
 
         if (
             self._connection_stage == CONNECTION_STAGE.LOGIN

@@ -1,0 +1,13 @@
+
+PC Logon
+
+03 00|1b 00|4c 00|00 00|5c 01 00 00|00 00 00 00|0c 00 00 00|4c 6f 63 61 6c 20 43 6f 6e 66 69 67|10 00 00 00|48 9e 60 3a c3 1d b9 b1 0c c1 4a 37 50 97 a8 22|02 00 00 00|11 00 00 00|XX XX 2d XX XX 2d XX XX 2d XX XX 2d XX XX 2d XX XX 00 00 00|00 00 00 00
+msgID|msgCD|msgLen     |schma      |cnTyp      |cvLen      |cv                                 |pwLen      |pw                                             |pid        |scrMAClen  |srcMAC                                                     |?
+3    |27   |76         |348        |0          |12         |L  o  c  a  l     C  o  n  f  i  g |16         |H     `  :                                     |2          |17         |X  X  -  X  X  -  X  X  -  X  X  -  X  X  -  X  X          |0
+
+
+Mobile Logon
+
+00 00 1b 00 2c 00 00 00 5c 01 00 00 00 00 00 00 07 00 00 00 41 6e 64 72 6f 69 64 00 10 00 00 00 48 9e 60 3a c3 1d b9 b1 0c c1 4a 37 50 97 a8 22 02 00 00 00
+msgID|msgCD|msgLen     |schma      |cnTyp      |cvLen      |cv                     |pwLen      |pw                                             |pid        
+0    |27   |44         |348        |0          |7          |A  n  d  r  o  i  d    |16         |                                               |2          
