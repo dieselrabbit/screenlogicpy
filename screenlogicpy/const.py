@@ -294,7 +294,7 @@ class CIRCUIT_FUNCTION:
         MAGICSTREAM,
     }
 
-    GROUP_LIGHTING = {
+    GROUP_LIGHTS_ALL = {
         *GROUP_LIGHTS_BASIC,
         *GROUP_LIGHTS_COLOR,
     }
