@@ -508,6 +508,15 @@ class ScreenLogicGateway:
             raise ValueError(f"Invalid PH Set point: {ph_setpoint}")
         if not self._is_valid_orp_setpoint(orp_setpoint):
             raise ValueError(f"Invalid ORP Set point: {orp_setpoint}")
+        if not (
+            ph_setpoint
+            and orp_setpoint
+            and calcium_harness
+            and total_alkalinity
+            and cya
+            and salt_tds_ppm
+        ):
+            raise KeyError("Unable to reference existing omitted chemistry values.")
         if calcium_harness < 0 or total_alkalinity < 0 or cya < 0 or salt_tds_ppm < 0:
             raise ValueError("Invalid Chemistry setting.")
 
