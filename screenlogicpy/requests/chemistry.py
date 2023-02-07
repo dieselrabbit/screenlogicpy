@@ -48,6 +48,7 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
         "name": "Current pH",
         "value": (pH / 100),
         "unit": UNIT.PH,
+        "state_type": STATE_TYPE.MEASUREMENT,
     }
 
     orp, offset = getSome(">H", buff, offset)  # 7
@@ -55,6 +56,7 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
         "name": "Current ORP",
         "value": orp,
         "unit": UNIT.MILLIVOLT,
+        "state_type": STATE_TYPE.MEASUREMENT,
     }
 
     pHSetpoint, offset = getSome(">H", buff, offset)  # 9
@@ -111,12 +113,14 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
     chemistry["ph_supply_level"] = {
         "name": "pH Supply Level",
         "value": pHSupplyLevel,
+        "state_type": STATE_TYPE.MEASUREMENT,
     }
 
     orpSupplyLevel, offset = getSome("B", buff, offset)  # 26 (21)
     chemistry["orp_supply_level"] = {
         "name": "ORP Supply Level",
         "value": orpSupplyLevel,
+        "state_type": STATE_TYPE.MEASUREMENT,
     }
 
     saturation, offset = getSome("B", buff, offset)  # 27
@@ -126,6 +130,7 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
         if is_set(saturation, 0x80)
         else saturation / 100,
         "unit": UNIT.SATURATION_INDEX,
+        "state_type": STATE_TYPE.MEASUREMENT,
     }
 
     cal, offset = getSome(">H", buff, offset)  # 28
@@ -168,6 +173,7 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
         "value": waterTemp,
         "unit": temperature_unit,
         "device_type": DEVICE_TYPE.TEMPERATURE,
+        "state_type": STATE_TYPE.MEASUREMENT,
     }
 
     alerts = chemistry.setdefault(DATA.KEY_ALERTS, {})

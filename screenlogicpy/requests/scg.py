@@ -1,6 +1,6 @@
 import struct
 
-from ..const import CODE, DATA, UNIT
+from ..const import CODE, DATA, STATE_TYPE, UNIT
 from .protocol import ScreenLogicProtocol
 from .request import async_make_request
 from .utility import getSome
@@ -45,6 +45,7 @@ def decode_scg_config(buff: bytes, data: dict) -> None:
         "name": "SCG Salt",
         "value": (salt * 50),
         "unit": UNIT.PARTS_PER_MILLION,
+        "state_type": STATE_TYPE.MEASUREMENT,
     }
 
     flags, offset = getSome("I", buff, offset)  # 20

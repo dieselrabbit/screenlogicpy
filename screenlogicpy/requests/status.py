@@ -7,6 +7,7 @@ from ..const import (
     DATA,
     DEVICE_TYPE,
     ON_OFF,
+    STATE_TYPE,
     UNIT,
 )
 from .protocol import ScreenLogicProtocol
@@ -60,6 +61,7 @@ def decode_pool_status(buff: bytes, data: dict) -> None:
         "value": airTemp,
         "unit": temperature_unit,
         "device_type": DEVICE_TYPE.TEMPERATURE,
+        "state_type": STATE_TYPE.MEASUREMENT,
     }
 
     bodiesCount, offset = getSome("I", buff, offset)  # 16
@@ -89,6 +91,7 @@ def decode_pool_status(buff: bytes, data: dict) -> None:
             "value": lastTemp,
             "unit": temperature_unit,
             "device_type": DEVICE_TYPE.TEMPERATURE,
+            "state_type": STATE_TYPE.MEASUREMENT,
         }
 
         heatStatus, offset = getSome("i", buff, offset)
@@ -151,6 +154,7 @@ def decode_pool_status(buff: bytes, data: dict) -> None:
         "name": "pH",
         "value": (pH / 100),
         "unit": UNIT.PH,
+        "state_type": STATE_TYPE.MEASUREMENT,
     }
 
     orp, offset = getSome("i", buff, offset)
@@ -158,6 +162,7 @@ def decode_pool_status(buff: bytes, data: dict) -> None:
         "name": "ORP",
         "value": orp,
         "unit": UNIT.MILLIVOLT,
+        "state_type": STATE_TYPE.MEASUREMENT,
     }
 
     saturation, offset = getSome("i", buff, offset)
@@ -165,6 +170,7 @@ def decode_pool_status(buff: bytes, data: dict) -> None:
         "name": "Saturation Index",
         "value": (saturation / 100),
         "unit": UNIT.SATURATION_INDEX,
+        "state_type": STATE_TYPE.MEASUREMENT,
     }
 
     saltPPM, offset = getSome("i", buff, offset)
@@ -172,18 +178,21 @@ def decode_pool_status(buff: bytes, data: dict) -> None:
         "name": "Salt",
         "value": (saltPPM * 50),
         "unit": UNIT.PARTS_PER_MILLION,
+        "state_type": STATE_TYPE.MEASUREMENT,
     }
 
     pHTank, offset = getSome("i", buff, offset)
     sensors["ph_supply_level"] = {
         "name": "pH Supply Level",
         "value": pHTank,
+        "state_type": STATE_TYPE.MEASUREMENT,
     }
 
     orpTank, offset = getSome("i", buff, offset)
     sensors["orp_supply_level"] = {
         "name": "ORP Supply Level",
         "value": orpTank,
+        "state_type": STATE_TYPE.MEASUREMENT,
     }
 
     alarm, offset = getSome("i", buff, offset)
