@@ -387,6 +387,186 @@ class ScreenLogicGateway:
             self._protocol, message_code, message, self._max_retries
         )
 
+    def get_data(self) -> dict:
+        """Return the data."""
+        return self._data
+
+    def get_debug(self) -> dict:
+        """Return the debug last-received data."""
+        return self._last
+
+    async def async_set_circuit(self, circuitID: int, circuitState: int):
+        """Set the circuit state for the specified circuit."""
+        if not self._is_valid_circuit(circuitID):
+            raise ValueError(f"Invalid circuitID: {circuitID}")
+        if not self._is_valid_circuit_state(circuitState):
+            raise ValueError(f"Invalid circuitState: {circuitState}")
+
+        if await self.async_connect():
+            return await async_request_pool_button_press(
+                self._protocol, circuitID, circuitState
+            )
+        return False
+
+    async def async_set_heat_temp(self, body: int, temp: int):
+        """Set the target temperature for the specified body."""
+        if not self._is_valid_body(body):
+            raise ValueError(f"Invalid body: {body}")
+        if not self._is_valid_heattemp(body, temp):
+            raise ValueError(f"Invalid temp ({temp}) for body ({body})")
+
+        if await self.async_connect():
+            return await async_request_set_heat_setpoint(self._protocol, body, temp)
+        return False
+
+    async def async_set_heat_mode(self, body: int, mode: int):
+        """Set the heating mode for the specified body."""
+        if not self._is_valid_body(body):
+            raise ValueError(f"Invalid body: {body}")
+        if not self._is_valid_heatmode(mode):
+            raise ValueError(f"Invalid mode: {mode}")
+
+        if await self.async_connect():
+            return await async_request_set_heat_mode(self._protocol, body, mode)
+        return False
+
+    async def async_set_color_lights(self, light_command: int):
+        """Set the light show mode for all capable lights."""
+        if not self._is_valid_color_mode(light_command):
+            raise ValueError(f"Invalid light_command: {light_command}")
+
+        if await self.async_connect():
+            return await async_request_pool_lights_command(
+                self._protocol, light_command
+            )
+        return False
+
+    async def async_set_scg_config(
+        self, *, pool_output: int = None, spa_output: int = None
+    ):
+        """Set the salt-chlorine-generator output for both pool and spa."""
+        if not (pool_output or spa_output):
+            raise ValueError("No SCG values to set")
+
+        def current(k):
+            return self._current_data_value(DATA.KEY_SCG, k)
+
+        pool_output = current("scg_level1") if pool_output is None else pool_output
+        spa_output = current("scg_level2") if spa_output is None else spa_output
+
+        if not self._is_valid_scg_value(pool_output, BODY_TYPE.POOL):
+            raise ValueError(f"Invalid pool_output: {pool_output}")
+        if not self._is_valid_scg_value(spa_output, BODY_TYPE.SPA):
+            raise ValueError(f"Invalid spa_output: {spa_output}")
+
+        if await self.async_connect():
+            return await async_request_set_scg_config(
+                self._protocol, pool_output, spa_output
+            )
+        return False
+
+    async def async_set_chem_data(
+        self,
+        *,
+        ph_setpoint: float = None,
+        orp_setpoint: int = None,
+        calcium_harness: int = None,
+        total_alkalinity: int = None,
+        cya: int = None,
+        salt_tds_ppm: int = None,
+    ):
+        """Set configurable chemistry values."""
+        if not (
+            ph_setpoint
+            or orp_setpoint
+            or calcium_harness
+            or total_alkalinity
+            or cya
+            or salt_tds_ppm
+        ):
+            raise ValueError("No Chemistry values to set")
+
+        def current(k):
+            return self._current_data_value(DATA.KEY_CHEMISTRY, k)
+
+        ph_setpoint = current("ph_setpoint") if ph_setpoint is None else ph_setpoint
+        orp_setpoint = current("orp_setpoint") if orp_setpoint is None else orp_setpoint
+        calcium_harness = (
+            current("calcium_harness") if calcium_harness is None else calcium_harness
+        )
+        total_alkalinity = (
+            current("total_alkalinity")
+            if total_alkalinity is None
+            else total_alkalinity
+        )
+        cya = current("cya") if cya is None else cya
+        salt_tds_ppm = current("salt_tds_ppm") if salt_tds_ppm is None else salt_tds_ppm
+
+        if self._is_valid_ph_setpoint(ph_setpoint):
+            ph_setpoint = int(ph_setpoint * 100)
+        else:
+            raise ValueError(f"Invalid PH Set point: {ph_setpoint}")
+        if not self._is_valid_orp_setpoint(orp_setpoint):
+            raise ValueError(f"Invalid ORP Set point: {orp_setpoint}")
+        if calcium_harness < 0 or total_alkalinity < 0 or cya < 0 or salt_tds_ppm < 0:
+            raise ValueError("Invalid Chemistry setting.")
+
+        if await self.async_connect():
+            return await async_request_set_chem_data(
+                self._protocol,
+                ph_setpoint,
+                orp_setpoint,
+                calcium_harness,
+                total_alkalinity,
+                cya,
+                salt_tds_ppm,
+            )
+        return False
+
+    async def async_subscribe_client(
+        self, callback: Callable[..., any], code: int
+    ) -> Callable:
+        """
+        Subscribe client listener to message code.
+
+        Subscribe to push messaging from the ScreenLogic protocol adapter and register a
+        callback method to call when a message with the specified message code is received.
+
+        Messages with known codes will be processed to update gateway data before
+        callback method is called.
+        """
+        return await self._client_manager.async_subscribe(callback, code)
+
+    def register_async_message_handler(
+        self, message_code: int, handler: Callable[[bytes, any], Awaitable[None]], *argv
+    ):
+        """
+        Register handler for message code.
+
+        Registers an async function to call when a message with the specified message_code is received.
+        Only one handler can be registered per message_code. Subsequent registrations will override
+        the previous registration.
+        """
+        if not self._protocol:
+            raise ScreenLogicError(
+                "Not connected to ScreenLogic gateway. Must connect to gateway before registering handler."
+            )
+        self._protocol.register_async_message_callback(message_code, handler, *argv)
+
+    def remove_async_message_handler(self, message_code: int):
+        """Remove handler for message code."""
+        if self._protocol:
+            self._protocol.remove_async_message_callback(message_code)
+
+    async def async_send_message(self, message_code: int, message: bytes = b""):
+        """Send a message to the ScreenLogic protocol adapter."""
+        if not self.is_connected:
+            raise ScreenLogicWarning(
+                "Not connected to protocol adapter. send_message failed."
+            )
+        _LOGGER.debug(f"User requesting {message_code}")
+        return await async_make_request(self._protocol, message_code, message)
+
     def _common_connection_closed_callback(self):
         """Perform any needed cleanup."""
         # Future internal cleanup tasks
@@ -447,3 +627,10 @@ class ScreenLogicGateway:
                 if circuit["function"] in CIRCUIT_FUNCTION.GROUP_LIGHTS_COLOR:
                     return True
         return False
+
+    def _current_data_value(self, sec_key: str, val_key: str) -> str | int | float:
+        """Return current data value."""
+        if section := self._data.get(sec_key):
+            if sensor := section.get(val_key):
+                return sensor.get("value")
+        return None
