@@ -65,7 +65,7 @@ async def test_gateway_late_connect(MockProtocolAdapter):
 
 @pytest.mark.asyncio
 async def test_async_set_circuit(
-    event_loop: asyncio.AbstractEventLoop, MockConnectedGateway
+    event_loop: asyncio.AbstractEventLoop, MockConnectedGateway: ScreenLogicGateway
 ):
     circuit_id = 505
     circuit_state = 1
@@ -86,7 +86,7 @@ async def test_async_set_circuit(
 
 @pytest.mark.asyncio
 async def test_async_set_heat_temp(
-    event_loop: asyncio.AbstractEventLoop, MockConnectedGateway
+    event_loop: asyncio.AbstractEventLoop, MockConnectedGateway: ScreenLogicGateway
 ):
     body = 0
     temp = 88
@@ -105,7 +105,7 @@ async def test_async_set_heat_temp(
 
 @pytest.mark.asyncio
 async def test_async_set_heat_mode(
-    event_loop: asyncio.AbstractEventLoop, MockConnectedGateway
+    event_loop: asyncio.AbstractEventLoop, MockConnectedGateway: ScreenLogicGateway
 ):
     body = 0
     mode = 3
@@ -124,7 +124,7 @@ async def test_async_set_heat_mode(
 
 @pytest.mark.asyncio
 async def test_async_set_color_lights(
-    event_loop: asyncio.AbstractEventLoop, MockConnectedGateway
+    event_loop: asyncio.AbstractEventLoop, MockConnectedGateway: ScreenLogicGateway
 ):
     mode = 7
     result = event_loop.create_future()
@@ -142,10 +142,10 @@ async def test_async_set_color_lights(
 
 @pytest.mark.asyncio
 async def test_async_set_scg_config(
-    event_loop: asyncio.AbstractEventLoop, MockConnectedGateway
+    event_loop: asyncio.AbstractEventLoop, MockConnectedGateway: ScreenLogicGateway
 ):
-    pool_output = 50
-    spa_output = 0
+    pool_pct = 50
+    spa_pct = 0
     result = event_loop.create_future()
     result.set_result(b"")
     with patch(
@@ -153,9 +153,35 @@ async def test_async_set_scg_config(
         return_value=result,
     ) as mockRequest:
         gateway = MockConnectedGateway
-        assert await gateway.async_set_scg_config(pool_output, spa_output)
+        assert await gateway.async_set_scg_config(
+            pool_output=pool_pct, spa_output=spa_pct
+        )
         await gateway.async_disconnect()
         assert mockRequest.call_args.args[0] == 12576
         assert mockRequest.call_args.args[1] == struct.pack(
-            "<IIIII", 0, pool_output, spa_output, 0, 0
+            "<IIIII", 0, pool_pct, spa_pct, 0, 0
+        )
+
+
+@pytest.mark.asyncio
+async def test_async_set_chemistry(
+    event_loop: asyncio.AbstractEventLoop, MockConnectedGateway: ScreenLogicGateway
+):
+    orp_sp = 700
+    ph_sp = 7.5
+    alk = 35
+    result = event_loop.create_future()
+    result.set_result(b"")
+    with patch(
+        "screenlogicpy.requests.chemistry.ScreenLogicProtocol.await_send_message",
+        return_value=result,
+    ) as mockRequest:
+        gateway = MockConnectedGateway
+        assert await gateway.async_set_chem_data(
+            orp_setpoint=orp_sp, ph_setpoint=ph_sp, total_alkalinity=alk
+        )
+        await gateway.async_disconnect()
+        assert mockRequest.call_args.args[0] == 12594
+        assert mockRequest.call_args.args[1] == struct.pack(
+            "<7I", 0, int(ph_sp * 100), orp_sp, 740, alk, 36, 1000
         )

@@ -192,23 +192,14 @@ async def cli(cli_args):
             print("No new SCG values. Nothing to do.")
             return 65
 
-        scg_data = gateway.get_data()[DATA.KEY_SCG]
         try:
-            scg_1 = (
-                scg_data["scg_level1"]["value"]
-                if args.scg_pool == "*"
-                else int(args.scg_pool)
-            )
-            scg_2 = (
-                scg_data["scg_level2"]["value"]
-                if args.scg_spa == "*"
-                else int(args.scg_spa)
-            )
+            scg_1 = None if args.scg_pool == "*" else int(args.scg_pool)
+            scg_2 = None if args.scg_spa == "*" else int(args.scg_spa)
         except ValueError:
             print("Invalid SCG value")
             return 66
 
-        if await gateway.async_set_scg_config(scg_1, scg_2):
+        if await gateway.async_set_scg_config(pool_output=scg_1, spa_output=scg_2):
             await gateway.async_update()
             new_data = gateway.get_data()
             print(
@@ -223,28 +214,14 @@ async def cli(cli_args):
             print("No new setpoint values. Nothing to do.")
             return 129
 
-        chem_data = gateway.get_data()[DATA.KEY_CHEMISTRY]
         try:
-            ph = (
-                chem_data["ph_setpoint"]["value"]
-                if args.ph_setpoint == "*"
-                else float(args.ph_setpoint)
-            )
-            orp = (
-                chem_data["orp_setpoint"]["value"]
-                if args.orp_setpoint == "*"
-                else int(args.orp_setpoint)
-            )
+            ph = None if args.ph_setpoint == "*" else float(args.ph_setpoint)
+            orp = None if args.orp_setpoint == "*" else int(args.orp_setpoint)
         except ValueError:
             print("Invalid Chemistry Setpoint value")
             return 130
 
-        ch = chem_data["calcium_harness"]["value"]
-        ta = chem_data["total_alkalinity"]["value"]
-        ca = chem_data["cya"]["value"]
-        sa = chem_data["salt_tds_ppm"]["value"]
-
-        if await gateway.async_set_chem_data(ph, orp, ch, ta, ca, sa):
+        if await gateway.async_set_chem_data(ph_setpoint=ph, orp_setpoint=orp):
             await asyncio.sleep(3)
             await gateway.async_update()
             new_data = gateway.get_data()
