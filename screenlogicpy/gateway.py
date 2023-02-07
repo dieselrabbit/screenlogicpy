@@ -13,6 +13,8 @@ from .const import (
     RANGE,
     SCG,
     ScreenLogicError,
+    ScreenLogicKeyError,
+    ScreenLogicValueRangeError,
     ScreenLogicWarning,
 )
 from .requests import (
@@ -146,7 +148,7 @@ class ScreenLogicGateway:
 
         if not force:
             while self._protocol.requests_pending():
-                await asyncio.sleep(1)
+                await asyncio.sleep(0)
 
         if self._transport and not self._transport.is_closing():
             self._transport.close()
@@ -398,9 +400,9 @@ class ScreenLogicGateway:
     async def async_set_circuit(self, circuitID: int, circuitState: int):
         """Set the circuit state for the specified circuit."""
         if not self._is_valid_circuit(circuitID):
-            raise ValueError(f"Invalid circuitID: {circuitID}")
+            raise ScreenLogicValueRangeError(f"Invalid circuitID: {circuitID}")
         if not self._is_valid_circuit_state(circuitState):
-            raise ValueError(f"Invalid circuitState: {circuitState}")
+            raise ScreenLogicValueRangeError(f"Invalid circuitState: {circuitState}")
 
         if await self.async_connect():
             return await async_request_pool_button_press(
@@ -411,9 +413,9 @@ class ScreenLogicGateway:
     async def async_set_heat_temp(self, body: int, temp: int):
         """Set the target temperature for the specified body."""
         if not self._is_valid_body(body):
-            raise ValueError(f"Invalid body: {body}")
+            raise ScreenLogicValueRangeError(f"Invalid body: {body}")
         if not self._is_valid_heattemp(body, temp):
-            raise ValueError(f"Invalid temp ({temp}) for body ({body})")
+            raise ScreenLogicValueRangeError(f"Invalid temp ({temp}) for body ({body})")
 
         if await self.async_connect():
             return await async_request_set_heat_setpoint(self._protocol, body, temp)
@@ -422,9 +424,9 @@ class ScreenLogicGateway:
     async def async_set_heat_mode(self, body: int, mode: int):
         """Set the heating mode for the specified body."""
         if not self._is_valid_body(body):
-            raise ValueError(f"Invalid body: {body}")
+            raise ScreenLogicValueRangeError(f"Invalid body: {body}")
         if not self._is_valid_heatmode(mode):
-            raise ValueError(f"Invalid mode: {mode}")
+            raise ScreenLogicValueRangeError(f"Invalid mode: {mode}")
 
         if await self.async_connect():
             return await async_request_set_heat_mode(self._protocol, body, mode)
@@ -433,7 +435,7 @@ class ScreenLogicGateway:
     async def async_set_color_lights(self, light_command: int):
         """Set the light show mode for all capable lights."""
         if not self._is_valid_color_mode(light_command):
-            raise ValueError(f"Invalid light_command: {light_command}")
+            raise ScreenLogicValueRangeError(f"Invalid light_command: {light_command}")
 
         if await self.async_connect():
             return await async_request_pool_lights_command(
@@ -446,7 +448,7 @@ class ScreenLogicGateway:
     ):
         """Set the salt-chlorine-generator output for both pool and spa."""
         if not (pool_output or spa_output):
-            raise ValueError("No SCG values to set")
+            raise ScreenLogicValueRangeError("No SCG values to set")
 
         def current(k):
             return self._current_data_value(DATA.KEY_SCG, k)
@@ -455,9 +457,9 @@ class ScreenLogicGateway:
         spa_output = current("scg_level2") if spa_output is None else spa_output
 
         if not self._is_valid_scg_value(pool_output, BODY_TYPE.POOL):
-            raise ValueError(f"Invalid pool_output: {pool_output}")
+            raise ScreenLogicValueRangeError(f"Invalid pool_output: {pool_output}")
         if not self._is_valid_scg_value(spa_output, BODY_TYPE.SPA):
-            raise ValueError(f"Invalid spa_output: {spa_output}")
+            raise ScreenLogicValueRangeError(f"Invalid spa_output: {spa_output}")
 
         if await self.async_connect():
             return await async_request_set_scg_config(
@@ -484,7 +486,7 @@ class ScreenLogicGateway:
             or cya
             or salt_tds_ppm
         ):
-            raise ValueError("No Chemistry values to set")
+            raise ScreenLogicValueRangeError("No Chemistry values to set")
 
         def current(k):
             return self._current_data_value(DATA.KEY_CHEMISTRY, k)
@@ -505,9 +507,9 @@ class ScreenLogicGateway:
         if self._is_valid_ph_setpoint(ph_setpoint):
             ph_setpoint = int(ph_setpoint * 100)
         else:
-            raise ValueError(f"Invalid PH Set point: {ph_setpoint}")
+            raise ScreenLogicValueRangeError(f"Invalid PH Set point: {ph_setpoint}")
         if not self._is_valid_orp_setpoint(orp_setpoint):
-            raise ValueError(f"Invalid ORP Set point: {orp_setpoint}")
+            raise ScreenLogicValueRangeError(f"Invalid ORP Set point: {orp_setpoint}")
         if not (
             ph_setpoint
             and orp_setpoint
@@ -516,9 +518,11 @@ class ScreenLogicGateway:
             and cya
             and salt_tds_ppm
         ):
-            raise KeyError("Unable to reference existing omitted chemistry values.")
+            raise ScreenLogicKeyError(
+                "Unable to reference existing omitted chemistry values."
+            )
         if calcium_harness < 0 or total_alkalinity < 0 or cya < 0 or salt_tds_ppm < 0:
-            raise ValueError("Invalid Chemistry setting.")
+            raise ScreenLogicValueRangeError("Invalid Chemistry setting.")
 
         if await self.async_connect():
             return await async_request_set_chem_data(
