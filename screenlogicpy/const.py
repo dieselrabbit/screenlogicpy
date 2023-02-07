@@ -15,11 +15,19 @@ SL_GATEWAY_NAME = "name"
 
 
 class ScreenLogicError(Exception):
-    pass
+    """Generic ScreenLogic error."""
+
+
+class ScreenLogicKeyError(ScreenLogicError):
+    """Mapping key not found."""
+
+
+class ScreenLogicValueRangeError(ScreenLogicError):
+    """Inappropriate argument value (out of range)."""
 
 
 class ScreenLogicWarning(Exception):
-    pass
+    """Generic ScreenLogic warning."""
 
 
 class MESSAGE:
