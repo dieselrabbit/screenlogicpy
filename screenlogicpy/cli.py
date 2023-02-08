@@ -13,6 +13,7 @@ from screenlogicpy.const import (
     HEAT_MODE,
     ON_OFF,
     RANGE,
+    SCG,
     SL_GATEWAY_IP,
     SL_GATEWAY_NAME,
     SL_GATEWAY_PORT,
@@ -188,8 +189,13 @@ async def cli(cli_args):
         return 32
 
     async def async_set_scg_config():
-        if args.scg_pool == "*" and args.scg_spa == "*":
-            print("No new SCG values. Nothing to do.")
+        if (
+            args.scg_pool == "*"
+            and args.scg_spa == "*"
+            and args.scg_super == "*"
+            and args.scg_super_time == "*"
+        ):
+            print("No new SCG settings. Nothing to do.")
             return 65
 
         scg_data = gateway.get_data()[DATA.KEY_SCG]
@@ -204,16 +210,28 @@ async def cli(cli_args):
                 if args.scg_spa == "*"
                 else int(args.scg_spa)
             )
+            #  "scg_status" may be grater than 1 if there is an abnormal state with the chlorinator.
+            #  Attempt to retain it being on when setting the value.
+            cur_scg_sc = 1 if scg_data["scg_status"]["value"] > 0 else 0
+            scg_sc = cur_scg_sc if args.scg_super == "*" else int(args.scg_super)
+            scg_sc_time = (
+                scg_data["scg_super_chlor_timer"]["value"]
+                if args.scg_super_time == "*"
+                else int(args.scg_super_time)
+            )
         except ValueError:
             print("Invalid SCG value")
             return 66
 
-        if await gateway.async_set_scg_config(scg_1, scg_2):
+        if await gateway.async_set_scg_config(scg_1, scg_2, scg_sc, scg_sc_time):
+            await asyncio.sleep(3)
             await gateway.async_update()
             new_data = gateway.get_data()
             print(
                 vFormat(new_data[DATA.KEY_SCG]["scg_level1"]),
                 vFormat(new_data[DATA.KEY_SCG]["scg_level2"]),
+                vFormat(new_data[DATA.KEY_SCG]["scg_status"]),
+                vFormat(new_data[DATA.KEY_SCG]["scg_super_chlor_timer"]),
             )
             return 0
         return 64
@@ -382,7 +400,21 @@ async def cli(cli_args):
         type=str,
         metavar="SPA_PCT",
         default=None,
-        help="Chlorinator output for when system is in SPA mode. 0-20, or * to keep current value.",
+        help="Chlorinator output for when system is in SPA mode. 0-100, or * to keep current value.",
+    )
+    set_scg_config_parser.add_argument(
+        "scg_super",
+        type=str,
+        metavar="SUPER_CHLOR",
+        default="*",
+        help=f"Super chlorinate. One of {on_off_options}, or * to keep current value.",
+    )
+    set_scg_config_parser.add_argument(
+        "scg_super_time",
+        type=str,
+        metavar="SUPER_CHLOR_TIME",
+        default="*",
+        help=f"Super chlorinate timer in hours. 1-{SCG.MAX_SC_RUNTIME}, or * to keep current value.",
     )
     set_scg_config_parser.set_defaults(async_func=async_set_scg_config)
 

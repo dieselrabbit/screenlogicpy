@@ -163,7 +163,7 @@ class ScreenLogicGateway:
         """Set the circuit state for the specified circuit."""
         if not self._is_valid_circuit(circuitID):
             raise ValueError(f"Invalid circuitID: {circuitID}")
-        if not self._is_valid_circuit_state(circuitState):
+        if not self._is_valid_on_off_state(circuitState):
             raise ValueError(f"Invalid circuitState: {circuitState}")
 
         if await self.async_connect():
@@ -207,16 +207,22 @@ class ScreenLogicGateway:
                 return True
         return False
 
-    async def async_set_scg_config(self, pool_output: int, spa_output: int):
-        """Set the salt-chlorine-generator output for both pool and spa."""
+    async def async_set_scg_config(
+        self, pool_output: int, spa_output: int, sc_state: int = 0, sc_runtime: int = 0
+    ):
+        """Sets the salt-chlorine-generator output for both pool and spa."""
         if not self._is_valid_scg_value(pool_output, BODY_TYPE.POOL):
             raise ValueError(f"Invalid pool_output: {pool_output}")
         if not self._is_valid_scg_value(spa_output, BODY_TYPE.SPA):
             raise ValueError(f"Invalid spa_output: {spa_output}")
+        if not self._is_valid_on_off_state(sc_state):
+            raise ValueError(f"Invalid sc_state: {sc_state}")
+        if not self._is_valid_scg_sc_runtime(sc_runtime):
+            raise ValueError(f"Invalid sc_runtime: {sc_runtime}")
 
         if await self.async_connect():
             if await async_request_set_scg_config(
-                self._protocol, pool_output, spa_output
+                self._protocol, pool_output, spa_output, sc_state, sc_runtime
             ):
                 return True
         return False
@@ -365,8 +371,7 @@ class ScreenLogicGateway:
         """Validate circuit number."""
         return circuit in self._data[DATA.KEY_CIRCUITS]
 
-    def _is_valid_circuit_state(self, state):
-        """Validate circuit state number."""
+    def _is_valid_on_off_state(self, state):
         return state == 0 or state == 1
 
     def _is_valid_body(self, body):
@@ -390,6 +395,9 @@ class ScreenLogicGateway:
     def _is_valid_scg_value(self, scg_value, body_type):
         """Validate chlorinator value for body."""
         return 0 <= scg_value <= SCG.LIMIT_FOR_BODY[body_type]
+
+    def _is_valid_scg_sc_runtime(self, runtime):
+        return 0 <= runtime <= SCG.MAX_SC_RUNTIME
 
     def _is_valid_ph_setpoint(self, ph_setpoint: float):
         """Validate pH setpoint."""

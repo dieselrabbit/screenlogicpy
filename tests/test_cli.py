@@ -166,14 +166,15 @@ async def test_set_color_lights(MockProtocolAdapter, capsys, args, ret, expected
 @pytest.mark.parametrize(
     "args, ret, expected",
     [
-        ("set salt-generator 100 20", 0, "50 0"),
+        ("set salt-generator 100 20 1 0", 0, "50 0 1 0"),
         (
-            "-v set scg 20 0",
+            "-v set scg 20 0 1 0",
             0,
-            EXPECTED_VERBOSE_PREAMBLE + "Pool SCG Level: 50 Spa SCG Level: 0",
+            EXPECTED_VERBOSE_PREAMBLE
+            + "Pool SCG Level: 50 Spa SCG Level: 0 SCG Status: 1 SCG Super Chlorination Timer: 0",
         ),
-        ("set scg * *", 65, "No new SCG values. Nothing to do."),
-        ("set scg f *", 66, "Invalid SCG value"),
+        ("set scg * * * *", 65, "No new SCG settings. Nothing to do."),
+        ("set scg f * * g", 66, "Invalid SCG value"),
     ],
 )
 async def test_set_scg(MockProtocolAdapter, capsys, args, ret, expected):
