@@ -78,7 +78,7 @@ class ScreenLogicProtocol(asyncio.Protocol):
 
     def data_received(self, data: bytes) -> None:
         """Called with data is received."""
-        _LOGGER.debug(f"{len(data)} bytes received.")
+        _LOGGER.debug(f"{len(data)} bytes received: {data}")
 
         def complete_messages(data: bytes) -> List[Tuple[int, int, bytes]]:
             """Return only complete ScreenLogic messages."""

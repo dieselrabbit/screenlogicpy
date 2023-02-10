@@ -76,6 +76,9 @@ async def async_gateway_connect(
         raise ScreenLogicError("Error sending connect ping") from ex
 
     await asyncio.sleep(0.25)
+    if not protocol.is_connected:
+        raise ScreenLogicError("Host unexpectedly disconnected.")
+
     _LOGGER.debug("Sending challenge")
     request = protocol.await_send_message(CODE.CHALLENGE_QUERY)
 
