@@ -305,7 +305,7 @@ class INTERFACE_GROUP:
     POOL = 0
     SPA = 1
     FEATURES = 2
-    LIGHTS_SPECIAL = 3  # ?
+    LIGHTS_COLOR = 3  # ?
     LIGHTS = 4
     DONT_SHOW = 5
 
