@@ -78,7 +78,6 @@ class ScreenLogicProtocol(asyncio.Protocol):
 
     def data_received(self, data: bytes) -> None:
         """Called with data is received."""
-        _LOGGER.debug(f"{len(data)} bytes received: {data}")
 
         def complete_messages(data: bytes) -> List[Tuple[int, int, bytes]]:
             """Return only complete ScreenLogic messages."""
@@ -106,6 +105,7 @@ class ScreenLogicProtocol(asyncio.Protocol):
                 _LOGGER.debug(
                     f"Returning {len(complete)} messages with {len(self._buff)} bytes in the buffer"
                 )
+                _LOGGER.debug(f"Buffer: {self._buff}")
             return complete
 
         for messageID, messageCode, message in complete_messages(data):
