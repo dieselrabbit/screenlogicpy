@@ -15,6 +15,7 @@ from .const_data import (
     FAKE_GATEWAY_PORT,
     FAKE_GATEWAY_VERSION,
 )
+from .fake_gateway import fake_resp
 from screenlogicpy import ScreenLogicGateway
 
 
@@ -69,8 +70,10 @@ async def test_async_set_circuit(
 ):
     circuit_id = 505
     circuit_state = 1
+    button_code = 12530
+
     result = event_loop.create_future()
-    result.set_result(b"")
+    result.set_result(fake_resp(button_code))
     with patch(
         "screenlogicpy.requests.button.ScreenLogicProtocol.await_send_message",
         return_value=result,
@@ -78,7 +81,7 @@ async def test_async_set_circuit(
         gateway = MockConnectedGateway
         assert await gateway.async_set_circuit(circuit_id, circuit_state)
         await gateway.async_disconnect()
-        assert mockRequest.call_args.args[0] == 12530
+        assert mockRequest.call_args.args[0] == button_code
         assert mockRequest.call_args.args[1] == struct.pack(
             "<III", 0, circuit_id, circuit_state
         )
@@ -90,8 +93,10 @@ async def test_async_set_heat_temp(
 ):
     body = 0
     temp = 88
+    heat_temp_code = 12528
+
     result = event_loop.create_future()
-    result.set_result(b"")
+    result.set_result(fake_resp(heat_temp_code))
     with patch(
         "screenlogicpy.requests.heat.ScreenLogicProtocol.await_send_message",
         return_value=result,
@@ -99,7 +104,7 @@ async def test_async_set_heat_temp(
         gateway = MockConnectedGateway
         assert await gateway.async_set_heat_temp(body, temp)
         await gateway.async_disconnect()
-        assert mockRequest.call_args.args[0] == 12528
+        assert mockRequest.call_args.args[0] == heat_temp_code
         assert mockRequest.call_args.args[1] == struct.pack("<III", 0, body, temp)
 
 
@@ -109,8 +114,10 @@ async def test_async_set_heat_mode(
 ):
     body = 0
     mode = 3
+    heat_mode_code = 12538
+
     result = event_loop.create_future()
-    result.set_result(b"")
+    result.set_result(fake_resp(heat_mode_code))
     with patch(
         "screenlogicpy.requests.heat.ScreenLogicProtocol.await_send_message",
         return_value=result,
@@ -118,7 +125,7 @@ async def test_async_set_heat_mode(
         gateway = MockConnectedGateway
         assert await gateway.async_set_heat_mode(body, mode)
         await gateway.async_disconnect()
-        assert mockRequest.call_args.args[0] == 12538
+        assert mockRequest.call_args.args[0] == heat_mode_code
         assert mockRequest.call_args.args[1] == struct.pack("<III", 0, body, mode)
 
 
@@ -127,8 +134,10 @@ async def test_async_set_color_lights(
     event_loop: asyncio.AbstractEventLoop, MockConnectedGateway
 ):
     mode = 7
+    color_lights_code = 12556
+
     result = event_loop.create_future()
-    result.set_result(b"")
+    result.set_result(fake_resp(color_lights_code))
     with patch(
         "screenlogicpy.requests.lights.ScreenLogicProtocol.await_send_message",
         return_value=result,
@@ -136,7 +145,7 @@ async def test_async_set_color_lights(
         gateway = MockConnectedGateway
         assert await gateway.async_set_color_lights(mode)
         await gateway.async_disconnect()
-        assert mockRequest.call_args.args[0] == 12556
+        assert mockRequest.call_args.args[0] == color_lights_code
         assert mockRequest.call_args.args[1] == struct.pack("<II", 0, mode)
 
 
@@ -146,8 +155,10 @@ async def test_async_set_scg_config(
 ):
     pool_output = 50
     spa_output = 0
+    scg_code = 12576
+
     result = event_loop.create_future()
-    result.set_result(b"")
+    result.set_result(fake_resp(scg_code))
     with patch(
         "screenlogicpy.requests.heat.ScreenLogicProtocol.await_send_message",
         return_value=result,
@@ -155,7 +166,7 @@ async def test_async_set_scg_config(
         gateway = MockConnectedGateway
         assert await gateway.async_set_scg_config(pool_output, spa_output)
         await gateway.async_disconnect()
-        assert mockRequest.call_args.args[0] == 12576
+        assert mockRequest.call_args.args[0] == scg_code
         assert mockRequest.call_args.args[1] == struct.pack(
             "<IIIII", 0, pool_output, spa_output, 0, 0
         )

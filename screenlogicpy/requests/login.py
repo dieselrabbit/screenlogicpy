@@ -91,7 +91,8 @@ async def async_gateway_connect(
 
     if not request.cancelled():
         # mac address
-        return decodeMessageString(request.result())
+        _, _, respData = request.result()
+        return decodeMessageString(respData)
 
 
 async def async_gateway_login(protocol: ScreenLogicProtocol) -> bool:

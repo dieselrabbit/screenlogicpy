@@ -17,6 +17,10 @@ from tests.const_data import (
 )
 
 
+def fake_resp(req_code, resp_data=b""):
+    return 0, req_code + 1, resp_data
+
+
 class CONNECTION_STAGE:
     NO_CONNECTION = 0
     CONNECTSERVERHOST = 1

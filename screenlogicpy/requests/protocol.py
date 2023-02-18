@@ -6,7 +6,7 @@ import struct
 import time
 from typing import Awaitable, Callable, Tuple, List
 
-from ..const import CODE, MESSAGE, ScreenLogicError
+from ..const import MESSAGE, ScreenLogicError
 from .utility import makeMessage, takeMessage
 
 _LOGGER = logging.getLogger(__name__)
@@ -108,26 +108,19 @@ class ScreenLogicProtocol(asyncio.Protocol):
                 _LOGGER.debug(f"Buffer: {self._buff}")
             return complete
 
-        for messageID, messageCode, message in complete_messages(data):
+        for message in complete_messages(data):
 
-            if messageCode == CODE.UNKNOWN_ANSWER:
-                raise ScreenLogicError(f"Request explicitly rejected: {messageID}")
-
-            if self._futures.mark_done(messageID, message):
-                _LOGGER.debug("Received: %i, %i, %s", messageID, messageCode, message)
+            if self._futures.mark_done(message):
+                _LOGGER.debug("Received: %i, %i, %s", message)
             else:
-                _LOGGER.debug(
-                    "Received async message: %i, %i, %s",
-                    messageID,
-                    messageCode,
-                    message,
-                )
+                _LOGGER.debug("Received async message: %i, %i, %s", message)
                 # Unsolicited message received. See if there's a callback registered
                 # for the message code and create a task for it.
-                if messageCode in self._callbacks:
-                    handler, args = self._callbacks[messageCode]
+                _, msgCode, msgData = message
+                if msgCode in self._callbacks:
+                    handler, args = self._callbacks[msgCode]
                     _LOGGER.debug(f"Calling {handler}")
-                    self._loop.create_task(handler(message, *args))
+                    self._loop.create_task(handler(msgData, *args))
 
     def connection_lost(self, exc) -> None:
         """Called when connection is closed/lost."""
@@ -218,12 +211,12 @@ class ScreenLogicProtocol(asyncio.Protocol):
             self._collection = {}
             self.loop = loop
 
-        def create(self, msgID) -> asyncio.Future:
+        def create(self, msgID: int) -> asyncio.Future:
             """Create future for response."""
             self._collection[msgID] = self.loop.create_future()
             return self._collection[msgID]
 
-        def try_get(self, msgID) -> asyncio.Future:
+        def try_get(self, msgID: int) -> asyncio.Future:
             """Get response future for message ID."""
             fut: asyncio.Future
             if (fut := self._collection.pop(msgID, None)) is not None:
@@ -231,11 +224,12 @@ class ScreenLogicProtocol(asyncio.Protocol):
                     return fut
             return None
 
-        def mark_done(self, msgID, result=True) -> bool:
+        def mark_done(self, message: Tuple[int, int, bytes]) -> bool:
             """Mark future done and add response."""
+            msgID, _, _ = message
             if (fut := self.try_get(msgID)) is not None:
                 try:
-                    fut.set_result(result)
+                    fut.set_result(message)
                 except asyncio.exceptions.InvalidStateError as ise:
                     raise ScreenLogicError(
                         f"Attempted to set result on future {msgID} when result exists: {fut.result()}"
