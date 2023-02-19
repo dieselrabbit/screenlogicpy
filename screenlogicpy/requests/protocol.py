@@ -111,9 +111,9 @@ class ScreenLogicProtocol(asyncio.Protocol):
         for message in complete_messages(data):
 
             if self._futures.mark_done(message):
-                _LOGGER.debug("Received: %i, %i, %s", message)
+                _LOGGER.debug("Received: %i, %i, %s", *message)
             else:
-                _LOGGER.debug("Received async message: %i, %i, %s", message)
+                _LOGGER.debug("Received async message: %i, %i, %s", *message)
                 # Unsolicited message received. See if there's a callback registered
                 # for the message code and create a task for it.
                 _, msgCode, msgData = message
