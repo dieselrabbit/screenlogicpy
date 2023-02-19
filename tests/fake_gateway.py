@@ -1,5 +1,6 @@
 """ Fake ScreenLogic gateway """
 import asyncio
+import random
 import struct
 from typing import Tuple
 
@@ -17,8 +18,15 @@ from tests.const_data import (
 )
 
 
-def fake_resp(req_code, resp_data=b""):
+def expected_resp(req_code, resp_data=b""):
     return 0, req_code + 1, resp_data
+
+
+def error_resp(req_code):
+    if req_code == CODE.LOCALLOGIN_QUERY:
+        return 0, CODE.ERROR_LOGIN_REJECTED, b""
+    else:
+        return 0, CODE.ERROR_BAD_PARAMETER, b""
 
 
 class CONNECTION_STAGE:
@@ -47,7 +55,7 @@ class FakeScreenLogicTCPProtocol(asyncio.Protocol):
                 self._connection_stage = CONNECTION_STAGE.CONNECTSERVERHOST
                 return None
 
-        messageID, messageCode, message = takeMessage(data)
+        messageID, messageCode, _ = takeMessage(data)
         if (
             messageCode == CODE.CHALLENGE_QUERY
             and self._connection_stage == CONNECTION_STAGE.CONNECTSERVERHOST
@@ -75,6 +83,22 @@ class FakeScreenLogicTCPProtocol(asyncio.Protocol):
             )
 
         return None
+
+
+class FailingFakeScreenLogicTCPProtocol(FakeScreenLogicTCPProtocol):
+    def process_request(self, data):
+        fail = random.randint(0, 5)
+        if fail > 3:
+            messageID, messageCode, _ = takeMessage(data)
+            if fail == 4:
+                if messageCode == CODE.LOCALLOGIN_QUERY:
+                    return makeMessage(messageID, CODE.ERROR_LOGIN_REJECTED)
+                else:
+                    return makeMessage(messageID, CODE.ERROR_BAD_PARAMETER)
+            else:
+                return None
+        else:
+            return super().process_request(data)
 
 
 class FakeScreenLogicUDPProtocol(asyncio.DatagramProtocol):

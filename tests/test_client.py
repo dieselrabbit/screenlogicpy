@@ -15,7 +15,7 @@ from .const_data import (
     FAKE_CONNECT_INFO,
     FAKE_STATUS_RESPONSE,
 )
-from .fake_gateway import fake_resp
+from .fake_gateway import expected_resp
 
 
 @pytest.mark.asyncio()
@@ -37,7 +37,7 @@ async def test_sub_unsub(event_loop, MockProtocolAdapter):
         sub_code = 12522
 
         result: asyncio.Future = event_loop.create_future()
-        result.set_result(fake_resp(sub_code))
+        result.set_result(expected_resp(sub_code))
         with patch(
             "screenlogicpy.requests.client.ScreenLogicProtocol.await_send_message",
             return_value=result,
@@ -62,7 +62,7 @@ async def test_sub_unsub(event_loop, MockProtocolAdapter):
         unsub_code = 12524
 
         result2: asyncio.Future = event_loop.create_future()
-        result2.set_result(fake_resp(unsub_code))
+        result2.set_result(expected_resp(unsub_code))
         with patch(
             "screenlogicpy.requests.client.ScreenLogicProtocol.await_send_message",
             return_value=result2,
