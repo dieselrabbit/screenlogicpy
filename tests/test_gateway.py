@@ -14,11 +14,12 @@ from tests.const_data import (
     FAKE_GATEWAY_NAME,
     FAKE_GATEWAY_PORT,
     FAKE_GATEWAY_VERSION,
+    FAKE_STATUS_RESPONSE,
 )
 from tests.fake_gateway import error_resp, expected_resp
 
 from screenlogicpy import ScreenLogicGateway
-from screenlogicpy.const import MESSAGE, ScreenLogicWarning
+from screenlogicpy.const import CODE, MESSAGE, ScreenLogicWarning
 
 
 @pytest.mark.asyncio
@@ -233,3 +234,23 @@ async def test_async_set_scg_config(
         assert mockRequest.call_args.args[1] == struct.pack(
             "<IIIII", 0, pool_output, spa_output, 0, 0
         )
+
+
+@pytest.mark.asyncio
+async def test_async_send_message_retry(
+    event_loop: asyncio.AbstractEventLoop, MockConnectedGateway: ScreenLogicGateway
+):
+    result = event_loop.create_future()
+    result.set_result(expected_resp(CODE.POOLSTATUS_QUERY, FAKE_STATUS_RESPONSE))
+    with patch(
+        "screenlogicpy.requests.gateway.ScreenLogicProtocol.await_send_message",
+        side_effect=(event_loop.create_future(), event_loop.create_future(), result),
+    ) as mockRequest, patch.object(MESSAGE, "COM_RETRY_WAIT", 1):
+        gateway = MockConnectedGateway
+        response = await gateway.async_send_message(
+            CODE.POOLSTATUS_QUERY, struct.pack("<I", 0), 3
+        )
+        assert response == FAKE_STATUS_RESPONSE
+        assert mockRequest.call_count == 3
+        assert mockRequest.call_args.args[0] == CODE.POOLSTATUS_QUERY
+        assert mockRequest.call_args.args[1] == struct.pack("<I", 0)

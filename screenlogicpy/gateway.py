@@ -288,14 +288,18 @@ class ScreenLogicGateway:
         if self._protocol:
             self._protocol.remove_async_message_callback(message_code)
 
-    async def async_send_message(self, message_code: int, message: bytes = b""):
+    async def async_send_message(
+        self, message_code: int, message: bytes = b"", max_retries: int = None
+    ):
         """Send a message to the ScreenLogic protocol adapter."""
         if not self.is_connected:
             raise ScreenLogicWarning(
                 "Not connected to protocol adapter. send_message failed."
             )
         _LOGGER.debug(f"User requesting {message_code}")
-        return await async_make_request(self._protocol, message_code, message)
+        return await async_make_request(
+            self._protocol, message_code, message, max_retries
+        )
 
     async def async_get_config(self):
         """Request pool configuration data."""
