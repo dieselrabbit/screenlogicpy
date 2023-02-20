@@ -1,13 +1,12 @@
 import asyncio
+import pytest
+import random
 import struct
 from unittest.mock import patch
 
-import pytest
-
 from screenlogicpy import ScreenLogicGateway
 from screenlogicpy.client import ClientManager
-from screenlogicpy.const import CLIENT_ID, CODE
-
+from screenlogicpy.const import CODE
 from .const_data import (
     EXPECTED_CHEMISTRY_DATA,
     EXPECTED_STATUS_DATA,
@@ -21,9 +20,9 @@ from .fake_gateway import expected_resp
 @pytest.mark.asyncio()
 async def test_sub_unsub(event_loop, MockProtocolAdapter):
     async with MockProtocolAdapter:
-        gateway = ScreenLogicGateway()
+        clientID = random.randint(32767, 65535)
+        gateway = ScreenLogicGateway(clientID)
         code = CODE.STATUS_CHANGED
-        clientID = CLIENT_ID
 
         def callback():
             pass

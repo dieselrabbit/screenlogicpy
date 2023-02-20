@@ -42,15 +42,8 @@ async def test_gateway(MockConnectedGateway):
 @pytest.mark.asyncio
 async def test_gateway_connect(MockProtocolAdapter):
     async with MockProtocolAdapter:
-        gateway = ScreenLogicGateway(**FAKE_CONNECT_INFO)
-        await gateway.async_connect()
-        assert gateway.ip == FAKE_GATEWAY_ADDRESS
-        assert gateway.port == FAKE_GATEWAY_PORT
-        assert gateway.name == FAKE_GATEWAY_NAME
-        assert gateway.version == FAKE_GATEWAY_VERSION
-        assert gateway.mac == FAKE_GATEWAY_MAC
-        assert gateway.is_connected
-        await gateway.async_disconnect()
+        with pytest.raises(TypeError):
+            _ = ScreenLogicGateway(**FAKE_CONNECT_INFO)
 
 
 @pytest.mark.asyncio
