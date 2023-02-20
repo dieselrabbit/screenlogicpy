@@ -6,13 +6,14 @@ from .request import async_make_request
 
 
 async def async_request_pool_button_press(
-    protocol: ScreenLogicProtocol, circuit_id: int, circuit_state: int
+    protocol: ScreenLogicProtocol, circuit_id: int, circuit_state: int, max_retries: int
 ) -> bool:
     return (
         await async_make_request(
             protocol,
             CODE.BUTTONPRESS_QUERY,
             struct.pack("<III", 0, circuit_id, circuit_state),
+            max_retries,
         )
         == b""
     )

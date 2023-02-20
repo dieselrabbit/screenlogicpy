@@ -1,14 +1,16 @@
 import struct
 
-from ..const import CODE, DATA, STATE_TYPE, UNIT
+from ..const import CODE, DATA, MESSAGE, STATE_TYPE, UNIT
 from .protocol import ScreenLogicProtocol
 from .request import async_make_request
 from .utility import getSome
 
 
-async def async_request_scg_config(protocol: ScreenLogicProtocol, data: dict) -> bytes:
+async def async_request_scg_config(
+    protocol: ScreenLogicProtocol, data: dict, max_retries: int
+) -> bytes:
     if result := await async_make_request(
-        protocol, CODE.SCGCONFIG_QUERY, struct.pack("<I", 0)
+        protocol, CODE.SCGCONFIG_QUERY, struct.pack("<I", 0), max_retries
     ):
         decode_scg_config(result, data)
         return result
@@ -65,12 +67,14 @@ async def async_request_set_scg_config(
     spa_output: int,
     super_chlor: int = 0,
     super_time: int = 0,
+    max_retries: int = MESSAGE.COM_MAX_RETRIES,
 ) -> bool:
     return (
         await async_make_request(
             protocol,
             CODE.SETSCG_QUERY,
             struct.pack("<IIIII", 0, pool_output, spa_output, super_chlor, super_time),
+            max_retries,
         )
         == b""
     )

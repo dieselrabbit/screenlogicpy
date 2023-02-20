@@ -7,11 +7,14 @@ from .request import async_make_request
 from .utility import getSome, getString
 
 
-async def async_request_pool_config(protocol: ScreenLogicProtocol, data: dict) -> bytes:
+async def async_request_pool_config(
+    protocol: ScreenLogicProtocol, data: dict, max_retries: int
+) -> bytes:
     if result := await async_make_request(
         protocol,
         CODE.CTRLCONFIG_QUERY,
         struct.pack("<2I", 0, 0),  # 0,1 yields different return
+        max_retries,
     ):
         decode_pool_config(result, data)
         return result

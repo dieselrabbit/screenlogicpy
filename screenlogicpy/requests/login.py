@@ -36,10 +36,12 @@ def create_local_login_message() -> bytes:
     )
 
 
-async def async_get_mac_address(gateway_ip: str, gateway_port: int) -> str:
+async def async_get_mac_address(
+    gateway_ip: str, gateway_port: int, max_retries: int = MESSAGE.COM_MAX_RETRIES
+) -> str:
     """Connect to a screenlogic gateway and return the mac address only."""
     transport, protocol = await async_create_connection(gateway_ip, gateway_port)
-    mac = await async_gateway_connect(transport, protocol)
+    mac = await async_gateway_connect(transport, protocol, max_retries)
     if transport and not transport.is_closing():
         transport.close()
     return mac
@@ -66,7 +68,7 @@ async def async_create_connection(
 
 
 async def async_gateway_connect(
-    transport: asyncio.Transport, protocol: ScreenLogicProtocol
+    transport: asyncio.Transport, protocol: ScreenLogicProtocol, max_retries: int
 ) -> str:
     connectString = b"CONNECTSERVERHOST\r\n\r\n"  # as bytes, not string
     try:
@@ -84,7 +86,9 @@ async def async_gateway_connect(
     try:
         # mac address
         return decodeMessageString(
-            await async_make_request(protocol, CODE.CHALLENGE_QUERY)
+            await async_make_request(
+                protocol, CODE.CHALLENGE_QUERY, max_retries=max_retries
+            )
         )
     except ScreenLogicWarning as warn:
         raise ScreenLogicError(
@@ -92,12 +96,12 @@ async def async_gateway_connect(
         ) from warn
 
 
-async def async_gateway_login(protocol: ScreenLogicProtocol) -> bool:
+async def async_gateway_login(protocol: ScreenLogicProtocol, max_retries: int) -> bool:
     _LOGGER.debug("Logging in")
     try:
         return (
             await async_make_request(
-                protocol, CODE.LOCALLOGIN_QUERY, create_login_message()
+                protocol, CODE.LOCALLOGIN_QUERY, create_login_message(), max_retries
             )
             is not None
         )
@@ -106,11 +110,14 @@ async def async_gateway_login(protocol: ScreenLogicProtocol) -> bool:
 
 
 async def async_connect_to_gateway(
-    gateway_ip, gateway_port, connection_lost_callback: Callable = None
+    gateway_ip,
+    gateway_port,
+    connection_lost_callback: Callable = None,
+    max_retries: int = MESSAGE.COM_MAX_RETRIES,
 ) -> tuple[asyncio.Transport, ScreenLogicProtocol, str]:
     transport, protocol = await async_create_connection(
         gateway_ip, gateway_port, connection_lost_callback
     )
-    mac_address = await async_gateway_connect(transport, protocol)
-    if await async_gateway_login(protocol):
+    mac_address = await async_gateway_connect(transport, protocol, max_retries)
+    if await async_gateway_login(protocol, max_retries):
         return transport, protocol, mac_address

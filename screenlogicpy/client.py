@@ -3,10 +3,10 @@ import asyncio
 import logging
 from typing import Callable
 
-from .const import CODE, COM_KEEPALIVE, ScreenLogicWarning
+from .const import CODE, COM_KEEPALIVE, MESSAGE, ScreenLogicWarning
 from .requests.chemistry import decode_chemistry
 from .requests.client import async_request_add_client, async_request_remove_client
-from .requests.color import decode_color_update
+from .requests.lights import decode_color_update
 from .requests.status import decode_pool_status
 from .requests.ping import async_request_ping
 from .requests.protocol import ScreenLogicProtocol
@@ -23,6 +23,7 @@ class ClientManager:
         self._client_sub_unsub_lock = asyncio.Lock()
         self._protocol = None
         self._data = None
+        self._max_retries = MESSAGE.COM_MAX_RETRIES
 
     @property
     def is_client(self):
@@ -37,7 +38,12 @@ class ClientManager:
     def _attached(self):
         return self._protocol and self._protocol.is_connected
 
-    async def attach(self, protocol: ScreenLogicProtocol, data: dict):
+    async def attach(
+        self,
+        protocol: ScreenLogicProtocol,
+        data: dict,
+        max_retries: int = MESSAGE.COM_MAX_RETRIES,
+    ):
         """
         Update protocol and data reference.
 
@@ -47,6 +53,7 @@ class ClientManager:
         """
         self._protocol = protocol
         self._data = data
+        self._max_retries = max_retries
         self._is_client = False
         if self.client_needed:
             self._protocol.remove_all_async_message_callbacks()
@@ -143,7 +150,9 @@ class ClientManager:
                 "Not attached to protocol adapter. add_client failed."
             )
         _LOGGER.debug("Requesting add client")
-        return await async_request_add_client(self._protocol)
+        return await async_request_add_client(
+            self._protocol, max_retries=self._max_retries
+        )
 
     async def _async_remove_client(self):
         """Check connection before sending remove client request."""
@@ -152,7 +161,9 @@ class ClientManager:
                 "Not attached to protocol adapter. remove_client failed."
             )
         _LOGGER.debug("Requesting remove client")
-        return await async_request_remove_client(self._protocol)
+        return await async_request_remove_client(
+            self._protocol, max_retries=self._max_retries
+        )
 
     async def async_subscribe_gateway(self) -> bool:
         """

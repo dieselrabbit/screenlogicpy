@@ -247,8 +247,9 @@ async def test_async_send_message_retry(
         side_effect=(event_loop.create_future(), event_loop.create_future(), result),
     ) as mockRequest, patch.object(MESSAGE, "COM_RETRY_WAIT", 1):
         gateway = MockConnectedGateway
+        gateway.set_max_retries(3)
         response = await gateway.async_send_message(
-            CODE.POOLSTATUS_QUERY, struct.pack("<I", 0), 3
+            CODE.POOLSTATUS_QUERY, struct.pack("<I", 0)
         )
         assert response == FAKE_STATUS_RESPONSE
         assert mockRequest.call_count == 3
