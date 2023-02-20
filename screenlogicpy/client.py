@@ -1,6 +1,7 @@
 """Client manager for a connection to a ScreenLogic protocol adapter."""
 import asyncio
 import logging
+import random
 from typing import Callable
 
 from .const import CODE, COM_KEEPALIVE, MESSAGE, ScreenLogicWarning
@@ -17,7 +18,10 @@ _LOGGER = logging.getLogger(__name__)
 class ClientManager:
     """Class to manage callback subscriptions to specific ScreenLogic messages."""
 
-    def __init__(self) -> None:
+    def __init__(self, client_id: int = None) -> None:
+        self._client_id = (
+            client_id if client_id is not None else random.randint(32767, 65535)
+        )
         self._listeners = {}
         self._is_client = False
         self._client_sub_unsub_lock = asyncio.Lock()
@@ -26,16 +30,20 @@ class ClientManager:
         self._max_retries = MESSAGE.COM_MAX_RETRIES
 
     @property
-    def is_client(self):
+    def is_client(self) -> bool:
         """Return if connected to ScreenLogic as a client."""
         return self._is_client and self._protocol and self._protocol.is_connected
 
     @property
-    def client_needed(self):
+    def client_id(self) -> int:
+        return self._client_id
+
+    @property
+    def client_needed(self) -> bool:
         """Return if desired to be a client."""
         return self._listeners and not self._is_client
 
-    def _attached(self):
+    def _attached(self) -> bool:
         return self._protocol and self._protocol.is_connected
 
     async def attach(
@@ -151,7 +159,7 @@ class ClientManager:
             )
         _LOGGER.debug("Requesting add client")
         return await async_request_add_client(
-            self._protocol, max_retries=self._max_retries
+            self._protocol, self._client_id, max_retries=self._max_retries
         )
 
     async def _async_remove_client(self):
@@ -162,7 +170,7 @@ class ClientManager:
             )
         _LOGGER.debug("Requesting remove client")
         return await async_request_remove_client(
-            self._protocol, max_retries=self._max_retries
+            self._protocol, self._client_id, max_retries=self._max_retries
         )
 
     async def async_subscribe_gateway(self) -> bool:
