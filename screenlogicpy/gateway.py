@@ -40,14 +40,12 @@ _LOGGER = logging.getLogger(__name__)
 class ScreenLogicGateway:
     """Class for interacting and communicating with a ScreenLogic protocol adapter."""
 
-    def __init__(
-        self, ip=None, port=80, gtype=0, gsubtype=0, name="Unnamed-Screenlogic-Gateway"
-    ):
-        self._ip = ip
-        self._port = port
-        self._type = gtype
-        self._subtype = gsubtype
-        self._name = name
+    def __init__(self, client_id: int = None):
+        self._ip = None
+        self._port = 80
+        self._type = 0
+        self._subtype = 0
+        self._name = "Unnamed-Screenlogic-Gateway"
         self._mac = ""
         self._version = ""
         self._transport: asyncio.Transport = None
@@ -55,8 +53,8 @@ class ScreenLogicGateway:
         self._is_client = False
         self._data = {}
         self._last = {}
-        self._client_manager = ClientManager()
         self._max_retries = MESSAGE.COM_MAX_RETRIES
+        self._client_manager = ClientManager(client_id)
 
     @property
     def ip(self) -> str:
@@ -85,6 +83,10 @@ class ScreenLogicGateway:
     @property
     def is_client(self) -> bool:
         return self._client_manager.is_client
+
+    @property
+    def client_id(self) -> int:
+        return self._client_manager.client_id
 
     @property
     def max_retries(self) -> int:
