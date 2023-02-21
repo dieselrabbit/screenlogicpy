@@ -39,8 +39,8 @@ async def FailingMockProtocolAdapter(event_loop: asyncio.AbstractEventLoop):
 @pytest_asyncio.fixture()
 async def MockConnectedGateway(MockProtocolAdapter):
     async with MockProtocolAdapter:
-        gateway = ScreenLogicGateway(**FAKE_CONNECT_INFO)
-        await gateway.async_connect()
+        gateway = ScreenLogicGateway()
+        await gateway.async_connect(**FAKE_CONNECT_INFO)
         assert gateway.is_connected
         await gateway.async_update()
         yield gateway
