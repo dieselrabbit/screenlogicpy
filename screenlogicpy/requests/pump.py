@@ -7,10 +7,10 @@ from .utility import getSome
 
 
 async def async_request_pump_status(
-    protocol: ScreenLogicProtocol, data: dict, pumpID: int
+    protocol: ScreenLogicProtocol, data: dict, pumpID: int, max_retries: int
 ) -> bytes:
     if result := await async_make_request(
-        protocol, CODE.PUMPSTATUS_QUERY, struct.pack("<II", 0, pumpID)
+        protocol, CODE.PUMPSTATUS_QUERY, struct.pack("<II", 0, pumpID), max_retries
     ):
         decode_pump_status(result, data, pumpID)
         return result

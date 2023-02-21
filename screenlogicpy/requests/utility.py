@@ -2,12 +2,12 @@ import struct
 import sys
 from typing import List, Tuple
 
-from ..const import CODE, DATA, MESSAGE, UNIT, ScreenLogicError
+from ..const import DATA, MESSAGE, UNIT, ScreenLogicError
 
 if sys.version_info[:2] < (3, 11):
-    from async_timeout import timeout as asyncio_timeout
+    from async_timeout import timeout as asyncio_timeout  # noqa F401
 else:
-    from asyncio import timeout as asyncio_timeout
+    from asyncio import timeout as asyncio_timeout  # noqa F401
 
 
 def makeMessage(msgID: int, msgCode: int, messageData: bytes = b""):
@@ -24,16 +24,14 @@ def makeMessage(msgID: int, msgCode: int, messageData: bytes = b""):
 def takeMessage(data: bytes) -> Tuple[int, int, bytes]:
     """Return (messageID, messageCode, message) from raw ScreenLogic message bytes."""
     messageBytes = len(data) - MESSAGE.HEADER_LENGTH
-    msgID, msgCode, msgLen, message = struct.unpack(
-        MESSAGE.HEADER_FORMAT + str(messageBytes) + "s", data
+    msgID, msgCode, msgLen, msgData = struct.unpack(
+        f"{MESSAGE.HEADER_FORMAT}{messageBytes}s", data
     )
     if msgLen != messageBytes:
         raise ScreenLogicError(
             f"Response length invalid. Claimed: {msgLen}. Received: {messageBytes}. Message ID: {msgID}. Message Code: {msgCode}. Data: {data}"
         )
-    if msgCode == CODE.UNKNOWN_ANSWER:
-        raise ScreenLogicError("Request rejected")
-    return msgID, msgCode, message  # return raw data
+    return msgID, msgCode, msgData  # return raw data
 
 
 def takeMessages(data: bytes) -> List[Tuple[int, int, bytes]]:

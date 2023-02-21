@@ -1,18 +1,21 @@
 import asyncio
 import struct
-import pytest
 from unittest.mock import patch
+
+import pytest
 
 from screenlogicpy import ScreenLogicGateway
 from screenlogicpy.client import ClientManager
 from screenlogicpy.const import CLIENT_ID, CODE
+
 from .const_data import (
-    EXPECTED_STATUS_DATA,
     EXPECTED_CHEMISTRY_DATA,
-    FAKE_CONNECT_INFO,
+    EXPECTED_STATUS_DATA,
     FAKE_CHEMISTRY_RESPONSE,
+    FAKE_CONNECT_INFO,
     FAKE_STATUS_RESPONSE,
 )
+from .fake_gateway import expected_resp
 
 
 @pytest.mark.asyncio()
@@ -31,8 +34,10 @@ async def test_sub_unsub(event_loop, MockProtocolAdapter):
 
         await gateway.async_connect(**FAKE_CONNECT_INFO)
 
-        result = event_loop.create_future()
-        result.set_result(b"")
+        sub_code = 12522
+
+        result: asyncio.Future = event_loop.create_future()
+        result.set_result(expected_resp(sub_code))
         with patch(
             "screenlogicpy.requests.client.ScreenLogicProtocol.await_send_message",
             return_value=result,
@@ -51,12 +56,16 @@ async def test_sub_unsub(event_loop, MockProtocolAdapter):
                     (code, gateway._data),
                 ),
             }
-            assert mockSubRequest.call_args.args[0] == 12522
+            assert mockSubRequest.call_args.args[0] == sub_code
             assert mockSubRequest.call_args.args[1] == struct.pack("<II", 0, clientID)
 
+        unsub_code = 12524
+
+        result2: asyncio.Future = event_loop.create_future()
+        result2.set_result(expected_resp(unsub_code))
         with patch(
             "screenlogicpy.requests.client.ScreenLogicProtocol.await_send_message",
-            return_value=result,
+            return_value=result2,
         ) as mockUnsubRequest:
             unsub()
 
@@ -65,7 +74,7 @@ async def test_sub_unsub(event_loop, MockProtocolAdapter):
 
             await asyncio.sleep(0)
 
-            assert mockUnsubRequest.call_args.args[0] == 12524
+            assert mockUnsubRequest.call_args.args[0] == unsub_code
             assert mockUnsubRequest.call_args.args[1] == struct.pack("<II", 0, clientID)
 
 
