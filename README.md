@@ -24,9 +24,9 @@ from screenlogicpy import ScreenLogicGateway
     gateway = ScreenLogicGateway()
 ```
 
-_Changed in v0.5.0: Instantiating the gateway no longer automatically connects to the protocol adapter or performs an initial update._  
-_Changed in v0.7.0: Passing adapter connection info when instantiating the gateway is deprecated and will be removed in a future release. Connection info should be passed to `async_connect()` instead._  
-_**Changed in v0.8.0:** Support for passing connection info during gateway instantiation is fully deprecated and has been removed. Added ability to specify client id used for push subscriptions. Added ability to specify maximum number of times to retry a request._
+* _Changed in v0.5.0: Instantiating the gateway no longer automatically connects to the protocol adapter or performs an initial update._  
+* _Changed in v0.7.0: Passing adapter connection info when instantiating the gateway is deprecated and will be removed in a future release. Connection info should be passed to `async_connect()` instead._  
+* _**Changed in v0.8.0:** Support for passing connection info during gateway instantiation is fully deprecated and has been removed. Added ability to specify client id used for push subscriptions. Added ability to specify maximum number of times to retry a request._
 
 ## Connecting to a ScreenLogic Protocol Adapter
 
@@ -38,8 +38,8 @@ If disconnected, this method may be called without any parameters to reconnect w
 success = await gateway.async_connect("192.168.x.x")
 ```
 
-_New in v0.5.0._  
-_Changed in v0.7.0: `async_connect()` now accepts adapter connection info. This supports handling ip changes to the protocol adapter._
+* _New in v0.5.0._  
+* _Changed in v0.7.0: `async_connect()` now accepts adapter connection info. This supports handling ip changes to the protocol adapter._
 
 ## Polling the pool state
 
@@ -58,7 +58,7 @@ This update consists of sending requests for:
 
 **Warning:** This method is not rate-limited. The calling application is responsible for maintaining reasonable intervals between updates. The ScreenLogic protocol adapter may respond with an error message if too many requests are made too quickly.
 
-_Changed in v0.5.0: This method is now an async coroutine and no longer disconnects from the protocol adapter after polling the data._
+* _Changed in v0.5.0: This method is now an async coroutine and no longer disconnects from the protocol adapter after polling the data._
 
 ## Subscribing to pool state updates
 
@@ -96,7 +96,7 @@ The ScreenLogic system does not make all state information for all equipment ava
 
 The status of any pumps or salt chlorine generators is not included in any push updates. To supplement this, the different data sets can now be requested individually.
 
-_New in v0.7.0._
+* _New in v0.7.0._
 
 ## Polling specific data
 
@@ -119,7 +119,7 @@ await gateway.async_get_scg()
 Push subscriptions and polling of all or specific data can be used on their own or at the same time.  
 **Warning:** Some expected data keys may not be present until a full update has been performed. It is recommended that an initial full `async_update()` be preformed to ensure the gateway's data `dict` is fully primed.
 
-_New in v0.7.0._
+* _New in v0.7.0._
 
 ## Using the data
 
@@ -137,7 +137,7 @@ When done, use `async_disconnect()` to unsubscribe from push updates and close t
 await gateway.async_disconnect()  
 ```
 
-_New in v0.5.0._
+* _New in v0.5.0._
 
 ## Gateway Discovery
 
@@ -149,7 +149,7 @@ The `discovery` module's `async_discover()` function can be used to get a list o
 hosts = await discovery.async_discover()
 ```
 
-_Changed in v0.5.0: This method is now an async coroutine._
+* _Changed in v0.5.0: This method is now an async coroutine._
 
 Example in `./examples/async_discovery.py`
 
@@ -193,7 +193,7 @@ A circuit can be requested to be turned on or off with the `async_set_circuit()`
 success = await gateway.async_set_circuit(circuitID, circuitState)
 ```
 
-_Changed in v0.5.0: This method is now an async coroutine._
+* _Changed in v0.5.0: This method is now an async coroutine._
 
 ## Setting a heating mode
 
@@ -203,7 +203,7 @@ The desired heating mode can be set per body of water (pool or spa) with `async_
 success = await gateway.async_set_heat_mode(body, mode)
 ```
 
-_Changed in v0.5.0: This method is now an async coroutine._
+* _Changed in v0.5.0: This method is now an async coroutine._
 
 ## Setting a target temperature
 
@@ -223,7 +223,7 @@ Colors or color-shows can be set for compatible color-enable lighting with `asyn
 success = await gateway.async_set_color_lights(light_command)
 ```
 
-_Changed in v0.5.0: This method is now an async coroutine._
+* _Changed in v0.5.0: This method is now an async coroutine._
 
 ## Setting chlorinator output levels
 
@@ -233,7 +233,7 @@ Chlorinator output levels can be set with `async_set_scg_config()`.  `async_set_
 success = await gateway.async_set_scg_config(pool_output, spa_output)  
 ```
 
-_New in v0.5.0._
+* _New in v0.5.0._
 
 ## Setting IntelliChem Chemistry values
 
@@ -261,7 +261,7 @@ success = await gateway.async_set_chem_data(ph, orp, ch, ta, ca, sa)
 
 **Note:** Only `ph_setpoint` and `orp_setpoint` are settable through the command line.
 
-_New in v0.6.0._
+* _New in v0.6.0._
 
 ## Handling unsolicited messages
 
@@ -271,7 +271,7 @@ To do so, you need to tell the `ScreenLogicGateway` what message code to listen 
 **Notes:**
 
 * Currently the `ScreenLogicGateway` must be connected to the protocol adapter before registering a handler.
-* Registering a handler in this way does not subscribe the gateway to state updates from the ScreenLogic system.
+* Registering a handler in this way does not subscribe the gateway to push state updates from the ScreenLogic system.
 
 **Example:**
 
@@ -295,7 +295,7 @@ gateway.remove_async_message_handler(WEATHER_UPDATE_CODE)
 
 Example in `./examples/async_listen.py`
 
-**_New in v0.7.0._**
+* _New in v0.7.0._
 
 ## Debug Information
 
@@ -306,7 +306,7 @@ A debug function is available in the `ScreenLogicGateway` class: `get_debug`. Th
 last_responses = gateway.get_debug()
 ```
 
-_New in v0.5.5._
+* _New in v0.5.5._
 
 # Command line
 
@@ -507,7 +507,7 @@ screenlogicpy set color-lights [color mode]
 Sets a color mode for all color-capable lights configured on the pool controller.  
 **Note:** `[color mode]` can be either the `int` or `string` representation of a [color mode](#color-modes).
 
-_New in v0.3.0._
+* _New in v0.3.0._
 
 #### set `salt-generator, scg`
 
@@ -518,7 +518,7 @@ screenlogicpy set salt-generator [pool_pct] [spa_pct]
 Sets the chlorinator output levels for the pool and spa. Pentair treats spa output level as a percentage of the pool's output level.  
 **Note:** `[pool_pct]` can be an `int` between `0`-`100`, or `*` to keep the current value. `[spa_pct]` can be an `int` between `0`-`100`, or `*` to keep the current value.
 
-_New in v0.5.0._
+* _New in v0.5.0._
 
 #### set `chem-data, ch`
 
@@ -529,7 +529,7 @@ screenlogicpy set chem-data [ph_setpoint] [orp_setpoint]
 Sets the pH and/or ORP set points for the IntelliChem system.  
 **Note:** `[ph_setpoint]` can be a `float` between `7.2`-`7.6`, or `*` to keep the current value. `[orp_setpoint]` can be an `int` between `400`-`800`, or `*` to keep the current value.
 
-_New in v0.6.0._
+* _New in v0.6.0._
 
 # Reference
 
