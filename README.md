@@ -24,24 +24,22 @@ from screenlogicpy import ScreenLogicGateway
     gateway = ScreenLogicGateway()
 ```
 
-_Changed in v0.5.0: Instantiating the gateway no longer automatically connects to the protocol adapter or performs an initial update._
-
-_**Changed in v0.7.0:** Passing adapter connection info when instantiating the gateway is deprecated and will be removed in a future release. Connection info should be passed to `async_connect()` instead._
+_Changed in v0.5.0: Instantiating the gateway no longer automatically connects to the protocol adapter or performs an initial update._  
+_Changed in v0.7.0: Passing adapter connection info when instantiating the gateway is deprecated and will be removed in a future release. Connection info should be passed to `async_connect()` instead._  
+_**Changed in v0.8.0:** Support for passing connection info during gateway instantiation is fully deprecated and has been removed. Added ability to specify client id used for push subscriptions. Added ability to specify maximum number of times to retry a request._
 
 ## Connecting to a ScreenLogic Protocol Adapter
 
-Once instantiated, use `async_connect()` to connect and logon to the ScreenLogic protocol adapter.
+Once instantiated, use `async_connect()` to connect and login to the ScreenLogic protocol adapter, and gather the pool configuration.
+
+If disconnected, this method may be called without any parameters to reconnect with the previous connection info, or with new parameters to connect to a different host.
 
 ```python
 success = await gateway.async_connect("192.168.x.x")
 ```
 
-This method also performs the initial polling of the pool controller configuration.  
-**Note:**  This is the preferred location to provide connection information.
-
-_New in v0.5.0._
-
-_**Changed in v0.7.0:** `async_connect()` now accepts adapter connection info. This supports handling ip changes to the protocol adapter._
+_New in v0.5.0._  
+_Changed in v0.7.0: `async_connect()` now accepts adapter connection info. This supports handling ip changes to the protocol adapter._
 
 ## Polling the pool state
 
@@ -88,17 +86,17 @@ Multiple callbacks can be subscribed to a single message code. Additionally, a s
 
 The ScreenLogic system does not make all state information for all equipment available via push messages. The two main state update messages that can be subscribed to are:
 
-- General status update containing
-  - Air and water temperature and heater states
-  - Basic status indicators such as Freeze mode and active delays
-  - Circuit states
-  - Basic chemistry information
-- IntelliChem controller status update containing
-  - Detailed chemistry information
+* General status update containing
+  * Air and water temperature and heater states
+  * Basic status indicators such as Freeze mode and active delays
+  * Circuit states
+  * Basic chemistry information
+* IntelliChem controller status update containing
+  * Detailed chemistry information
 
 The status of any pumps or salt chlorine generators is not included in any push updates. To supplement this, the different data sets can now be requested individually.
 
-**_New in v0.7.0._**
+_New in v0.7.0._
 
 ## Polling specific data
 
@@ -121,7 +119,7 @@ await gateway.async_get_scg()
 Push subscriptions and polling of all or specific data can be used on their own or at the same time.  
 **Warning:** Some expected data keys may not be present until a full update has been performed. It is recommended that an initial full `async_update()` be preformed to ensure the gateway's data `dict` is fully primed.
 
-**_New in v0.7.0._**
+_New in v0.7.0._
 
 ## Using the data
 
@@ -133,15 +131,13 @@ data = gateway.get_data()
 
 ## Disconnecting
 
-When done, use `async_disconnect()` to close the connection to the protocol adapter.
+When done, use `async_disconnect()` to unsubscribe from push updates and close the connection to the protocol adapter.
 
 ```python
 await gateway.async_disconnect()  
 ```
 
 _New in v0.5.0._
-
----
 
 ## Gateway Discovery
 
@@ -179,12 +175,12 @@ Full example in `./examples/gateway.py`
 
 The following actions can be performed with methods on the `ScreenLogicGateway` object:
 
-- Set a specific circuit to on or off
-- Set a heating mode for a specific body of water (spa/pool)
-- Set a target heating temperature for a specific body of water (spa/pool)
-- Select various color-enabled lighting options
-- Set the chlorinator output levels
-- Setting IntelliChem chemistry values
+* Set a specific circuit to on or off
+* Set a heating mode for a specific body of water (spa/pool)
+* Set a target heating temperature for a specific body of water (spa/pool)
+* Select various color-enabled lighting options
+* Set the chlorinator output levels
+* Setting IntelliChem chemistry values
 
 Each method will `return True` if the operation reported no exceptions.
 **Note:** The methods do not confirm the requested action is now in effect on the pool controller.
@@ -198,8 +194,6 @@ success = await gateway.async_set_circuit(circuitID, circuitState)
 ```
 
 _Changed in v0.5.0: This method is now an async coroutine._
-
----
 
 ## Setting a heating mode
 
@@ -276,8 +270,8 @@ To do so, you need to tell the `ScreenLogicGateway` what message code to listen 
 
 **Notes:**
 
-- Currently the `ScreenLogicGateway` must be connected to the protocol adapter before registering a handler.
-- Registering a handler in this way does not subscribe the gateway to state updates from the ScreenLogic system.
+* Currently the `ScreenLogicGateway` must be connected to the protocol adapter before registering a handler.
+* Registering a handler in this way does not subscribe the gateway to state updates from the ScreenLogic system.
 
 **Example:**
 
