@@ -14,7 +14,7 @@ $ pip install screenlogicpy
 
 # Library usage
 
-_New in v0.5.0: The screenlogicpy library has moved over to using asyncio for all network I/O. Relevant methods now require the `async`/`await` syntax._
+* _New in v0.5.0: The screenlogicpy library has moved over to using asyncio for all network I/O. Relevant methods now require the `async`/`await` syntax._
 
 The `ScreenLogicGateway` class is the primary interface.
 
@@ -66,7 +66,7 @@ The preferred method for retrieving updated pool data is to subscribe to updates
 
 To enable push updates, subscribe to a particular message code using `gateway.async_subscribe_client(callback, message_code)`, passing a callback method to be called when that message is received, and the [message code](#supported-subscribable-messages) to subscribe to. This function returns a callback that can be called to unsubscribe that particular subscription.
 
-`screenlogicpy` will automatically handle subscribing and unsubscribing as a client to the ScreenLogic protocol adapter upon the first callback subscription and last unsub respectively.
+The gateway's `ClientManager` will automatically handle subscribing and unsubscribing as a client to the ScreenLogic protocol adapter upon the first callback subscription and last unsub respectively.
 
 ```python
 from screenlogicpy.const import CODE
@@ -79,12 +79,12 @@ unsub_method = await gateway.async_subscribe_client(status_updated, CODE.STATUS_
 
 Example in `./examples/async_client.py`
 
-Multiple callbacks can be subscribed to a single message code. Additionally, a single global callback may be subscribed to multiple message codes. 
+Multiple callbacks can be subscribed to a single message code. Additionally, a single global callback may be subscribed to multiple message codes.  
 **Note:** Each combination of callback and code will result in a separate unique unsub callback. The calling application is responsible for managing and unsubing all subscribed callbacks as needed.  
 
 ### Pushed data
 
-The ScreenLogic system does not make all state information for all equipment available via push messages. The two main state update messages that can be subscribed to are:
+While the ScreenLogic system does support some push updates, not all state information for all equipment available via push. The two main state update messages that can be subscribed to are:
 
 * General status update containing
   * Air and water temperature and heater states
