@@ -53,8 +53,7 @@ def decode_pool_config(buff: bytes, data: dict) -> dict:
     equipFlags, offset = getSome("I", buff, offset)
     config["equipment_flags"] = equipFlags
 
-    paddedGenName, offset = getString(buff, offset)
-    genCircuitName = paddedGenName.decode("utf-8").strip("\0")
+    genCircuitName, offset = getString(buff, offset)
     config["generic_circuit_name"] = {
         "name": "Default Circuit Name",
         "value": genCircuitName,
@@ -73,8 +72,7 @@ def decode_pool_config(buff: bytes, data: dict) -> dict:
 
         currentCircuit["id"] = circuitID
 
-        paddedName, offset = getString(buff, offset)
-        circuitName = paddedName.decode("utf-8").strip("\0")
+        circuitName, offset = getString(buff, offset)
         currentCircuit["name"] = circuitName
 
         cNameIndex, offset = getSome("B", buff, offset)
@@ -118,8 +116,7 @@ def decode_pool_config(buff: bytes, data: dict) -> dict:
     colors = config.setdefault(DATA.KEY_COLORS, [{} for x in range(colorCount)])
 
     for i in range(colorCount):
-        paddedColorName, offset = getString(buff, offset)
-        colorName = paddedColorName.decode("utf-8").strip("\0")
+        colorName, offset = getString(buff, offset)
         rgbR, offset = getSome("I", buff, offset)
         rgbG, offset = getSome("I", buff, offset)
         rgbB, offset = getSome("I", buff, offset)

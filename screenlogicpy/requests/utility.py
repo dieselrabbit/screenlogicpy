@@ -1,6 +1,6 @@
 import struct
 import sys
-from typing import List, Tuple
+from typing import Any, List, Tuple
 
 from ..const import DATA, MESSAGE, UNIT, ScreenLogicError
 
@@ -13,7 +13,7 @@ else:
 def makeMessage(msgID: int, msgCode: int, messageData: bytes = b""):
     """Returns packed bytes formatted as a ready-to-send ScreenLogic message."""
     return struct.pack(
-        MESSAGE.HEADER_FORMAT + str(len(messageData)) + "s",
+        f"{MESSAGE.HEADER_FORMAT}{str(len(messageData))}s",
         msgID,
         msgCode,
         len(messageData),
@@ -51,24 +51,24 @@ def takeMessages(data: bytes) -> List[Tuple[int, int, bytes]]:
         ) from err
 
 
-def encodeMessageString(string):
+def encodeMessageString(string) -> bytes:
     data = string.encode()
     length = len(data)
     over = length % 4
     pad = (4 - over) if over > 0 else 0  # pad string to multiple of 4
-    fmt = "<I" + str(length + pad) + "s"
+    fmt = f"<I{str(length + pad)}s"
     return struct.pack(fmt, length, data)
 
 
-def decodeMessageString(data):
+def decodeMessageString(data) -> str:
     size = struct.unpack_from("<I", data, 0)[0]
-    return struct.unpack_from("<" + str(size) + "s", data, struct.calcsize("<I"))[
-        0
-    ].decode("utf-8")
+    return struct.unpack_from(f"<{str(size)}s", data, struct.calcsize("<I"))[0].decode(
+        "utf-8"
+    )
 
 
-def getSome(want, buff, offset):
-    fmt = want if want.startswith(">") else "<" + want
+def getSome(format, buff, offset) -> tuple[Any, int]:
+    fmt = format if format.startswith(">") else f"<{format}"
     newoffset = offset + struct.calcsize(fmt)
     return struct.unpack_from(fmt, buff, offset)[0], newoffset
 
@@ -93,16 +93,17 @@ def getValueAt(buff, offset, want, **kwargs):
     return data, newoffset
 
 
-def getString(buff, offset):
+def getString(buff, offset) -> tuple[str, int]:
     fmtLen = "<I"
     offsetLen = offset + struct.calcsize(fmtLen)
     sLen = struct.unpack_from(fmtLen, buff, offset)[0]
     if sLen % 4 != 0:
         sLen += 4 - sLen % 4
 
-    fmt = "<{}{}".format(sLen, "s")
+    fmt = f"<{sLen}s"
     newoffset = offsetLen + struct.calcsize(fmt)
-    return struct.unpack_from(fmt, buff, offsetLen)[0], newoffset
+    padded_str = struct.unpack_from(fmt, buff, offsetLen)[0]
+    return padded_str.decode("utf-8").strip("\0"), newoffset
 
 
 def getArray(buff, offset):
