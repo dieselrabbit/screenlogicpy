@@ -1,0 +1,30 @@
+Request:
+
+00 00 00 00|00 00 00 00|19 00 00 00
+controller |start_idx  |count
+0          |0          |25
+
+Official apps request small chunks to not overwhelm the buffers?
+00 00 00 00|19 00 00 00|19 00 00 00
+controller |start_idx  |count
+0          |25         |25
+
+00 00 00 00|32 00 00 00|19 00 00 00
+controller |start_idx  |count
+0          |50         |25
+
+Response:
+65 00 00 00 
+count      |
+
+07 00 00 00|41 65 72 61 74 6f 72 00 
+name_size  |name   
+7          | A  e  r  a  t  o  r
+0a 00 00 00 41 69 72 20 42 6c 6f 77 65 72 00 00 
+name_size  |name   
+10         | A  i  r     B  l  o  w  e  r
+05 00 00 00 41 75 78 20 31 00 00 00 
+name_size  |name   
+5          | A  u  x     1
+
+etc...
