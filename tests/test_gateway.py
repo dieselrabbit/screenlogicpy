@@ -238,8 +238,10 @@ async def test_async_set_chemistry(
     orp_sp = 700
     ph_sp = 7.5
     alk = 35
+    set_chem_code = 12594
+
     result = event_loop.create_future()
-    result.set_result(b"")
+    result.set_result(expected_resp(set_chem_code))
     with patch(
         "screenlogicpy.requests.chemistry.ScreenLogicProtocol.await_send_message",
         return_value=result,
@@ -249,7 +251,7 @@ async def test_async_set_chemistry(
             orp_setpoint=orp_sp, ph_setpoint=ph_sp, total_alkalinity=alk
         )
         await gateway.async_disconnect()
-        assert mockRequest.call_args.args[0] == 12594
+        assert mockRequest.call_args.args[0] == set_chem_code
         assert mockRequest.call_args.args[1] == struct.pack(
             "<7I", 0, int(ph_sp * 100), orp_sp, 740, alk, 36, 1000
         )
