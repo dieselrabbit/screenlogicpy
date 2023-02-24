@@ -444,7 +444,12 @@ class ScreenLogicGateway:
         return False
 
     async def async_set_scg_config(
-        self, *, pool_output: int = None, spa_output: int = None
+        self,
+        *,
+        pool_output: int = None,
+        spa_output: int = None,
+        super_chlor: int = 0,
+        super_time: int = 0,
     ):
         """Set the salt-chlorine-generator output for both pool and spa."""
         if not (pool_output or spa_output):
@@ -463,7 +468,7 @@ class ScreenLogicGateway:
 
         if await self.async_connect():
             return await async_request_set_scg_config(
-                self._protocol, pool_output, spa_output
+                self._protocol, pool_output, spa_output, super_chlor, super_time
             )
         return False
 

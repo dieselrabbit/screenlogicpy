@@ -13,6 +13,7 @@ from screenlogicpy.const import (
     HEAT_MODE,
     ON_OFF,
     RANGE,
+    SCG,
     SL_GATEWAY_IP,
     SL_GATEWAY_NAME,
     SL_GATEWAY_PORT,
@@ -188,24 +189,52 @@ async def cli(cli_args):
         return 32
 
     async def async_set_scg_config():
-        if args.scg_pool == "*" and args.scg_spa == "*":
-            print("No new SCG values. Nothing to do.")
-            return 65
+        scg_1 = None
+        scg_2 = None
+        sup = None
+        timer = None
+        if args.set_option in {"super-chlorinate", "sup"}:
+            if args.super_enable == "*" and args.super_time == "*":
+                print("No new super chlorinate values. Nothing to do.")
+                return 65
 
-        try:
-            scg_1 = None if args.scg_pool == "*" else int(args.scg_pool)
-            scg_2 = None if args.scg_spa == "*" else int(args.scg_spa)
-        except ValueError:
-            print("Invalid SCG value")
-            return 66
+            try:
+                sup = (
+                    None
+                    if args.super_enable == "*"
+                    else 1
+                    if args.super_enable.lower() in {"1", "on"}
+                    else 0
+                )
+                timer = None if args.super_time == "*" else int(args.super_time)
+            except ValueError:
+                print("Invalid super chlorinate value")
+                return 66
+        else:
+            if args.scg_pool == "*" and args.scg_spa == "*":
+                print("No new SCG values. Nothing to do.")
+                return 65
 
-        if await gateway.async_set_scg_config(pool_output=scg_1, spa_output=scg_2):
+            try:
+                scg_1 = None if args.scg_pool == "*" else int(args.scg_pool)
+                scg_2 = None if args.scg_spa == "*" else int(args.scg_spa)
+            except ValueError:
+                print("Invalid SCG value")
+                return 66
+
+        if await gateway.async_set_scg_config(
+            pool_output=scg_1, spa_output=scg_2, super_chlor=sup, super_time=timer
+        ):
             await gateway.async_update()
             new_data = gateway.get_data()
-            print(
-                vFormat(new_data[DATA.KEY_SCG]["scg_level1"]),
-                vFormat(new_data[DATA.KEY_SCG]["scg_level2"]),
-            )
+            if scg_1:
+                print(vFormat(new_data[DATA.KEY_SCG]["scg_level1"]))
+            if scg_2:
+                print(vFormat(new_data[DATA.KEY_SCG]["scg_level2"]))
+            if sup:
+                print(vFormat(new_data[DATA.KEY_SCG]["scg_flags"]))
+            if timer:
+                print(vFormat(new_data[DATA.KEY_SCG]["scg_super_chlor_timer"]))
             return 0
         return 64
 
@@ -362,6 +391,26 @@ async def cli(cli_args):
         help="Chlorinator output for when system is in SPA mode. 0-20, or * to keep current value.",
     )
     set_scg_config_parser.set_defaults(async_func=async_set_scg_config)
+
+    set_super_config_parser = set_subparsers.add_parser(
+        "super-chlorinate", aliases=["sup"]
+    )
+    set_super_config_parser.add_argument(
+        "super_enable",
+        type=str,
+        metavar="ENABLE",
+        default="0",
+        choices=on_off_options,
+        help=f"Enable super chlorinate. One of {on_off_options}",
+    )
+    set_super_config_parser.add_argument(
+        "super_time",
+        type=str,
+        metavar="SUPER_TIME",
+        default=None,
+        help=f"Time in hours to run super chlorination. 1-{SCG.MAX_SC_RUNTIME}, or * to keep current value.",
+    )
+    set_super_config_parser.set_defaults(async_func=async_set_scg_config)
 
     set_chem_data_parser = set_subparsers.add_parser("chem-data", aliases=["ch"])
     set_chem_data_parser.add_argument(
