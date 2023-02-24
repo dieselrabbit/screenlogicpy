@@ -168,6 +168,64 @@ class ScreenLogicGateway:
         _LOGGER.debug("Update complete")
         return True
 
+    async def async_get_config(self):
+        """Request pool configuration data."""
+        if not self.is_connected:
+            raise ScreenLogicWarning(
+                "Not connected to protocol adapter. get_config failed."
+            )
+        _LOGGER.debug("Requesting config data")
+        self._last[DATA.KEY_CONFIG] = await async_request_pool_config(
+            self._protocol, self._data, self._max_retries
+        )
+
+    async def async_get_status(self):
+        """Request pool state data."""
+        if not self.is_connected:
+            raise ScreenLogicWarning(
+                "Not connected to protocol adapter. get_status failed."
+            )
+        _LOGGER.debug("Requesting pool status")
+        self._last["status"] = await async_request_pool_status(
+            self._protocol, self._data, self._max_retries
+        )
+
+    async def async_get_pumps(self):
+        """Request all pump state data."""
+        if not self.is_connected:
+            raise ScreenLogicWarning(
+                "Not connected to protocol adapter. get_pumps failed."
+            )
+        for pumpID in self._data[DATA.KEY_PUMPS]:
+            if self._data[DATA.KEY_PUMPS][pumpID]["data"] != 0:
+                _LOGGER.debug("Requesting pump %i data", pumpID)
+                last_pumps = self._last.setdefault(DATA.KEY_PUMPS, {})
+                last_pumps[pumpID] = await async_request_pump_status(
+                    self._protocol, self._data, pumpID, self._max_retries
+                )
+
+    async def async_get_chemistry(self):
+        """Request IntelliChem controller data."""
+        if not self.is_connected:
+            raise ScreenLogicWarning(
+                "Not connected to protocol adapter. get_chemistry failed."
+            )
+        _LOGGER.debug("Requesting chemistry data")
+        self._last[DATA.KEY_CHEMISTRY] = await async_request_chemistry(
+            self._protocol, self._data, self._max_retries
+        )
+
+    async def async_get_scg(self):
+        """Request salt chlorine generator state data."""
+        if not self.is_connected:
+            raise ScreenLogicWarning(
+                "Not connected to protocol adapter. get_scg failed."
+            )
+        _LOGGER.debug("Requesting scg data")
+        self._last[DATA.KEY_SCG] = await async_request_scg_config(
+            self._protocol, self._data, self._max_retries
+        )
+
     def get_data(self) -> dict:
         """Return the data."""
         return self._data
@@ -327,64 +385,6 @@ class ScreenLogicGateway:
         _LOGGER.debug(f"User requesting {message_code}")
         return await async_make_request(
             self._protocol, message_code, message, self._max_retries
-        )
-
-    async def async_get_config(self):
-        """Request pool configuration data."""
-        if not self.is_connected:
-            raise ScreenLogicWarning(
-                "Not connected to protocol adapter. get_config failed."
-            )
-        _LOGGER.debug("Requesting config data")
-        self._last[DATA.KEY_CONFIG] = await async_request_pool_config(
-            self._protocol, self._data, self._max_retries
-        )
-
-    async def async_get_status(self):
-        """Request pool state data."""
-        if not self.is_connected:
-            raise ScreenLogicWarning(
-                "Not connected to protocol adapter. get_status failed."
-            )
-        _LOGGER.debug("Requesting pool status")
-        self._last["status"] = await async_request_pool_status(
-            self._protocol, self._data, self._max_retries
-        )
-
-    async def async_get_pumps(self):
-        """Request all pump state data."""
-        if not self.is_connected:
-            raise ScreenLogicWarning(
-                "Not connected to protocol adapter. get_pumps failed."
-            )
-        for pumpID in self._data[DATA.KEY_PUMPS]:
-            if self._data[DATA.KEY_PUMPS][pumpID]["data"] != 0:
-                _LOGGER.debug("Requesting pump %i data", pumpID)
-                last_pumps = self._last.setdefault(DATA.KEY_PUMPS, {})
-                last_pumps[pumpID] = await async_request_pump_status(
-                    self._protocol, self._data, pumpID, self._max_retries
-                )
-
-    async def async_get_chemistry(self):
-        """Request IntelliChem controller data."""
-        if not self.is_connected:
-            raise ScreenLogicWarning(
-                "Not connected to protocol adapter. get_chemistry failed."
-            )
-        _LOGGER.debug("Requesting chemistry data")
-        self._last[DATA.KEY_CHEMISTRY] = await async_request_chemistry(
-            self._protocol, self._data, self._max_retries
-        )
-
-    async def async_get_scg(self):
-        """Request salt chlorine generator state data."""
-        if not self.is_connected:
-            raise ScreenLogicWarning(
-                "Not connected to protocol adapter. get_scg failed."
-            )
-        _LOGGER.debug("Requesting scg data")
-        self._last[DATA.KEY_SCG] = await async_request_scg_config(
-            self._protocol, self._data, self._max_retries
         )
 
     def _common_connection_closed_callback(self):
