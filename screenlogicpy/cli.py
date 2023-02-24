@@ -227,13 +227,13 @@ async def cli(cli_args):
         ):
             await gateway.async_update()
             new_data = gateway.get_data()
-            if scg_1:
+            if scg_1 is not None:
                 print(vFormat(new_data[DATA.KEY_SCG]["scg_level1"]))
-            if scg_2:
+            if scg_2 is not None:
                 print(vFormat(new_data[DATA.KEY_SCG]["scg_level2"]))
-            if sup:
+            if sup is not None:
                 print(vFormat(new_data[DATA.KEY_SCG]["scg_flags"]))
-            if timer:
+            if timer is not None:
                 print(vFormat(new_data[DATA.KEY_SCG]["scg_super_chlor_timer"]))
             return 0
         return 64
