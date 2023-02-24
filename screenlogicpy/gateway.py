@@ -296,160 +296,13 @@ class ScreenLogicGateway:
                 return True
         return False
 
-    async def async_set_scg_config(self, pool_output: int, spa_output: int):
-        """Set the salt-chlorine-generator output for both pool and spa."""
-        if not self._is_valid_scg_value(pool_output, BODY_TYPE.POOL):
-            raise ValueError(f"Invalid pool_output: {pool_output}")
-        if not self._is_valid_scg_value(spa_output, BODY_TYPE.SPA):
-            raise ValueError(f"Invalid spa_output: {spa_output}")
-
-        if await self.async_connect():
-            if await async_request_set_scg_config(
-                self._protocol, pool_output, spa_output, max_retries=self._max_retries
-            ):
-                return True
-        return False
-
-    async def async_set_chem_data(
-        self,
-        ph_setpoint: float,
-        orp_setpoint: int,
-        calcium: int,
-        alkalinity: int,
-        cyanuric: int,
-        salt: int,
-    ):
-        """Set configurable chemistry values."""
-        if self._is_valid_ph_setpoint(ph_setpoint):
-            ph_setpoint = int(ph_setpoint * 100)
-        else:
-            raise ValueError(f"Invalid PH Set point: {ph_setpoint}")
-        if not self._is_valid_orp_setpoint(orp_setpoint):
-            raise ValueError(f"Invalid ORP Set point: {orp_setpoint}")
-        if calcium < 0 or alkalinity < 0 or cyanuric < 0 or salt < 0:
-            raise ValueError("Invalid Chemistry setting.")
-
-        if await self.async_connect():
-            if await async_request_set_chem_data(
-                self._protocol,
-                ph_setpoint,
-                orp_setpoint,
-                calcium,
-                alkalinity,
-                cyanuric,
-                salt,
-                self._max_retries,
-            ):
-                return True
-        return False
-
-    async def async_subscribe_client(
-        self, callback: Callable[..., any], code: int
-    ) -> Callable:
-        """
-        Subscribe client listener to message code.
-
-        Subscribe to push messaging from the ScreenLogic protocol adapter and register a
-        callback method to call when a message with the specified message code is received.
-
-        Messages with known codes will be processed to update gateway data before
-        callback method is called.
-        """
-        return await self._client_manager.async_subscribe(callback, code)
-
-    def register_async_message_handler(
-        self, message_code: int, handler: Callable[[bytes, any], Awaitable[None]], *argv
-    ):
-        """
-        Register handler for message code.
-
-        Registers an async function to call when a message with the specified message_code is received.
-        Only one handler can be registered per message_code. Subsequent registrations will override
-        the previous registration.
-        """
-        if not self._protocol:
-            raise ScreenLogicError(
-                "Not connected to ScreenLogic gateway. Must connect to gateway before registering handler."
-            )
-        self._protocol.register_async_message_callback(message_code, handler, *argv)
-
-    def remove_async_message_handler(self, message_code: int):
-        """Remove handler for message code."""
-        if self._protocol:
-            self._protocol.remove_async_message_callback(message_code)
-
-    async def async_send_message(self, message_code: int, message: bytes = b""):
-        """Send a message to the ScreenLogic protocol adapter."""
-        if not self.is_connected:
-            raise ScreenLogicWarning(
-                "Not connected to protocol adapter. send_message failed."
-            )
-        _LOGGER.debug(f"User requesting {message_code}")
-        return await async_make_request(
-            self._protocol, message_code, message, self._max_retries
-        )
-
-    def get_data(self) -> dict:
-        """Return the data."""
-        return self._data
-
-    def get_debug(self) -> dict:
-        """Return the debug last-received data."""
-        return self._last
-
-    async def async_set_circuit(self, circuitID: int, circuitState: int):
-        """Set the circuit state for the specified circuit."""
-        if not self._is_valid_circuit(circuitID):
-            raise ScreenLogicValueRangeError(f"Invalid circuitID: {circuitID}")
-        if not self._is_valid_circuit_state(circuitState):
-            raise ScreenLogicValueRangeError(f"Invalid circuitState: {circuitState}")
-
-        if await self.async_connect():
-            return await async_request_pool_button_press(
-                self._protocol, circuitID, circuitState
-            )
-        return False
-
-    async def async_set_heat_temp(self, body: int, temp: int):
-        """Set the target temperature for the specified body."""
-        if not self._is_valid_body(body):
-            raise ScreenLogicValueRangeError(f"Invalid body: {body}")
-        if not self._is_valid_heattemp(body, temp):
-            raise ScreenLogicValueRangeError(f"Invalid temp ({temp}) for body ({body})")
-
-        if await self.async_connect():
-            return await async_request_set_heat_setpoint(self._protocol, body, temp)
-        return False
-
-    async def async_set_heat_mode(self, body: int, mode: int):
-        """Set the heating mode for the specified body."""
-        if not self._is_valid_body(body):
-            raise ScreenLogicValueRangeError(f"Invalid body: {body}")
-        if not self._is_valid_heatmode(mode):
-            raise ScreenLogicValueRangeError(f"Invalid mode: {mode}")
-
-        if await self.async_connect():
-            return await async_request_set_heat_mode(self._protocol, body, mode)
-        return False
-
-    async def async_set_color_lights(self, light_command: int):
-        """Set the light show mode for all capable lights."""
-        if not self._is_valid_color_mode(light_command):
-            raise ScreenLogicValueRangeError(f"Invalid light_command: {light_command}")
-
-        if await self.async_connect():
-            return await async_request_pool_lights_command(
-                self._protocol, light_command
-            )
-        return False
-
     async def async_set_scg_config(
         self,
         *,
         pool_output: int = None,
         spa_output: int = None,
-        super_chlor: int = 0,
-        super_time: int = 0,
+        super_chlor: int = None,
+        super_time: int = None,
     ):
         """Set the salt-chlorine-generator output for both pool and spa."""
         if not (pool_output or spa_output):
@@ -460,6 +313,9 @@ class ScreenLogicGateway:
 
         pool_output = current("scg_level1") if pool_output is None else pool_output
         spa_output = current("scg_level2") if spa_output is None else spa_output
+        # TODO: Need to find state values for these
+        super_chlor = 0 if super_chlor is None else super_chlor
+        super_time = 0 if super_time is None else super_time
 
         if not self._is_valid_scg_value(pool_output, BODY_TYPE.POOL):
             raise ScreenLogicValueRangeError(f"Invalid pool_output: {pool_output}")
@@ -468,7 +324,12 @@ class ScreenLogicGateway:
 
         if await self.async_connect():
             return await async_request_set_scg_config(
-                self._protocol, pool_output, spa_output, super_chlor, super_time
+                self._protocol,
+                pool_output,
+                spa_output,
+                super_chlor,
+                super_time,
+                self._max_retries,
             )
         return False
 
@@ -538,6 +399,7 @@ class ScreenLogicGateway:
                 total_alkalinity,
                 cya,
                 salt_tds_ppm,
+                self._max_retries,
             )
         return False
 
@@ -583,7 +445,9 @@ class ScreenLogicGateway:
                 "Not connected to protocol adapter. send_message failed."
             )
         _LOGGER.debug(f"User requesting {message_code}")
-        return await async_make_request(self._protocol, message_code, message)
+        return await async_make_request(
+            self._protocol, message_code, message, self._max_retries
+        )
 
     def _common_connection_closed_callback(self):
         """Perform any needed cleanup."""
