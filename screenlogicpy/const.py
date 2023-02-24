@@ -313,7 +313,9 @@ class INTERFACE_GROUP:
     POOL = 0
     SPA = 1
     FEATURES = 2
-    LIGHTS = 3
+    LIGHTS_COLOR = 3  # ?
+    LIGHTS = 4
+    DONT_SHOW = 5
 
 
 class CHEMISTRY:
@@ -381,7 +383,11 @@ class CHEM_DOSE_TYPE:
         ACID = 1
         CO2 = 2
 
-        NAME_FOR_NUM = {NONE: "None", ACID: "Acid", CO2: "CO2"}
+        NAME_FOR_NUM = {
+            NONE: "None",
+            ACID: "Acid",
+            CO2: "CO2",
+        }
         NUM_FOR_NAME = {name: num for num, name in NAME_FOR_NUM.items()}
 
 
@@ -391,7 +397,7 @@ class SCG:
 
 
 GENERIC_CIRCUIT_NAMES = [
-    *[f"Aux {num}" for num in range(1, 8)],  # Last number is 7
+    *[f"Aux {num}" for num in range(1, 25)],  # Last number is 24
     "AuxEx",
     *[f"Feature {num}" for num in range(1, 9)],  # Last number is 8
 ]
