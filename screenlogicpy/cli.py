@@ -7,19 +7,17 @@ from screenlogicpy.gateway import ScreenLogicGateway
 from screenlogicpy.const import (
     BODY_TYPE,
     COLOR_MODE,
-    CHEMISTRY,
     DATA,
     EQUIPMENT,
     HEAT_MODE,
     ON_OFF,
-    RANGE,
-    SCG,
     SL_GATEWAY_IP,
     SL_GATEWAY_NAME,
     SL_GATEWAY_PORT,
     ScreenLogicError,
     ScreenLogicWarning,
 )
+from screenlogicpy.validation import DATA_BOUNDS as DB
 
 
 def cliFormat(name: str):
@@ -188,49 +186,53 @@ async def cli(cli_args):
             return 0
         return 32
 
-    async def async_set_scg_config():
-        scg_1 = None
-        scg_2 = None
-        sup = None
-        timer = None
-        if args.set_option in {"super-chlorinate", "sup"}:
-            if args.super_enable == "*" and args.super_time == "*":
-                print("No new super chlorinate values. Nothing to do.")
-                return 65
+    async def async_set_scg_setpoint():
+        if args.pool is None and args.spa is None:
+            set_scg_setpoint_parser.error("At least one argument required.")
 
-            try:
-                sup = (
-                    None
-                    if args.super_enable == "*"
-                    else 1
-                    if args.super_enable.lower() in {"1", "on"}
-                    else 0
-                )
-                timer = None if args.super_time == "*" else int(args.super_time)
-            except ValueError:
-                print("Invalid super chlorinate value")
-                return 66
-        else:
-            if args.scg_pool == "*" and args.scg_spa == "*":
-                print("No new SCG values. Nothing to do.")
-                return 65
-
-            try:
-                scg_1 = None if args.scg_pool == "*" else int(args.scg_pool)
-                scg_2 = None if args.scg_spa == "*" else int(args.scg_spa)
-            except ValueError:
-                print("Invalid SCG value")
-                return 66
+        try:
+            if args.pool is not None:
+                DB.SCG_SETPOINT_POOL.validate(args.pool)
+            scg_pool = args.pool
+            if args.spa is not None:
+                DB.SCG_SETPOINT_SPA.validate(args.spa)
+            scg_spa = args.spa
+        except ValueError:
+            set_scg_setpoint_parser.error("Invalid SCG setpoint value.")
 
         if await gateway.async_set_scg_config(
-            pool_output=scg_1, spa_output=scg_2, super_chlor=sup, super_time=timer
+            pool_output=scg_pool,
+            spa_output=scg_spa,
         ):
             await gateway.async_update()
             new_data = gateway.get_data()
-            if scg_1 is not None:
+            if scg_pool is not None:
                 print(vFormat(new_data[DATA.KEY_SCG]["scg_level1"]))
-            if scg_2 is not None:
+            if scg_spa is not None:
                 print(vFormat(new_data[DATA.KEY_SCG]["scg_level2"]))
+            return 0
+        return 64
+
+    async def async_set_scg_super():
+        if args.state is None and args.time is None:
+            set_scg_super_parser.error("At least one argument required.")
+
+        try:
+            if args.state is not None:
+                DB.ON_OFF.validate(args.state)
+            sup = args.state
+            if args.time is not None:
+                DB.SC_RUNTIME.validate(args.time)
+            timer = args.time
+        except ValueError:
+            set_scg_super_parser.error("Invalid super chlorinate value")
+
+        if await gateway.async_set_scg_config(
+            super_chlor=sup,
+            super_time=timer,
+        ):
+            await gateway.async_update()
+            new_data = gateway.get_data()
             if sup is not None:
                 print(vFormat(new_data[DATA.KEY_SCG]["scg_flags"]))
             if timer is not None:
@@ -238,26 +240,78 @@ async def cli(cli_args):
             return 0
         return 64
 
-    async def async_set_chem_data():
-        if args.ph_setpoint == "*" and args.orp_setpoint == "*":
-            print("No new setpoint values. Nothing to do.")
-            return 129
+    async def async_set_chem_setpoint():
+        if args.ph is None and args.orp is None:
+            set_chem_setpoint_parser.error("At least one argument required.")
 
         try:
-            ph = None if args.ph_setpoint == "*" else float(args.ph_setpoint)
-            orp = None if args.orp_setpoint == "*" else int(args.orp_setpoint)
+            if args.ph is not None:
+                DB.CHEM_SETPOINT_PH.validate(args.ph)
+            ph = args.ph
+            if args.orp is not None:
+                DB.CHEM_SETPOINT_ORP.validate(args.orp)
+            orp = args.orp
         except ValueError:
-            print("Invalid Chemistry Setpoint value")
-            return 130
+            set_chem_setpoint_parser.error("Invalid chemistry setpoint value.")
 
-        if await gateway.async_set_chem_data(ph_setpoint=ph, orp_setpoint=orp):
+        if await gateway.async_set_chem_data(
+            ph_setpoint=ph,
+            orp_setpoint=orp,
+        ):
             await asyncio.sleep(3)
             await gateway.async_update()
             new_data = gateway.get_data()
-            print(
-                vFormat(new_data[DATA.KEY_CHEMISTRY]["ph_setpoint"]),
-                vFormat(new_data[DATA.KEY_CHEMISTRY]["orp_setpoint"]),
-            )
+            if ph is not None:
+                print(vFormat(new_data[DATA.KEY_CHEMISTRY]["ph_setpoint"]))
+            if orp is not None:
+                print(vFormat(new_data[DATA.KEY_CHEMISTRY]["orp_setpoint"]))
+
+            return 0
+        return 128
+
+    async def async_set_chem_data():
+        if (
+            args.ch is None
+            and args.ta is None
+            and args.cya is None
+            and args.salt is None
+        ):
+            set_chem_data_parser.error("At least one argument required.")
+
+        try:
+            if args.ch is not None:
+                DB.CHEM_CALCIUM_HARDNESS.validate(args.ch)
+            ch = args.ch
+            if args.ta is not None:
+                DB.CHEM_TOTAL_ALKALINITY.validate(args.ta)
+            ta = args.ta
+            if args.cya is not None:
+                DB.CHEM_CYANURIC_ACID.validate(args.cya)
+            cya = args.cya
+            if args.salt is not None:
+                DB.CHEM_SALT_TDS.validate(args.salt)
+            salt = args.salt
+        except ValueError:
+            set_chem_data_parser.error("Invalid chemistry value.")
+
+        if await gateway.async_set_chem_data(
+            calcium_harness=ch,
+            total_alkalinity=ta,
+            cya=cya,
+            salt_tds_ppm=salt,
+        ):
+            await asyncio.sleep(3)
+            await gateway.async_update()
+            new_data = gateway.get_data()
+            if ch is not None:
+                print(vFormat(new_data[DATA.KEY_CHEMISTRY]["calcium_harness"]))
+            if ta is not None:
+                print(vFormat(new_data[DATA.KEY_CHEMISTRY]["total_alkalinity"]))
+            if cya is not None:
+                print(vFormat(new_data[DATA.KEY_CHEMISTRY]["cya"]))
+            if salt is not None:
+                print(vFormat(new_data[DATA.KEY_CHEMISTRY]["salt_tds_ppm"]))
+
             return 0
         return 128
 
@@ -266,7 +320,7 @@ async def cli(cli_args):
         return 0
 
     option_parser = argparse.ArgumentParser(
-        description="Interface for Pentair Screenlogic gateway"
+        prog="screenlogicpy", description="Interface for Pentair Screenlogic gateway"
     )
 
     option_parser.add_argument("-v", "--verbose", action="store_true")
@@ -370,62 +424,105 @@ async def cli(cli_args):
         "temp",
         type=int,
         metavar="TEMP",
-        default=None,
         help="Temperature to set in same unit of measurement as controller settings",
     )
     set_heat_temp_parser.set_defaults(async_func=async_set_heat_temp)
 
-    set_scg_config_parser = set_subparsers.add_parser("salt-generator", aliases=["scg"])
-    set_scg_config_parser.add_argument(
-        "scg_pool",
-        type=str,
-        metavar="POOL_PCT",
-        default=None,
-        help="Chlorinator output for when system is in POOL mode. 0-100, or * to keep current value.",
+    set_scg_setpoint_parser = set_subparsers.add_parser(
+        "salt-generator", aliases=["scg"]
     )
-    set_scg_config_parser.add_argument(
-        "scg_spa",
-        type=str,
-        metavar="SPA_PCT",
+    set_scg_setpoint_parser.add_argument(
+        "-p",
+        "--pool",
+        type=int,
+        metavar="OUTPUT",
         default=None,
-        help="Chlorinator output for when system is in SPA mode. 0-20, or * to keep current value.",
+        help="Chlorinator output for when system is in POOL mode. 0-100",
     )
-    set_scg_config_parser.set_defaults(async_func=async_set_scg_config)
+    set_scg_setpoint_parser.add_argument(
+        "-s",
+        "--spa",
+        type=int,
+        metavar="OUTPUT",
+        default=None,
+        help="Chlorinator output for when system is in SPA mode. 0-100",
+    )
+    set_scg_setpoint_parser.set_defaults(async_func=async_set_scg_setpoint)
 
-    set_super_config_parser = set_subparsers.add_parser(
+    set_scg_super_parser = set_subparsers.add_parser(
         "super-chlorinate", aliases=["sup"]
     )
-    set_super_config_parser.add_argument(
-        "super_enable",
+    set_scg_super_parser.add_argument(
+        "-s",
+        "--state",
         type=str,
-        metavar="ENABLE",
-        default="0",
         choices=on_off_options,
-        help=f"Enable super chlorinate. One of {on_off_options}",
-    )
-    set_super_config_parser.add_argument(
-        "super_time",
-        type=str,
-        metavar="SUPER_TIME",
         default=None,
-        help=f"Time in hours to run super chlorination. 1-{SCG.MAX_SC_RUNTIME}, or * to keep current value.",
+        help=f"State of super chlorination. One of {on_off_options}",
     )
-    set_super_config_parser.set_defaults(async_func=async_set_scg_config)
+    set_scg_super_parser.add_argument(
+        "-t",
+        "--time",
+        type=int,
+        metavar="HOURS",
+        default=None,
+        help=f"Time in hours to run super chlorination. {DB.SC_RUNTIME.min}-{DB.SC_RUNTIME.max}",
+    )
+    set_scg_super_parser.set_defaults(async_func=async_set_scg_super)
 
-    set_chem_data_parser = set_subparsers.add_parser("chem-data", aliases=["ch"])
-    set_chem_data_parser.add_argument(
-        "ph_setpoint",
-        type=str,
-        metavar="PH_SETPOINT",
+    set_chem_setpoint_parser = set_subparsers.add_parser(
+        "chem-setpoint", aliases=["csp"]
+    )
+    set_chem_setpoint_parser.add_argument(
+        "-p",
+        "--ph",
+        type=float,
         default=None,
-        help=f"PH set point for IntelliChem. {CHEMISTRY.RANGE_PH_SETPOINT[RANGE.MIN]}-{CHEMISTRY.RANGE_PH_SETPOINT[RANGE.MAX]}, or * to keep current value.",
+        help=(
+            "PH set point for IntelliChem. "
+            f"{DB.CHEM_SETPOINT_PH.min}-{DB.CHEM_SETPOINT_PH.max}"
+        ),
+    )
+    set_chem_setpoint_parser.add_argument(
+        "-o",
+        "--orp",
+        type=int,
+        default=None,
+        help=(
+            "ORP set point for IntelliChem. "
+            f"{DB.CHEM_SETPOINT_ORP.min}-{DB.CHEM_SETPOINT_ORP.max}"
+        ),
+    )
+    set_chem_setpoint_parser.set_defaults(async_func=async_set_chem_setpoint)
+
+    set_chem_data_parser = set_subparsers.add_parser("chem-data", aliases=["cd"])
+    set_chem_data_parser.add_argument(
+        "-c",
+        "--ch",
+        type=int,
+        default=None,
+        help="Calcium hardness for LSI calculations in the IntelliChem system.",
     )
     set_chem_data_parser.add_argument(
-        "orp_setpoint",
-        type=str,
-        metavar="ORP_SETPOINT",
+        "-t",
+        "--ta",
+        type=int,
         default=None,
-        help=f"ORP set point for IntelliChem. {CHEMISTRY.RANGE_ORP_SETPOINT[RANGE.MIN]}-{CHEMISTRY.RANGE_ORP_SETPOINT[RANGE.MAX]}, or * to keep current value.",
+        help="Total alkalinity for LSI calculations in the IntelliChem system.",
+    )
+    set_chem_data_parser.add_argument(
+        "-y",
+        "--cya",
+        type=int,
+        default=None,
+        help="Cyanuric acid for LSI calculations in the IntelliChem system.",
+    )
+    set_chem_data_parser.add_argument(
+        "-s",
+        "--salt",
+        type=int,
+        default=None,
+        help="Salt or total dissolved solids (if not using a SCG) for LSI calculations in the IntelliChem system.",
     )
     set_chem_data_parser.set_defaults(async_func=async_set_chem_data)
 
