@@ -67,7 +67,7 @@ def decodeMessageString(data) -> str:
     )
 
 
-def getSome(format, buff, offset) -> tuple[Any, int]:
+def getSome(format, buff, offset) -> Tuple[Any, int]:
     fmt = format if format.startswith(">") else f"<{format}"
     newoffset = offset + struct.calcsize(fmt)
     return struct.unpack_from(fmt, buff, offset)[0], newoffset
@@ -93,7 +93,7 @@ def getValueAt(buff, offset, want, **kwargs):
     return data, newoffset
 
 
-def getString(buff, offset) -> tuple[str, int]:
+def getString(buff, offset) -> Tuple[str, int]:
     fmtLen = "<I"
     offsetLen = offset + struct.calcsize(fmtLen)
     sLen = struct.unpack_from(fmtLen, buff, offset)[0]
