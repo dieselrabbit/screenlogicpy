@@ -5,13 +5,9 @@ from typing import Awaitable, Callable
 
 from .client import ClientManager
 from .const import (
-    BODY_TYPE,
-    CHEMISTRY,
     CIRCUIT_FUNCTION,
     DATA,
     MESSAGE,
-    RANGE,
-    SCG,
     ScreenLogicError,
     ScreenLogicKeyError,
     ScreenLogicValueRangeError,
@@ -34,6 +30,12 @@ from .requests import (
     async_make_request,
 )
 from .requests.protocol import ScreenLogicProtocol
+from .validation import (
+    BoundsSet,
+    BoundsRange,
+    DATA_BOUNDS as DB,
+    SETTINGS_BOUNDS as SB,
+)
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -137,6 +139,7 @@ class ScreenLogicGateway:
                 await self._client_manager.attach(
                     self._protocol, self.get_data(), self._max_retries
                 )
+                self._add_local_limits()
                 return True
         _LOGGER.debug("Login failed")
         return False
@@ -237,17 +240,13 @@ class ScreenLogicGateway:
         return self._last
 
     def set_max_retries(self, max_retries: int = MESSAGE.COM_MAX_RETRIES) -> None:
-        if 0 < max_retries < 6:
-            self._max_retries = max_retries
-        else:
-            raise ValueError(f"Invalid max_retries: {max_retries}")
+        SB.MAX_RETRIES.validate(max_retries)
+        self._max_retries = max_retries
 
     async def async_set_circuit(self, circuitID: int, circuitState: int):
         """Set the circuit state for the specified circuit."""
-        if not self._is_valid_circuit(circuitID):
-            raise ValueError(f"Invalid circuitID: {circuitID}")
-        if not self._is_valid_circuit_state(circuitState):
-            raise ValueError(f"Invalid circuitState: {circuitState}")
+        DB.CIRCUIT.validate(circuitID)
+        DB.ON_OFF.validate(circuitState)
 
         if await self.async_connect():
             if await async_request_pool_button_press(
@@ -258,10 +257,8 @@ class ScreenLogicGateway:
 
     async def async_set_heat_temp(self, body: int, temp: int):
         """Set the target temperature for the specified body."""
-        if not self._is_valid_body(body):
-            raise ValueError(f"Invalid body: {body}")
-        if not self._is_valid_heattemp(body, temp):
-            raise ValueError(f"Invalid temp ({temp}) for body ({body})")
+        DB.BODY.validate(body)
+        DB.HEAT_TEMP[body].validate(temp)
 
         if await self.async_connect():
             if await async_request_set_heat_setpoint(
@@ -272,10 +269,8 @@ class ScreenLogicGateway:
 
     async def async_set_heat_mode(self, body: int, mode: int):
         """Set the heating mode for the specified body."""
-        if not self._is_valid_body(body):
-            raise ValueError(f"Invalid body: {body}")
-        if not self._is_valid_heatmode(mode):
-            raise ValueError(f"Invalid mode: {mode}")
+        DB.BODY.validate(body)
+        DB.HEAT_MODE.validate(mode)
 
         if await self.async_connect():
             if await async_request_set_heat_mode(
@@ -286,8 +281,7 @@ class ScreenLogicGateway:
 
     async def async_set_color_lights(self, light_command: int):
         """Set the light show mode for all capable lights."""
-        if not self._is_valid_color_mode(light_command):
-            raise ValueError(f"Invalid light_command: {light_command}")
+        DB.COLOR_MODE.validate(light_command)
 
         if await self.async_connect():
             if await async_request_pool_lights_command(
@@ -305,7 +299,7 @@ class ScreenLogicGateway:
         super_time: int = None,
     ):
         """Set the salt-chlorine-generator output for both pool and spa."""
-        if not (pool_output or spa_output):
+        if pool_output is None and spa_output is None:
             raise ScreenLogicValueRangeError("No SCG values to set")
 
         def current(k):
@@ -315,12 +309,12 @@ class ScreenLogicGateway:
         spa_output = current("scg_level2") if spa_output is None else spa_output
         # TODO: Need to find state values for these
         super_chlor = 0 if super_chlor is None else super_chlor
-        super_time = 0 if super_time is None else super_time
+        super_time = 1 if super_time is None else super_time
 
-        if not self._is_valid_scg_value(pool_output, BODY_TYPE.POOL):
-            raise ScreenLogicValueRangeError(f"Invalid pool_output: {pool_output}")
-        if not self._is_valid_scg_value(spa_output, BODY_TYPE.SPA):
-            raise ScreenLogicValueRangeError(f"Invalid spa_output: {spa_output}")
+        DB.SCG_SETPOINT_POOL.validate(pool_output)
+        DB.SCG_SETPOINT_SPA.validate(spa_output)
+        DB.ON_OFF.validate(super_chlor)
+        DB.SC_RUNTIME.validate(super_time)
 
         if await self.async_connect():
             return await async_request_set_scg_config(
@@ -370,25 +364,25 @@ class ScreenLogicGateway:
         cya = current("cya") if cya is None else cya
         salt_tds_ppm = current("salt_tds_ppm") if salt_tds_ppm is None else salt_tds_ppm
 
-        if self._is_valid_ph_setpoint(ph_setpoint):
-            ph_setpoint = int(ph_setpoint * 100)
-        else:
-            raise ScreenLogicValueRangeError(f"Invalid PH Set point: {ph_setpoint}")
-        if not self._is_valid_orp_setpoint(orp_setpoint):
-            raise ScreenLogicValueRangeError(f"Invalid ORP Set point: {orp_setpoint}")
         if not (
-            ph_setpoint
-            and orp_setpoint
-            and calcium_harness
-            and total_alkalinity
-            and cya
-            and salt_tds_ppm
+            ph_setpoint is not None
+            and orp_setpoint is not None
+            and calcium_harness is not None
+            and total_alkalinity is not None
+            and cya is not None
+            and salt_tds_ppm is not None
         ):
             raise ScreenLogicKeyError(
                 "Unable to reference existing omitted chemistry values."
             )
-        if calcium_harness < 0 or total_alkalinity < 0 or cya < 0 or salt_tds_ppm < 0:
-            raise ScreenLogicValueRangeError("Invalid Chemistry setting.")
+
+        DB.CHEM_SETPOINT_PH.validate(ph_setpoint)
+        ph_setpoint = int(ph_setpoint * 100)
+        DB.CHEM_SETPOINT_ORP.validate(orp_setpoint)
+        DB.CHEM_CALCIUM_HARDNESS.validate(calcium_harness)
+        DB.CHEM_TOTAL_ALKALINITY.validate(total_alkalinity)
+        DB.CHEM_CYANURIC_ACID.validate(cya)
+        DB.CHEM_SALT_TDS.validate(salt_tds_ppm)
 
         if await self.async_connect():
             return await async_request_set_chem_data(
@@ -455,51 +449,16 @@ class ScreenLogicGateway:
         if self._custom_connection_closed_callback:
             self._custom_connection_closed_callback()
 
-    def _is_valid_circuit(self, circuit):
-        """Validate circuit number."""
-        return circuit in self._data[DATA.KEY_CIRCUITS]
-
-    def _is_valid_circuit_state(self, state):
-        """Validate circuit state number."""
-        return state == 0 or state == 1
-
-    def _is_valid_body(self, body):
-        """Validate body of water number."""
-        return body in self._data[DATA.KEY_BODIES]
-
-    def _is_valid_heatmode(self, heatmode):
-        """Validate heat mode number."""
-        return 0 <= heatmode < 5
-
-    def _is_valid_heattemp(self, body, temp):
-        """Validate heat tem for body."""
-        min_temp = self._data[DATA.KEY_BODIES][int(body)]["min_set_point"]["value"]
-        max_temp = self._data[DATA.KEY_BODIES][int(body)]["max_set_point"]["value"]
-        return min_temp <= temp <= max_temp
-
-    def _is_valid_color_mode(self, mode):
-        """Validate color mode number."""
-        return 0 <= mode <= 21
-
-    def _is_valid_scg_value(self, scg_value, body_type):
-        """Validate chlorinator value for body."""
-        return 0 <= scg_value <= SCG.LIMIT_FOR_BODY[body_type]
-
-    def _is_valid_ph_setpoint(self, ph_setpoint: float):
-        """Validate pH setpoint."""
-        return (
-            CHEMISTRY.RANGE_PH_SETPOINT[RANGE.MIN]
-            <= ph_setpoint
-            <= CHEMISTRY.RANGE_PH_SETPOINT[RANGE.MAX]
-        )
-
-    def _is_valid_orp_setpoint(self, orp_setpoint: int):
-        """Validate ORP setpoint."""
-        return (
-            CHEMISTRY.RANGE_ORP_SETPOINT[RANGE.MIN]
-            <= orp_setpoint
-            <= CHEMISTRY.RANGE_ORP_SETPOINT[RANGE.MAX]
-        )
+    def _add_local_limits(self):
+        DB.CIRCUIT = BoundsSet(self._data[DATA.KEY_CIRCUITS].keys())
+        DB.BODY = BoundsSet(self._data[DATA.KEY_BODIES].keys())
+        DB.HEAT_TEMP = {
+            body: BoundsRange(
+                body_data["min_set_point"]["value"],
+                body_data["max_set_point"]["value"],
+            )
+            for body, body_data in self._data[DATA.KEY_BODIES].items()
+        }
 
     # Promote?
     def _has_color_lights(self):
@@ -510,7 +469,7 @@ class ScreenLogicGateway:
                     return True
         return False
 
-    def _current_data_value(self, sec_key: str, val_key: str) -> str | int | float:
+    def _current_data_value(self, sec_key: str, val_key: str):
         """Return current data value."""
         if section := self._data.get(sec_key):
             if sensor := section.get(val_key):

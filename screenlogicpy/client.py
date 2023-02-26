@@ -5,6 +5,7 @@ import random
 from typing import Callable
 
 from .const import CODE, COM_KEEPALIVE, MESSAGE, ScreenLogicWarning
+from .validation import SETTINGS_BOUNDS as SB
 from .requests.chemistry import decode_chemistry
 from .requests.client import async_request_add_client, async_request_remove_client
 from .requests.lights import decode_color_update
@@ -19,9 +20,11 @@ class ClientManager:
     """Class to manage callback subscriptions to specific ScreenLogic messages."""
 
     def __init__(self, client_id: int = None) -> None:
-        self._client_id = (
-            client_id if client_id is not None else random.randint(32767, 65535)
-        )
+        if client_id is not None and SB.CLIENT_ID.is_valid(client_id):
+            self._client_id = client_id
+        else:
+            self._client_id = random.randint(32767, 65535)
+
         self._listeners = {}
         self._is_client = False
         self._client_sub_unsub_lock = asyncio.Lock()

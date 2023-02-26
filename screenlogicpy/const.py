@@ -177,13 +177,6 @@ class COLOR_MODE:
     NUM_FOR_NAME = {name: num for num, name in NAME_FOR_NUM.items()}
 
 
-class RANGE:
-    MIN = 0
-    MAX = 1
-
-    NAME_FOR_NUM = {MIN: "Minimum", MAX: "Maximum"}
-
-
 class DEVICE_TYPE:
     ALARM = "alarm"
     DURATION = "duration"
@@ -355,10 +348,6 @@ class CHEMISTRY:
     FLAG_FLAGS_PH_SUPPLY_TYPE = 0x40
     FLAG_FLAGS_COMMS_LOST = 0x80  # ?
 
-    # Valid ranges listed in IntelliChem documentation
-    RANGE_PH_SETPOINT = {RANGE.MIN: 7.2, RANGE.MAX: 7.6}
-    RANGE_ORP_SETPOINT = {RANGE.MIN: 400, RANGE.MAX: 800}
-
 
 class CHEM_DOSING_STATE:
     DOSING = 0
@@ -393,11 +382,6 @@ class CHEM_DOSE_TYPE:
             CO2: "CO2",
         }
         NUM_FOR_NAME = {name: num for num, name in NAME_FOR_NUM.items()}
-
-
-class SCG:
-    LIMIT_FOR_BODY = {BODY_TYPE.POOL: 100, BODY_TYPE.SPA: 100}
-    MAX_SC_RUNTIME = 72
 
 
 GENERIC_CIRCUIT_NAMES = [
