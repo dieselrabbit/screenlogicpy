@@ -227,7 +227,7 @@ async def test_async_set_scg_config(
         await gateway.async_disconnect()
         assert mockRequest.call_args.args[0] == scg_code
         assert mockRequest.call_args.args[1] == struct.pack(
-            "<IIIII", 0, pool_pct, spa_pct, 0, 0
+            "<IIIII", 0, pool_pct, spa_pct, 0, 1
         )
 
 

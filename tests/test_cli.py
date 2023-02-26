@@ -166,14 +166,14 @@ async def test_set_color_lights(MockProtocolAdapter, capsys, args, ret, expected
 @pytest.mark.parametrize(
     "args, ret, expected",
     [
-        ("set salt-generator 100 20", 0, "50\n0"),
+        ("set salt-generator --pool 100 --spa 20", 0, "50\n0"),
         (
-            "-v set scg 20 0",
+            "-v set scg -p 20 -s 0",
             0,
             EXPECTED_VERBOSE_PREAMBLE + "Pool SCG Level: 50\nSpa SCG Level: 0",
         ),
-        ("set scg * *", 65, "No new SCG values. Nothing to do."),
-        ("set scg f *", 66, "Invalid SCG value"),
+        ("set salt-generator --spa 20", 0, "0"),
+        ("set scg -p 100", 0, "50"),
     ],
 )
 async def test_set_scg(MockProtocolAdapter, capsys, args, ret, expected):
@@ -184,14 +184,14 @@ async def test_set_scg(MockProtocolAdapter, capsys, args, ret, expected):
 @pytest.mark.parametrize(
     "args, ret, expected",
     [
-        ("set chem-data 7.5 700", 0, "7.5 700"),
+        ("set chem-setpoint --ph 7.5 --orp 700", 0, "7.5\n700"),
         (
-            "-v set ch 7.6 650",
+            "-v set csp -p 7.6 -o 650",
             0,
-            EXPECTED_VERBOSE_PREAMBLE + "pH Setpoint: 7.5 ORP Setpoint: 700",
+            EXPECTED_VERBOSE_PREAMBLE + "pH Setpoint: 7.5\nORP Setpoint: 700",
         ),
-        ("set ch * *", 129, "No new setpoint values. Nothing to do."),
-        ("set ch f *", 130, "Invalid Chemistry Setpoint value"),
+        ("set csp --orp 700", 0, "700"),
+        ("set csp -p 7.5", 0, "7.5"),
     ],
 )
 async def test_set_chemistry(MockProtocolAdapter, capsys, args, ret, expected):
