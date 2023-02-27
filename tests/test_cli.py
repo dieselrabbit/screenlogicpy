@@ -166,14 +166,14 @@ async def test_set_color_lights(MockProtocolAdapter, capsys, args, ret, expected
 @pytest.mark.parametrize(
     "args, ret, expected",
     [
-        ("set salt-generator --pool 100 --spa 20", 0, "50\n0"),
+        ("set salt-generator --pool 100 --spa 0", 0, "50\n0"),
         (
             "-v set scg -p 20 -s 0",
             0,
             EXPECTED_VERBOSE_PREAMBLE + "Pool SCG Level: 50\nSpa SCG Level: 0",
         ),
-        ("set salt-generator --spa 20", 0, "0"),
-        ("set scg -p 100", 0, "50"),
+        ("set salt-generator --spa 0", 0, "0"),
+        ("set scg -p 50", 0, "50"),
     ],
 )
 async def test_set_scg(MockProtocolAdapter, capsys, args, ret, expected):
@@ -184,9 +184,9 @@ async def test_set_scg(MockProtocolAdapter, capsys, args, ret, expected):
 @pytest.mark.parametrize(
     "args, ret, expected",
     [
-        ("set chem-setpoint --ph 7.5 --orp 700", 0, "7.5\n700"),
+        ("set chem-setpoint --ph 7.5 --orp 720", 0, "7.5\n700"),
         (
-            "-v set csp -p 7.6 -o 650",
+            "-v set csp -p 7.6 -o 700",
             0,
             EXPECTED_VERBOSE_PREAMBLE + "pH Setpoint: 7.5\nORP Setpoint: 700",
         ),

@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import string
 import json
 import argparse
@@ -204,12 +205,25 @@ async def cli(cli_args):
             pool_output=scg_pool,
             spa_output=scg_spa,
         ):
-            await gateway.async_update()
-            new_data = gateway.get_data()
+            for x in range(5):
+                await asyncio.sleep(2)
+                await gateway.async_get_scg()
+                new_data = gateway.get_data()
+                new_pool_sp_data = new_data[DATA.KEY_SCG]["scg_level1"]
+                new_spa_sp_data = new_data[DATA.KEY_SCG]["scg_level2"]
+                if (
+                    new_pool_sp_data["value"] == scg_pool
+                    or new_spa_sp_data["value"] == scg_spa
+                ):
+                    break
+                elif x == 4:
+                    print("Failed to confirm updated scg values.")
+                    return 64
+
             if scg_pool is not None:
-                print(vFormat(new_data[DATA.KEY_SCG]["scg_level1"]))
+                print(vFormat(new_pool_sp_data))
             if scg_spa is not None:
-                print(vFormat(new_data[DATA.KEY_SCG]["scg_level2"]))
+                print(vFormat(new_spa_sp_data))
             return 0
         return 64
 
@@ -231,12 +245,22 @@ async def cli(cli_args):
             super_chlor=sup,
             super_time=timer,
         ):
-            await gateway.async_update()
-            new_data = gateway.get_data()
+            for x in range(5):
+                await asyncio.sleep(2)
+                await gateway.async_get_scg()
+                new_data = gateway.get_data()
+                new_scg_data = new_data[DATA.KEY_SCG]["scg_flags"]
+                new_timer_data = new_data[DATA.KEY_SCG]["scg_super_chlor_timer"]
+                if new_scg_data["value"] == sup or new_timer_data["value"] == timer:
+                    break
+                elif x == 4:
+                    print("Failed to confirm updated scg values.")
+                    return 64
+
             if sup is not None:
-                print(vFormat(new_data[DATA.KEY_SCG]["scg_flags"]))
+                print(vFormat(new_scg_data))
             if timer is not None:
-                print(vFormat(new_data[DATA.KEY_SCG]["scg_super_chlor_timer"]))
+                print(vFormat(new_timer_data))
             return 0
         return 64
 
@@ -258,13 +282,22 @@ async def cli(cli_args):
             ph_setpoint=ph,
             orp_setpoint=orp,
         ):
-            await asyncio.sleep(3)
-            await gateway.async_update()
-            new_data = gateway.get_data()
+            for x in range(5):
+                await asyncio.sleep(2)
+                await gateway.async_get_chemistry()
+                new_data = gateway.get_data()
+                new_ph_data = new_data[DATA.KEY_CHEMISTRY]["ph_setpoint"]
+                new_orp_data = new_data[DATA.KEY_CHEMISTRY]["orp_setpoint"]
+                if new_ph_data["value"] == ph or new_orp_data["value"] == orp:
+                    break
+                elif x == 4:
+                    print("Failed to confirm updated chemistry values.")
+                    return 128
+
             if ph is not None:
-                print(vFormat(new_data[DATA.KEY_CHEMISTRY]["ph_setpoint"]))
+                print(vFormat(new_ph_data))
             if orp is not None:
-                print(vFormat(new_data[DATA.KEY_CHEMISTRY]["orp_setpoint"]))
+                print(vFormat(new_orp_data))
 
             return 0
         return 128
@@ -300,8 +333,27 @@ async def cli(cli_args):
             cya=cya,
             salt_tds_ppm=salt,
         ):
+            for x in range(5):
+                await asyncio.sleep(2)
+                await gateway.async_get_chemistry()
+                new_data = gateway.get_data()
+                new_ch_data = new_data[DATA.KEY_CHEMISTRY]["calcium_harness"]
+                new_ta_data = new_data[DATA.KEY_CHEMISTRY]["total_alkalinity"]
+                new_cya_data = new_data[DATA.KEY_CHEMISTRY]["cya"]
+                new_salt_data = new_data[DATA.KEY_CHEMISTRY]["salt_tds_ppm"]
+                if (
+                    new_ch_data["value"] == ch
+                    or new_ta_data["value"] == ta
+                    or new_cya_data["value"] == cya
+                    or new_salt_data["value"] == salt
+                ):
+                    break
+                elif x == 3:
+                    print("Failed to confirm updated chemistry values.")
+                    return 128
+
             await asyncio.sleep(3)
-            await gateway.async_update()
+            await gateway.async_get_chemistry()
             new_data = gateway.get_data()
             if ch is not None:
                 print(vFormat(new_data[DATA.KEY_CHEMISTRY]["calcium_harness"]))
@@ -323,9 +375,21 @@ async def cli(cli_args):
         prog="screenlogicpy", description="Interface for Pentair Screenlogic gateway"
     )
 
-    option_parser.add_argument("-v", "--verbose", action="store_true")
-    option_parser.add_argument("-i", "--ip")
-    option_parser.add_argument("-p", "--port", default=80)
+    option_parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        help="Enables verbose output. Additional 'v's increase logging up to '-vvv' for DEBUG logging",
+    )
+    option_parser.add_argument(
+        "-i",
+        "--ip",
+        help="Bypasses discovery and specifies the ip address of the protocol adapter",
+    )
+    option_parser.add_argument(
+        "-p", "--port", default=80, help="Specifies the port of the protocol adapter"
+    )
 
     subparsers = option_parser.add_subparsers(dest="action")
 
@@ -336,7 +400,7 @@ async def cli(cli_args):
     )
 
     # Get options
-    get_parser = subparsers.add_parser("get", help="Gets the option specified")
+    get_parser = subparsers.add_parser("get", help="Gets the specified value or state")
     get_subparsers = get_parser.add_subparsers(dest="get_option")
     get_subparsers.required = True
 
@@ -346,7 +410,9 @@ async def cli(cli_args):
         "type": int,
         "help": "Circuit number",
     }
-    get_circuit_parser = get_subparsers.add_parser("circuit", aliases=["c"])
+    get_circuit_parser = get_subparsers.add_parser(
+        "circuit", aliases=["c"], help="Get the state of the specified circuit"
+    )
     get_circuit_parser.add_argument(**ARGUMENT_CIRCUIT_NUM)
     get_circuit_parser.set_defaults(async_func=async_get_circuit)
 
@@ -358,32 +424,54 @@ async def cli(cli_args):
         "choices": body_options,
         "help": f"Body of water. One of: {body_options}",
     }
-    get_heat_mode_parser = get_subparsers.add_parser("heat-mode", aliases=["hm"])
+    get_heat_mode_parser = get_subparsers.add_parser(
+        "heat-mode", aliases=["hm"], help="Get the heat mode for the specified body"
+    )
     get_heat_mode_parser.add_argument(**ARGUMENT_BODY)
     get_heat_mode_parser.set_defaults(async_func=async_get_heat_mode)
 
-    get_heat_temp_parser = get_subparsers.add_parser("heat-temp", aliases=["ht"])
+    get_heat_temp_parser = get_subparsers.add_parser(
+        "heat-temp",
+        aliases=["ht"],
+        help="Get the target temperature for the specified body",
+    )
     get_heat_temp_parser.add_argument(**ARGUMENT_BODY)
     get_heat_temp_parser.set_defaults(async_func=async_get_heat_temp)
 
-    get_heat_state_parser = get_subparsers.add_parser("heat-state", aliases=["hs"])
+    get_heat_state_parser = get_subparsers.add_parser(
+        "heat-state",
+        aliases=["hs"],
+        help="Get the current heating state for the specified body",
+    )
     get_heat_state_parser.add_argument(**ARGUMENT_BODY)
     get_heat_state_parser.set_defaults(async_func=async_get_heat_state)
 
-    get_current_temp_parser = get_subparsers.add_parser("current-temp", aliases=["t"])
+    get_current_temp_parser = get_subparsers.add_parser(
+        "current-temp",
+        aliases=["t"],
+        help="Get the current temperature for the specified body",
+    )
     get_current_temp_parser.add_argument(**ARGUMENT_BODY)
     get_current_temp_parser.set_defaults(async_func=async_get_current_temp)
 
-    get_json_parser = get_subparsers.add_parser("json", aliases=["j"])
+    get_json_parser = get_subparsers.add_parser(
+        "json", aliases=["j"], help="Return the full data dict as JSON"
+    )
     get_json_parser.set_defaults(async_func=async_get_json)
 
     # Set options
-    set_parser = subparsers.add_parser("set")
+    set_parser = subparsers.add_parser(
+        "set", help="Sets the specified option, state, or value"
+    )
     set_subparsers = set_parser.add_subparsers(dest="set_option")
     set_subparsers.required = True
 
     on_off_options = optionsFromDict(ON_OFF.NAME_FOR_NUM)
-    set_circuit_parser = set_subparsers.add_parser("circuit", aliases=["c"])
+    set_circuit_parser = set_subparsers.add_parser(
+        "circuit",
+        aliases=["c"],
+        help="Set the specified circuit to the specified state",
+    )
     set_circuit_parser.add_argument(**ARGUMENT_CIRCUIT_NUM)
     set_circuit_parser.add_argument(
         "state",
@@ -395,7 +483,11 @@ async def cli(cli_args):
 
     cl_options = optionsFromDict(COLOR_MODE.NAME_FOR_NUM)
     set_circuit_parser.set_defaults(async_func=async_set_circuit)
-    set_color_light_parser = set_subparsers.add_parser("color-lights", aliases=["cl"])
+    set_color_light_parser = set_subparsers.add_parser(
+        "color-lights",
+        aliases=["cl"],
+        help="Send the specified color lights or IntelliBrite command",
+    )
     set_color_light_parser.add_argument(
         "mode",
         metavar="MODE",
@@ -405,7 +497,11 @@ async def cli(cli_args):
     )
     set_color_light_parser.set_defaults(async_func=async_set_color_light)
 
-    set_heat_mode_parser = set_subparsers.add_parser("heat-mode", aliases=["hm"])
+    set_heat_mode_parser = set_subparsers.add_parser(
+        "heat-mode",
+        aliases=["hm"],
+        help="Set the specified heat mode for the specified body",
+    )
     set_heat_mode_parser.add_argument(**ARGUMENT_BODY)
     hm_options = optionsFromDict(HEAT_MODE.NAME_FOR_NUM)
     set_heat_mode_parser.add_argument(
@@ -418,7 +514,11 @@ async def cli(cli_args):
     )
     set_heat_mode_parser.set_defaults(async_func=async_set_heat_mode)
 
-    set_heat_temp_parser = set_subparsers.add_parser("heat-temp", aliases=["ht"])
+    set_heat_temp_parser = set_subparsers.add_parser(
+        "heat-temp",
+        aliases=["ht"],
+        help="Set the specified target temperature for the specified body",
+    )
     set_heat_temp_parser.add_argument(**ARGUMENT_BODY)
     set_heat_temp_parser.add_argument(
         "temp",
@@ -429,7 +529,9 @@ async def cli(cli_args):
     set_heat_temp_parser.set_defaults(async_func=async_set_heat_temp)
 
     set_scg_setpoint_parser = set_subparsers.add_parser(
-        "salt-generator", aliases=["scg"]
+        "salt-generator",
+        aliases=["scg"],
+        help="Set the SCG output level(s) for the pool and/or spa",
     )
     set_scg_setpoint_parser.add_argument(
         "-p",
@@ -450,7 +552,7 @@ async def cli(cli_args):
     set_scg_setpoint_parser.set_defaults(async_func=async_set_scg_setpoint)
 
     set_scg_super_parser = set_subparsers.add_parser(
-        "super-chlorinate", aliases=["sup"]
+        "super-chlorinate", aliases=["sup"], help="Configure super chlorination"
     )
     set_scg_super_parser.add_argument(
         "-s",
@@ -471,7 +573,9 @@ async def cli(cli_args):
     set_scg_super_parser.set_defaults(async_func=async_set_scg_super)
 
     set_chem_setpoint_parser = set_subparsers.add_parser(
-        "chem-setpoint", aliases=["csp"]
+        "chem-setpoint",
+        aliases=["csp"],
+        help="Set the specified pH and/or ORP setpoint(s) for the IntelliChem system",
     )
     set_chem_setpoint_parser.add_argument(
         "-p",
@@ -495,7 +599,11 @@ async def cli(cli_args):
     )
     set_chem_setpoint_parser.set_defaults(async_func=async_set_chem_setpoint)
 
-    set_chem_data_parser = set_subparsers.add_parser("chem-data", aliases=["cd"])
+    set_chem_data_parser = set_subparsers.add_parser(
+        "chem-data",
+        aliases=["cd"],
+        help="Set various chemistry values for LSI calculation in the IntelliChem system",
+    )
     set_chem_data_parser.add_argument(
         "-c",
         "--ch",
@@ -527,6 +635,17 @@ async def cli(cli_args):
     set_chem_data_parser.set_defaults(async_func=async_set_chem_data)
 
     args = option_parser.parse_args(cli_args)
+
+    if args.verbose == 2:
+        logging.basicConfig(
+            level=logging.INFO,
+        )
+    elif args.verbose == 3:
+        logging.basicConfig(
+            format="%(asctime)s %(levelname)-8s %(message)s",
+            level=logging.DEBUG,
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
 
     try:
         host = {SL_GATEWAY_IP: args.ip, SL_GATEWAY_PORT: args.port}
