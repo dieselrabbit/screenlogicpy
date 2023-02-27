@@ -15,6 +15,7 @@ $ pip install screenlogicpy
 # Library usage
 
 * _New in v0.5.0: The screenlogicpy library has moved over to using asyncio for all network I/O. Relevant methods now require the `async`/`await` syntax._
+* _**New in v0.9.0**: Support for Python 3.8 has been removed._
 
 The `ScreenLogicGateway` class is the primary interface.
 
