@@ -107,11 +107,11 @@ class ScreenLogicGateway:
         if self.is_connected:
             return True
 
-        self._ip = ip if ip else self._ip
-        self._port = port if port else self._port
-        self._type = gtype if gtype else self._type
-        self._subtype = gsubtype if gsubtype else self._subtype
-        self._name = name if name else self._name
+        self._ip = ip if ip is not None else self._ip
+        self._port = port if port is not None else self._port
+        self._type = gtype if gtype is not None else self._type
+        self._subtype = gsubtype if gsubtype is not None else self._subtype
+        self._name = name if name is not None else self._name
         self._custom_connection_closed_callback = connection_closed_callback
 
         if not self._ip:
