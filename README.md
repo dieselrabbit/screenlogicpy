@@ -14,7 +14,8 @@ $ pip install screenlogicpy
 
 # Library usage
 
-* _New in v0.5.0: The screenlogicpy library has moved over to using asyncio for all network I/O. Relevant methods now require the `async`/`await` syntax._
+* _Changed in v0.5.0: The screenlogicpy library has moved over to using asyncio for all network I/O. Relevant methods now require the `async`/`await` syntax._
+* _**New in v0.8.0**: Support for Python 3.8 and 3.9 is being phased out across future releases. This will be the last version to support Python 3.8._
 
 The `ScreenLogicGateway` class is the primary interface.
 
@@ -26,7 +27,7 @@ from screenlogicpy import ScreenLogicGateway
 
 * _Changed in v0.5.0: Instantiating the gateway no longer automatically connects to the protocol adapter or performs an initial update._  
 * _Changed in v0.7.0: Passing adapter connection info when instantiating the gateway is deprecated and will be removed in a future release. Connection info should be passed to `async_connect()` instead._  
-* _**Changed in v0.8.0:** Support for passing connection info during gateway instantiation is fully deprecated and has been removed. Added ability to specify client id used for push subscriptions. Added ability to specify maximum number of times to retry a request._
+* _**Changed in v0.8.0:** Support for passing connection info to gateway constructor is fully deprecated and has been removed. Ability to specify client id used for push subscriptions, and to specify maximum number of times to retry a request has replaced it._
 
 ## Connecting to a ScreenLogic Protocol Adapter
 
