@@ -2,28 +2,6 @@ from abc import ABC, abstractmethod
 from .const import BODY_TYPE, COLOR_MODE, HEAT_MODE
 
 
-class ValidationKeys:
-    # ScreenLogic data
-    HEAT_MODE = "heat_mode"
-    HEAT_TEMP = "heat_temp"
-    BODY = "body"
-    CIRCUIT = "circuit"
-    ON_OFF = "on_off_state"
-    COLOR_MODE = "color_mode"
-    SCG_SETPOINT = "scg_setpoint"
-    SC_RUNTIME = "sc_runtime"
-    PH_SETPOINT = "ph_setpoint"
-    ORP_SETPOINT = "orp_setpoint"
-    TOTAL_ALKALINITY = "total_alkalinity"
-    CALCIUM_HARDNESS = "calcium_hardness"
-    CYANURIC_ACID = "cyanuric_acid"
-    SALT_TDS = "salt_tds_ppm"
-
-    # screenlogicpy Settings
-    MAX_RETRIES = "max_retries"
-    CLIENT_ID = "client_id"
-
-
 class BoundsValidation(ABC):
     def __init__(self, name: str = None) -> None:
         self.name = name
@@ -84,32 +62,6 @@ class BoundsSet(BoundsValidation):
         super().validate(value, f"Must be in {self.values}")
 
 
-Key = ValidationKeys
-DATA_BOUNDS_CONST = {
-    Key.ON_OFF: BoundsSet({0, 1}, Key.ON_OFF),
-    Key.COLOR_MODE: BoundsSet(COLOR_MODE.NAME_FOR_NUM.keys(), Key.COLOR_MODE),
-    Key.HEAT_MODE: BoundsSet(HEAT_MODE.NAME_FOR_NUM.keys(), Key.HEAT_MODE),
-    # Valid ranges per documentation
-    Key.SCG_SETPOINT: {
-        BODY_TYPE.POOL: BoundsRange(0, 100, f"{Key.SCG_SETPOINT}_pool"),
-        BODY_TYPE.SPA: BoundsRange(0, 100, f"{Key.SCG_SETPOINT}_spa"),
-    },
-    Key.SC_RUNTIME: BoundsRange(1, 72, Key.SC_RUNTIME),
-    Key.ORP_SETPOINT: BoundsRange(400, 800, Key.ORP_SETPOINT),
-    Key.PH_SETPOINT: BoundsRange(7.2, 7.6, Key.PH_SETPOINT),
-    # Valid settable ranges in IntelliChem
-    Key.CALCIUM_HARDNESS: BoundsRange(25, 800, Key.CALCIUM_HARDNESS),
-    Key.CYANURIC_ACID: BoundsRange(0, 201, Key.CYANURIC_ACID),
-    Key.SALT_TDS: BoundsRange(500, 6500, Key.SALT_TDS),
-    Key.TOTAL_ALKALINITY: BoundsRange(25, 800, Key.TOTAL_ALKALINITY),
-}
-
-SETTING_BOUNDS_CONST = {
-    Key.MAX_RETRIES: BoundsRange(0, 5, Key.MAX_RETRIES),
-    Key.CLIENT_ID: BoundsRange(32767, 65535, Key.CLIENT_ID),
-}
-
-
 class DATA_BOUNDS:
     ON_OFF = BoundsSet({0, 1}, "on_off_state")
 
@@ -140,3 +92,79 @@ class DATA_BOUNDS:
 class SETTINGS_BOUNDS:
     MAX_RETRIES = BoundsRange(0, 5, "max_retries")
     CLIENT_ID = BoundsRange(32767, 65535, "client_id")
+
+
+class ValidationKeys:
+    # ScreenLogic data
+    HEAT_MODE = "heat_mode"
+    HEAT_TEMP = "heat_temp"
+    BODY = "body"
+    CIRCUIT = "circuit"
+    ON_OFF = "on_off_state"
+    COLOR_MODE = "color_mode"
+    SCG_SETPOINT = "scg_setpoint"
+    SC_RUNTIME = "sc_runtime"
+    PH_SETPOINT = "ph_setpoint"
+    ORP_SETPOINT = "orp_setpoint"
+    TOTAL_ALKALINITY = "total_alkalinity"
+    CALCIUM_HARDNESS = "calcium_hardness"
+    CYANURIC_ACID = "cyanuric_acid"
+    SALT_TDS = "salt_tds_ppm"
+
+    # screenlogicpy Settings
+    MAX_RETRIES = "max_retries"
+    CLIENT_ID = "client_id"
+
+
+Key = ValidationKeys
+DATA_BOUNDS_CONST = {
+    Key.ON_OFF: {0, 1},
+    Key.COLOR_MODE: set(COLOR_MODE.NAME_FOR_NUM.keys()),
+    Key.HEAT_MODE: set(HEAT_MODE.NAME_FOR_NUM.keys()),
+    # Valid ranges per documentation
+    Key.SCG_SETPOINT: {
+        BODY_TYPE.POOL: (0, 100),
+        BODY_TYPE.SPA: (0, 100),
+    },
+    Key.SC_RUNTIME: (1, 72),
+    Key.ORP_SETPOINT: (400, 800),
+    Key.PH_SETPOINT: (7.2, 7.6),
+    # Valid settable ranges in IntelliChem
+    Key.CALCIUM_HARDNESS: (25, 800),
+    Key.CYANURIC_ACID: (0, 201),
+    Key.SALT_TDS: (500, 6500),
+    Key.TOTAL_ALKALINITY: (25, 800),
+}
+
+SETTING_BOUNDS_CONST = {
+    Key.MAX_RETRIES: (0, 5),
+    Key.CLIENT_ID: (32767, 65535),
+}
+
+def is_valid(key: str, value)->bool:
+    bounds = DATA_BOUNDS_CONST[key]
+    if isinstance(bounds, set):
+        if value in bounds:
+            return True
+    elif isinstance(bounds, tuple):
+        if bounds[0] <= value <= bounds[1]:
+            return True
+    return False
+
+def validate(key: str, value):
+    bounds = DATA_BOUNDS_CONST[key]
+    if not is_valid(key, value):
+        raise ValueError(f"{key} {value} not in {bounds}")
+
+def clamp(key: str, value):
+    if not isinstance(bounds, tuple):
+        raise ValueError(f"{key} not a min/max.")
+    bounds = DATA_BOUNDS_CONST[key]
+    if bounds[0] is not None and bounds[1] is not None:
+        return max(min(value, bounds[1]), bounds[0])
+    elif bounds[1] is not None:
+        return min(value, bounds[1])
+    elif bounds[0] is not None:
+        return max(value, bounds[0])
+    return value
+
