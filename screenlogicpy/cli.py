@@ -18,7 +18,7 @@ from screenlogicpy.const import (
     ScreenLogicError,
     ScreenLogicWarning,
 )
-from screenlogicpy.validation import DATA_BOUNDS as DB
+from .validation import DataValidationKey as dv_key
 
 
 def cliFormat(name: str):
@@ -47,6 +47,8 @@ def optionsFromDict(mapping: dict):
 # Entry function
 async def cli(cli_args):
     """Handle command line args"""
+
+    gateway = ScreenLogicGateway()
 
     def vFormat(slElement: dict, slClass=None):
         if args.verbose:
@@ -193,10 +195,10 @@ async def cli(cli_args):
 
         try:
             if args.pool is not None:
-                DB.SCG_SETPOINT_POOL.validate(args.pool)
+                gateway.dv.validate((dv_key.SCG_SETPOINT, BODY_TYPE.POOL), args.pool)
             scg_pool = args.pool
             if args.spa is not None:
-                DB.SCG_SETPOINT_SPA.validate(args.spa)
+                gateway.dv.validate((dv_key.SCG_SETPOINT, BODY_TYPE.SPA), args.spa)
             scg_spa = args.spa
         except ValueError:
             set_scg_setpoint_parser.error("Invalid SCG setpoint value.")
@@ -233,10 +235,10 @@ async def cli(cli_args):
 
         try:
             if args.state is not None:
-                DB.ON_OFF.validate(args.state)
+                gateway.dv.validate(dv_key.ON_OFF, args.state)
             sup = args.state
             if args.time is not None:
-                DB.SC_RUNTIME.validate(args.time)
+                gateway.dv.validate(dv_key.SC_RUNTIME, args.time)
             timer = args.time
         except ValueError:
             set_scg_super_parser.error("Invalid super chlorinate value")
@@ -270,10 +272,10 @@ async def cli(cli_args):
 
         try:
             if args.ph is not None:
-                DB.CHEM_SETPOINT_PH.validate(args.ph)
+                gateway.dv.validate(dv_key.PH_SETPOINT, args.ph)
             ph = args.ph
             if args.orp is not None:
-                DB.CHEM_SETPOINT_ORP.validate(args.orp)
+                gateway.dv.validate(dv_key.ORP_SETPOINT, args.orp)
             orp = args.orp
         except ValueError:
             set_chem_setpoint_parser.error("Invalid chemistry setpoint value.")
@@ -313,16 +315,16 @@ async def cli(cli_args):
 
         try:
             if args.ch is not None:
-                DB.CHEM_CALCIUM_HARDNESS.validate(args.ch)
+                gateway.dv.validate(dv_key.CALCIUM_HARDNESS, args.ch)
             ch = args.ch
             if args.ta is not None:
-                DB.CHEM_TOTAL_ALKALINITY.validate(args.ta)
+                gateway.dv.validate(dv_key.TOTAL_ALKALINITY, args.ta)
             ta = args.ta
             if args.cya is not None:
-                DB.CHEM_CYANURIC_ACID.validate(args.cya)
+                gateway.dv.validate(dv_key.CYANURIC_ACID, args.cya)
             cya = args.cya
             if args.salt is not None:
-                DB.CHEM_SALT_TDS.validate(args.salt)
+                gateway.dv.validate(dv_key.SALT_TDS, args.salt)
             salt = args.salt
         except ValueError:
             set_chem_data_parser.error("Invalid chemistry value.")
@@ -562,13 +564,14 @@ async def cli(cli_args):
         default=None,
         help=f"State of super chlorination. One of {on_off_options}",
     )
+    sc_min, sc_max = gateway.dv.get_bounds(dv_key.SC_RUNTIME)
     set_scg_super_parser.add_argument(
         "-t",
         "--time",
         type=int,
         metavar="HOURS",
         default=None,
-        help=f"Time in hours to run super chlorination. {DB.SC_RUNTIME.min}-{DB.SC_RUNTIME.max}",
+        help=f"Time in hours to run super chlorination. {sc_min}-{sc_max}",
     )
     set_scg_super_parser.set_defaults(async_func=async_set_scg_super)
 
@@ -577,25 +580,21 @@ async def cli(cli_args):
         aliases=["csp"],
         help="Set the specified pH and/or ORP setpoint(s) for the IntelliChem system",
     )
+    ph_min, ph_max = gateway.dv.get_bounds(dv_key.PH_SETPOINT)
     set_chem_setpoint_parser.add_argument(
         "-p",
         "--ph",
         type=float,
         default=None,
-        help=(
-            "PH set point for IntelliChem. "
-            f"{DB.CHEM_SETPOINT_PH.min}-{DB.CHEM_SETPOINT_PH.max}"
-        ),
+        help=("PH set point for IntelliChem. " f"{ph_min}-{ph_max}"),
     )
+    orp_min, orp_max = gateway.dv.get_bounds(dv_key.ORP_SETPOINT)
     set_chem_setpoint_parser.add_argument(
         "-o",
         "--orp",
         type=int,
         default=None,
-        help=(
-            "ORP set point for IntelliChem. "
-            f"{DB.CHEM_SETPOINT_ORP.min}-{DB.CHEM_SETPOINT_ORP.max}"
-        ),
+        help=("ORP set point for IntelliChem. " f"{orp_min}-{orp_max}"),
     )
     set_chem_setpoint_parser.set_defaults(async_func=async_set_chem_setpoint)
 
@@ -685,8 +684,6 @@ async def cli(cli_args):
             else:
                 print("No ScreenLogic gateways found.")
                 return 1
-
-        gateway = ScreenLogicGateway()
 
         await gateway.async_connect(**host)
 

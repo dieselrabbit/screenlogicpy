@@ -5,6 +5,7 @@ from typing import Awaitable, Callable
 
 from .client import ClientManager
 from .const import (
+    BODY_TYPE,
     CIRCUIT_FUNCTION,
     DATA,
     MESSAGE,
@@ -31,10 +32,8 @@ from .requests import (
 )
 from .requests.protocol import ScreenLogicProtocol
 from .validation import (
-    BoundsSet,
-    BoundsRange,
-    DATA_BOUNDS as DB,
-    SETTINGS_BOUNDS as SB,
+    DataValidation,
+    DataValidationKey as dv_key,
 )
 
 
@@ -57,6 +56,8 @@ class ScreenLogicGateway:
         self._is_client = False
         self._data = {}
         self._last = {}
+        self.dv = DataValidation()
+        client_id = client_id if self.dv.is_valid(dv_key.CLIENT_ID, client_id) else None
         self._client_manager = ClientManager(client_id)
         self.set_max_retries(
             max_retries
@@ -240,13 +241,13 @@ class ScreenLogicGateway:
         return self._last
 
     def set_max_retries(self, max_retries: int = MESSAGE.COM_MAX_RETRIES) -> None:
-        SB.MAX_RETRIES.validate(max_retries)
+        self.dv.validate(dv_key.MAX_RETRIES, max_retries)
         self._max_retries = max_retries
 
     async def async_set_circuit(self, circuitID: int, circuitState: int):
         """Set the circuit state for the specified circuit."""
-        DB.CIRCUIT.validate(circuitID)
-        DB.ON_OFF.validate(circuitState)
+        self.dv.validate(dv_key.CIRCUIT, circuitID)
+        self.dv.validate(dv_key.ON_OFF, circuitState)
 
         if await self.async_connect():
             if await async_request_pool_button_press(
@@ -257,8 +258,8 @@ class ScreenLogicGateway:
 
     async def async_set_heat_temp(self, body: int, temp: int):
         """Set the target temperature for the specified body."""
-        DB.BODY.validate(body)
-        DB.HEAT_TEMP[body].validate(temp)
+        self.dv.validate(dv_key.BODY, body)
+        self.dv.validate((dv_key.HEAT_TEMP, body), temp)
 
         if await self.async_connect():
             if await async_request_set_heat_setpoint(
@@ -269,8 +270,8 @@ class ScreenLogicGateway:
 
     async def async_set_heat_mode(self, body: int, mode: int):
         """Set the heating mode for the specified body."""
-        DB.BODY.validate(body)
-        DB.HEAT_MODE.validate(mode)
+        self.dv.validate(dv_key.BODY, body)
+        self.dv.validate(dv_key.HEAT_MODE, mode)
 
         if await self.async_connect():
             if await async_request_set_heat_mode(
@@ -281,7 +282,7 @@ class ScreenLogicGateway:
 
     async def async_set_color_lights(self, light_command: int):
         """Set the light show mode for all capable lights."""
-        DB.COLOR_MODE.validate(light_command)
+        self.dv.validate(dv_key.COLOR_MODE, light_command)
 
         if await self.async_connect():
             if await async_request_pool_lights_command(
@@ -311,10 +312,10 @@ class ScreenLogicGateway:
         super_chlor = 0 if super_chlor is None else super_chlor
         super_time = 1 if super_time is None else super_time
 
-        DB.SCG_SETPOINT_POOL.validate(pool_output)
-        DB.SCG_SETPOINT_SPA.validate(spa_output)
-        DB.ON_OFF.validate(super_chlor)
-        DB.SC_RUNTIME.validate(super_time)
+        self.dv.validate((dv_key.SCG_SETPOINT, BODY_TYPE.POOL), pool_output)
+        self.dv.validate((dv_key.SCG_SETPOINT, BODY_TYPE.SPA), spa_output)
+        self.dv.validate(dv_key.ON_OFF, super_chlor)
+        self.dv.validate(dv_key.SC_RUNTIME, super_time)
 
         if await self.async_connect():
             return await async_request_set_scg_config(
@@ -376,13 +377,13 @@ class ScreenLogicGateway:
                 "Unable to reference existing omitted chemistry values."
             )
 
-        DB.CHEM_SETPOINT_PH.validate(ph_setpoint)
+        self.dv.validate(dv_key.PH_SETPOINT, ph_setpoint)
         ph_setpoint = int(ph_setpoint * 100)
-        DB.CHEM_SETPOINT_ORP.validate(orp_setpoint)
-        DB.CHEM_CALCIUM_HARDNESS.validate(calcium_harness)
-        DB.CHEM_TOTAL_ALKALINITY.validate(total_alkalinity)
-        DB.CHEM_CYANURIC_ACID.validate(cya)
-        DB.CHEM_SALT_TDS.validate(salt_tds_ppm)
+        self.dv.validate(dv_key.ORP_SETPOINT, orp_setpoint)
+        self.dv.validate(dv_key.CALCIUM_HARDNESS, calcium_harness)
+        self.dv.validate(dv_key.TOTAL_ALKALINITY, total_alkalinity)
+        self.dv.validate(dv_key.CYANURIC_ACID, cya)
+        self.dv.validate(dv_key.SALT_TDS, salt_tds_ppm)
 
         if await self.async_connect():
             return await async_request_set_chem_data(
@@ -450,15 +451,18 @@ class ScreenLogicGateway:
             self._custom_connection_closed_callback()
 
     def _add_local_limits(self):
-        DB.CIRCUIT = BoundsSet(self._data[DATA.KEY_CIRCUITS].keys())
-        DB.BODY = BoundsSet(self._data[DATA.KEY_BODIES].keys())
-        DB.HEAT_TEMP = {
-            body: BoundsRange(
-                body_data["min_set_point"]["value"],
-                body_data["max_set_point"]["value"],
+        self.dv.update(dv_key.CIRCUIT, set(self._data[DATA.KEY_CIRCUITS].keys()))
+        self.dv.update(dv_key.BODY, set(self._data[DATA.KEY_BODIES].keys()))
+        (
+            self.dv.update(
+                (dv_key.HEAT_TEMP, body),
+                (
+                    body_data["min_set_point"]["value"],
+                    body_data["max_set_point"]["value"],
+                ),
             )
             for body, body_data in self._data[DATA.KEY_BODIES].items()
-        }
+        )
 
     # Promote?
     def _has_color_lights(self):
