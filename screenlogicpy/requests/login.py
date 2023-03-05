@@ -1,16 +1,17 @@
 import asyncio
 import logging
 import struct
-from typing import Callable
+from typing import Callable, Tuple
 
-from ..const import CODE, MESSAGE, ScreenLogicError
+from ..const import CODE, MESSAGE, ScreenLogicError, ScreenLogicWarning
 from .protocol import ScreenLogicProtocol
+from .request import async_make_request
 from .utility import asyncio_timeout, decodeMessageString, encodeMessageString
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def create_login_message():
+def create_login_message() -> bytes:
     # these constants are only for this message.
     schema = 348
     connectionType = 0
@@ -18,11 +19,11 @@ def create_login_message():
     pid = 2
     password = "0000000000000000"  # passwd must be <= 16 chars. empty is not OK.
     passwd = encodeMessageString(password)
-    fmt = "<II" + str(len(clientVersion)) + "s" + str(len(passwd)) + "sxI"
+    fmt = f"<II{len(clientVersion)}s{len(passwd)}sxI"
     return struct.pack(fmt, schema, connectionType, clientVersion, passwd, pid)
 
 
-def create_local_login_message():
+def create_local_login_message() -> bytes:
     schema = 348
     connectionType = 0
     clientVersion = encodeMessageString("Local Config")
@@ -35,18 +36,20 @@ def create_local_login_message():
     )
 
 
-async def async_get_mac_address(gateway_ip, gateway_port):
+async def async_get_mac_address(
+    gateway_ip: str, gateway_port: int, max_retries: int = MESSAGE.COM_MAX_RETRIES
+) -> str:
     """Connect to a screenlogic gateway and return the mac address only."""
     transport, protocol = await async_create_connection(gateway_ip, gateway_port)
-    mac = await async_gateway_connect(transport, protocol)
+    mac = await async_gateway_connect(transport, protocol, max_retries)
     if transport and not transport.is_closing():
         transport.close()
     return mac
 
 
 async def async_create_connection(
-    gateway_ip, gateway_port, connection_lost_callback: Callable = None
-):
+    gateway_ip: str, gateway_port: int, connection_lost_callback: Callable = None
+) -> Tuple[asyncio.Transport, ScreenLogicProtocol]:
     try:
         loop = asyncio.get_running_loop()
 
@@ -65,7 +68,7 @@ async def async_create_connection(
 
 
 async def async_gateway_connect(
-    transport: asyncio.Transport, protocol: ScreenLogicProtocol
+    transport: asyncio.Transport, protocol: ScreenLogicProtocol, max_retries: int
 ) -> str:
     connectString = b"CONNECTSERVERHOST\r\n\r\n"  # as bytes, not string
     try:
@@ -80,38 +83,41 @@ async def async_gateway_connect(
         raise ScreenLogicError("Host unexpectedly disconnected.")
 
     _LOGGER.debug("Sending challenge")
-    request = protocol.await_send_message(CODE.CHALLENGE_QUERY)
-
     try:
-
-        async with asyncio_timeout(MESSAGE.COM_TIMEOUT):
-            await request
-    except asyncio.TimeoutError:
-        raise ScreenLogicError("Host failed to respond to challenge")
-
-    if not request.cancelled():
         # mac address
-        return decodeMessageString(request.result())
+        return decodeMessageString(
+            await async_make_request(
+                protocol, CODE.CHALLENGE_QUERY, max_retries=max_retries
+            )
+        )
+    except ScreenLogicWarning as warn:
+        raise ScreenLogicError(
+            f"Host failed to respond to challenge: : {warn.args[0]}"
+        ) from warn
 
 
-async def async_gateway_login(protocol: ScreenLogicProtocol) -> bool:
+async def async_gateway_login(protocol: ScreenLogicProtocol, max_retries: int) -> bool:
     _LOGGER.debug("Logging in")
-    request = protocol.await_send_message(CODE.LOCALLOGIN_QUERY, create_login_message())
     try:
-        async with asyncio_timeout(MESSAGE.COM_TIMEOUT):
-            await request
-    except asyncio.TimeoutError:
-        raise ScreenLogicError("Failed to logon to gateway")
-
-    return not request.cancelled()
+        return (
+            await async_make_request(
+                protocol, CODE.LOCALLOGIN_QUERY, create_login_message(), max_retries
+            )
+            is not None
+        )
+    except ScreenLogicWarning as warn:
+        raise ScreenLogicError(f"Failed to logon to gateway: {warn.args[0]}") from warn
 
 
 async def async_connect_to_gateway(
-    gateway_ip, gateway_port, connection_lost_callback: Callable = None
-):
+    gateway_ip,
+    gateway_port,
+    connection_lost_callback: Callable = None,
+    max_retries: int = MESSAGE.COM_MAX_RETRIES,
+) -> Tuple[asyncio.Transport, ScreenLogicProtocol, str]:
     transport, protocol = await async_create_connection(
         gateway_ip, gateway_port, connection_lost_callback
     )
-    mac_address = await async_gateway_connect(transport, protocol)
-    if await async_gateway_login(protocol):
+    mac_address = await async_gateway_connect(transport, protocol, max_retries)
+    if await async_gateway_login(protocol, max_retries):
         return transport, protocol, mac_address

@@ -16,9 +16,11 @@ from .request import async_make_request
 from .utility import getSome, getTemperatureUnit
 
 
-async def async_request_chemistry(protocol: ScreenLogicProtocol, data: dict) -> bytes:
+async def async_request_chemistry(
+    protocol: ScreenLogicProtocol, data: dict, max_retries: int
+) -> bytes:
     if result := await async_make_request(
-        protocol, CODE.CHEMISTRY_QUERY, struct.pack("<I", 0)
+        protocol, CODE.CHEMISTRY_QUERY, struct.pack("<I", 0), max_retries
     ):
         decode_chemistry(result, data)
         return result
@@ -278,6 +280,7 @@ async def async_request_set_chem_data(
     alkalinity: int,
     cyanuric: int,
     salt: int,
+    max_retries: int,
 ):
     return (
         await async_make_request(
@@ -293,6 +296,7 @@ async def async_request_set_chem_data(
                 cyanuric,
                 salt,
             ),
+            max_retries,
         )
         == b""
     )

@@ -15,9 +15,11 @@ from .request import async_make_request
 from .utility import getSome, getTemperatureUnit
 
 
-async def async_request_pool_status(protocol: ScreenLogicProtocol, data: dict) -> bytes:
+async def async_request_pool_status(
+    protocol: ScreenLogicProtocol, data: dict, max_retries: int
+) -> bytes:
     if result := await async_make_request(
-        protocol, CODE.POOLSTATUS_QUERY, struct.pack("<I", 0)
+        protocol, CODE.POOLSTATUS_QUERY, struct.pack("<I", 0), max_retries
     ):
         decode_pool_status(result, data)
         return result

@@ -1,12 +1,13 @@
 """Client manager for a connection to a ScreenLogic protocol adapter."""
 import asyncio
 import logging
+import random
 from typing import Callable
 
-from .const import CODE, COM_KEEPALIVE, ScreenLogicWarning
+from .const import CODE, COM_KEEPALIVE, MESSAGE, ScreenLogicWarning
 from .requests.chemistry import decode_chemistry
 from .requests.client import async_request_add_client, async_request_remove_client
-from .requests.color import decode_color_update
+from .requests.lights import decode_color_update
 from .requests.status import decode_pool_status
 from .requests.ping import async_request_ping
 from .requests.protocol import ScreenLogicProtocol
@@ -17,27 +18,40 @@ _LOGGER = logging.getLogger(__name__)
 class ClientManager:
     """Class to manage callback subscriptions to specific ScreenLogic messages."""
 
-    def __init__(self) -> None:
+    def __init__(self, client_id: int = None) -> None:
+        self._client_id = (
+            client_id if client_id is not None else random.randint(32767, 65535)
+        )
         self._listeners = {}
         self._is_client = False
         self._client_sub_unsub_lock = asyncio.Lock()
         self._protocol = None
         self._data = None
+        self._max_retries = MESSAGE.COM_MAX_RETRIES
 
     @property
-    def is_client(self):
+    def is_client(self) -> bool:
         """Return if connected to ScreenLogic as a client."""
         return self._is_client and self._protocol and self._protocol.is_connected
 
     @property
-    def client_needed(self):
+    def client_id(self) -> int:
+        return self._client_id
+
+    @property
+    def client_needed(self) -> bool:
         """Return if desired to be a client."""
         return self._listeners and not self._is_client
 
-    def _attached(self):
+    def _attached(self) -> bool:
         return self._protocol and self._protocol.is_connected
 
-    async def attach(self, protocol: ScreenLogicProtocol, data: dict):
+    async def attach(
+        self,
+        protocol: ScreenLogicProtocol,
+        data: dict,
+        max_retries: int = MESSAGE.COM_MAX_RETRIES,
+    ):
         """
         Update protocol and data reference.
 
@@ -47,6 +61,7 @@ class ClientManager:
         """
         self._protocol = protocol
         self._data = data
+        self._max_retries = max_retries
         self._is_client = False
         if self.client_needed:
             self._protocol.remove_all_async_message_callbacks()
@@ -143,7 +158,9 @@ class ClientManager:
                 "Not attached to protocol adapter. add_client failed."
             )
         _LOGGER.debug("Requesting add client")
-        return await async_request_add_client(self._protocol)
+        return await async_request_add_client(
+            self._protocol, self._client_id, max_retries=self._max_retries
+        )
 
     async def _async_remove_client(self):
         """Check connection before sending remove client request."""
@@ -152,7 +169,9 @@ class ClientManager:
                 "Not attached to protocol adapter. remove_client failed."
             )
         _LOGGER.debug("Requesting remove client")
-        return await async_request_remove_client(self._protocol)
+        return await async_request_remove_client(
+            self._protocol, self._client_id, max_retries=self._max_retries
+        )
 
     async def async_subscribe_gateway(self) -> bool:
         """
