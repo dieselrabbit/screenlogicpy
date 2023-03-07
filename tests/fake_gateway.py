@@ -54,7 +54,7 @@ class FakeScreenLogicTCPProtocol(asyncio.Protocol):
         if self._connection_stage == CONNECTION_STAGE.NO_CONNECTION:
             if data == b"CONNECTSERVERHOST\r\n\r\n":
                 self._connection_stage = CONNECTION_STAGE.CONNECTSERVERHOST
-                return None
+                return []
 
         def complete_messages(data: bytes) -> List[Tuple[int, int, bytes]]:
             """Return only complete ScreenLogic messages."""
