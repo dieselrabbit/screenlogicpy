@@ -2,9 +2,9 @@
 import asyncio
 import random
 import struct
-from typing import Tuple
+from typing import List, Tuple
 
-from screenlogicpy.const import CODE
+from screenlogicpy.const import CODE, MESSAGE
 from screenlogicpy.requests.utility import takeMessage, makeMessage, encodeMessageString
 from tests.const_data import (
     ASYNC_SL_RESPONSES,
@@ -41,10 +41,11 @@ class FakeScreenLogicTCPProtocol(asyncio.Protocol):
         self.transport = transport
         self.connected = True
         self._connection_stage = CONNECTION_STAGE.NO_CONNECTION
+        self._buff = bytearray()
 
     def data_received(self, data: bytes) -> None:
-        if (data_to_send := self.process_request(data)) is not None:
-            self.transport.write(data_to_send)
+        for response in self.process_request(data):
+            self.transport.write(response)
 
     def connection_lost(self, exc: Exception) -> None:
         return super().connection_lost(exc)
@@ -55,34 +56,56 @@ class FakeScreenLogicTCPProtocol(asyncio.Protocol):
                 self._connection_stage = CONNECTION_STAGE.CONNECTSERVERHOST
                 return None
 
-        messageID, messageCode, _ = takeMessage(data)
-        if (
-            messageCode == CODE.CHALLENGE_QUERY
-            and self._connection_stage == CONNECTION_STAGE.CONNECTSERVERHOST
-        ):
-            self._connection_stage = CONNECTION_STAGE.CHALLENGE
-            return makeMessage(
-                messageID,
-                CODE.CHALLENGE_QUERY + 1,
-                encodeMessageString(FAKE_GATEWAY_MAC),
-            )
+        def complete_messages(data: bytes) -> List[Tuple[int, int, bytes]]:
+            """Return only complete ScreenLogic messages."""
 
-        if (
-            messageCode == CODE.LOCALLOGIN_QUERY
-            and self._connection_stage == CONNECTION_STAGE.CHALLENGE
-        ):
-            self._connection_stage = CONNECTION_STAGE.LOGIN
-            return makeMessage(messageID, CODE.LOCALLOGIN_QUERY + 1, b"")
+            self._buff.extend(data)
+            complete = []
+            while len(self._buff) >= MESSAGE.HEADER_LENGTH:
+                dataLen = struct.unpack_from("<I", self._buff, 4)[0]
+                totalLen = MESSAGE.HEADER_LENGTH + dataLen
+                if len(self._buff) >= totalLen:
+                    out = bytearray()
+                    for _ in range(totalLen):
+                        out.append(self._buff.pop(0))
+                    complete.append(takeMessage(bytes(out)))
+                else:
+                    break
+            return complete
 
-        if (
-            self._connection_stage == CONNECTION_STAGE.LOGIN
-            and messageCode in ASYNC_SL_RESPONSES
-        ):
-            return makeMessage(
-                messageID, messageCode + 1, ASYNC_SL_RESPONSES[messageCode]
-            )
+        responses = []
+        for messageID, messageCode, _ in complete_messages(data):
+            if (
+                messageCode == CODE.CHALLENGE_QUERY
+                and self._connection_stage == CONNECTION_STAGE.CONNECTSERVERHOST
+            ):
+                self._connection_stage = CONNECTION_STAGE.CHALLENGE
+                responses.append(
+                    makeMessage(
+                        messageID,
+                        CODE.CHALLENGE_QUERY + 1,
+                        encodeMessageString(FAKE_GATEWAY_MAC),
+                    )
+                )
 
-        return None
+            if (
+                messageCode == CODE.LOCALLOGIN_QUERY
+                and self._connection_stage == CONNECTION_STAGE.CHALLENGE
+            ):
+                self._connection_stage = CONNECTION_STAGE.LOGIN
+                responses.append(makeMessage(messageID, CODE.LOCALLOGIN_QUERY + 1, b""))
+
+            if (
+                self._connection_stage == CONNECTION_STAGE.LOGIN
+                and messageCode in ASYNC_SL_RESPONSES
+            ):
+                responses.append(
+                    makeMessage(
+                        messageID, messageCode + 1, ASYNC_SL_RESPONSES[messageCode]
+                    )
+                )
+
+        return responses
 
 
 class FailingFakeScreenLogicTCPProtocol(FakeScreenLogicTCPProtocol):
