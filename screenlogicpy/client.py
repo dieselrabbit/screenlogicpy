@@ -148,7 +148,7 @@ class ClientManager:
                 "Not attached to protocol adapter. request_ping failed."
             )
         _LOGGER.debug("Requesting ping")
-        if await async_request_ping(self._protocol):
+        if await async_request_ping(self._protocol, max_retries=self._max_retries):
             _LOGGER.debug("Ping successful.")
 
     async def _async_add_client(self):
