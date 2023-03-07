@@ -45,7 +45,8 @@ class FakeScreenLogicTCPProtocol(asyncio.Protocol):
 
     def data_received(self, data: bytes) -> None:
         for response in self.process_request(data):
-            self.transport.write(response)
+            if response is not None:
+                self.transport.write(response)
 
     def connection_lost(self, exc: Exception) -> None:
         return super().connection_lost(exc)
@@ -73,46 +74,42 @@ class FakeScreenLogicTCPProtocol(asyncio.Protocol):
                     break
             return complete
 
-        responses = []
-        for messageID, messageCode, _ in complete_messages(data):
-            if (
-                messageCode == CODE.CHALLENGE_QUERY
-                and self._connection_stage == CONNECTION_STAGE.CONNECTSERVERHOST
-            ):
-                self._connection_stage = CONNECTION_STAGE.CHALLENGE
-                responses.append(
-                    makeMessage(
-                        messageID,
-                        CODE.CHALLENGE_QUERY + 1,
-                        encodeMessageString(FAKE_GATEWAY_MAC),
-                    )
-                )
+        return [self.process_message(message) for message in complete_messages(data)]
 
-            if (
-                messageCode == CODE.LOCALLOGIN_QUERY
-                and self._connection_stage == CONNECTION_STAGE.CHALLENGE
-            ):
-                self._connection_stage = CONNECTION_STAGE.LOGIN
-                responses.append(makeMessage(messageID, CODE.LOCALLOGIN_QUERY + 1, b""))
+    def process_message(self, message: Tuple[int, int, bytes]) -> bytes:
+        messageID, messageCode, _ = message
+        if (
+            messageCode == CODE.CHALLENGE_QUERY
+            and self._connection_stage == CONNECTION_STAGE.CONNECTSERVERHOST
+        ):
+            self._connection_stage = CONNECTION_STAGE.CHALLENGE
+            return makeMessage(
+                messageID,
+                CODE.CHALLENGE_QUERY + 1,
+                encodeMessageString(FAKE_GATEWAY_MAC),
+            )
 
-            if (
-                self._connection_stage == CONNECTION_STAGE.LOGIN
-                and messageCode in ASYNC_SL_RESPONSES
-            ):
-                responses.append(
-                    makeMessage(
-                        messageID, messageCode + 1, ASYNC_SL_RESPONSES[messageCode]
-                    )
-                )
+        if (
+            messageCode == CODE.LOCALLOGIN_QUERY
+            and self._connection_stage == CONNECTION_STAGE.CHALLENGE
+        ):
+            self._connection_stage = CONNECTION_STAGE.LOGIN
+            return makeMessage(messageID, CODE.LOCALLOGIN_QUERY + 1, b"")
 
-        return responses
+        if (
+            self._connection_stage == CONNECTION_STAGE.LOGIN
+            and messageCode in ASYNC_SL_RESPONSES
+        ):
+            return makeMessage(
+                messageID, messageCode + 1, ASYNC_SL_RESPONSES[messageCode]
+            )
 
 
 class FailingFakeScreenLogicTCPProtocol(FakeScreenLogicTCPProtocol):
-    def process_request(self, data):
+    def process_message(self, message: Tuple[int, int, bytes]) -> bytes:
         fail = random.randint(0, 5)
         if fail > 3:
-            messageID, messageCode, _ = takeMessage(data)
+            messageID, messageCode, _ = message
             if fail == 4:
                 if messageCode == CODE.LOCALLOGIN_QUERY:
                     return makeMessage(messageID, CODE.ERROR_LOGIN_REJECTED)
@@ -121,7 +118,7 @@ class FailingFakeScreenLogicTCPProtocol(FakeScreenLogicTCPProtocol):
             else:
                 return None
         else:
-            return super().process_request(data)
+            return super().process_message(message)
 
 
 class FakeScreenLogicUDPProtocol(asyncio.DatagramProtocol):
