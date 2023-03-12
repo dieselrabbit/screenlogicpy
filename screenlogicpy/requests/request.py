@@ -42,7 +42,7 @@ async def async_make_request(
 
         if attempt == max_retries:
             raise ScreenLogicRequestError(
-                f"{error_message} after {max_retries} attempts"
+                f"{error_message} after {max_retries + 1} attempts"
             )
 
         retry_delay = MESSAGE.COM_RETRY_WAIT * (attempt + 1)
