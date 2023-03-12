@@ -26,10 +26,6 @@ class ScreenLogicError(ScreenLogicException):
     pass
 
 
-class ScreenLogicRequestTimeout(ScreenLogicException):
-    pass
-
-
 class ScreenLogicRequestError(ScreenLogicException):
     pass
 
