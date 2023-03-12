@@ -1,44 +1,28 @@
-0D-BF-7F                                11 1100
-0D-C6-A5                                 1 1100
-0D-CD-0C                                 1 1000
-0F-5A-03                                11 1000
-config	1111 1111 1111 1111 1000 0000 0011 1000
-solar	                                   0001
-sheatp	                                   0010
-chlor	                                   0100
-UNKNOWN                                    1000
-UNKNOWN                                  1 0000
-sparmt                                  10 0000
-cooling	                         1000 0000 0000
-ichem	                    1000 0000 0000 0000
+7F                                      11 1100  IntelliTouch i5+3S
+A5                                       1 1100  IntelliTouch i5+3S
+0C                                       1 1000  IntelliTouch i5+3S
+03                                      11 1000  IntelliTouch i7+3
+                                      0011 0000  IntelliTouch i9+3
+                            0010 0000 0001 1111
+config	1111 1111 1111 1111 1000 0000 0011 1000  EasyTouch2 8
 
+solar	                                   0001
+solar as heat pump                         0010
+chlorinator                                0100
+UNKNOWN                                    1000
+UNKNOWN                               0001 0000
+spa remote                            0010 0000
+UNKNOWN                               0100 0000
+UNKNOWN                               1000 0000
+UNKNOWN                          0001 0000 0000
+UNKNOWN                          0010 0000 0000
+UNKNOWN                          0100 0000 0000
+(Night?) cooling                 1000 0000 0000
+UNKNOWN                     0001 0000 0000 0000
+UNKNOWN                     0010 0000 0000 0000
+UNKNOWN                     0100 0000 0000 0000
+IntelliChem                 1000 0000 0000 0000
+
+Pump Data
 pump 0  0100 0110
 pump 1  0100 0010
-
-
-SERVICE
-"controller_buffer": 1,
-"show_alarms": 1,
-"ok": 3,
-"freeze_mode": {
-    "name": "Freeze Mode",
-    "value": 0
-},
-
-SERVICE_TIMEOUT
-"controller_buffer": 129,
-"show_alarms": 1,
-"ok": 3,
-"freeze_mode": {
-    "name": "Freeze Mode",
-    "value": 0
-},
-
-AUTO
-"controller_buffer": 0,
-"show_alarms": 1,
-"ok": 1,
-"freeze_mode": {
-    "name": "Freeze Mode",
-    "value": 0
-},
