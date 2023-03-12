@@ -21,6 +21,7 @@ class ScreenLogicProtocol(asyncio.Protocol):
         self._futures = self.FutureManager(self._loop)
         self._callbacks = {}
         self._connected = False
+        self._closing = False
         self._last_request: float = None
         self._last_response: float = None
         self._buff = bytearray()
@@ -38,6 +39,10 @@ class ScreenLogicProtocol(asyncio.Protocol):
         """Return if protocol is currently connected."""
         return self._connected
 
+    @property
+    def is_closing(self):
+        return self._closing
+    
     @property
     def last_request(self):
         """Monotonic time for the last message sent."""
@@ -129,6 +134,9 @@ class ScreenLogicProtocol(asyncio.Protocol):
         if self._connection_lost_callback is not None:
             self._connection_lost_callback()
 
+    def close(self, force: bool = False):
+        self._closing = True
+        
     def register_async_message_callback(
         self,
         messageCode,
