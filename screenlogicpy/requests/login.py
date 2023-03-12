@@ -3,7 +3,7 @@ import logging
 import struct
 from typing import Callable, Tuple
 
-from ..const import CODE, MESSAGE, ScreenLogicError, ScreenLogicWarning
+from ..const import CODE, MESSAGE, ScreenLogicError, ScreenLogicRequestError
 from .protocol import ScreenLogicProtocol
 from .request import async_make_request
 from .utility import asyncio_timeout, decodeMessageString, encodeMessageString
@@ -90,10 +90,10 @@ async def async_gateway_connect(
                 protocol, CODE.CHALLENGE_QUERY, max_retries=max_retries
             )
         )
-    except ScreenLogicWarning as warn:
+    except ScreenLogicRequestError as re:
         raise ScreenLogicError(
-            f"Host failed to respond to challenge: : {warn.args[0]}"
-        ) from warn
+            f"Host failed to respond to challenge: : {re.args[0]}"
+        ) from re
 
 
 async def async_gateway_login(protocol: ScreenLogicProtocol, max_retries: int) -> bool:
@@ -105,8 +105,8 @@ async def async_gateway_login(protocol: ScreenLogicProtocol, max_retries: int) -
             )
             is not None
         )
-    except ScreenLogicWarning as warn:
-        raise ScreenLogicError(f"Failed to logon to gateway: {warn.args[0]}") from warn
+    except ScreenLogicRequestError as re:
+        raise ScreenLogicError(f"Failed to logon to gateway: {re.args[0]}") from re
 
 
 async def async_connect_to_gateway(

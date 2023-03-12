@@ -14,18 +14,30 @@ SL_GATEWAY_SUBTYPE = "gsubtype"
 SL_GATEWAY_NAME = "name"
 
 
-class ScreenLogicError(Exception):
+class ScreenLogicException(Exception):
     pass
 
 
-class ScreenLogicWarning(Exception):
+class ScreenLogicWarning(ScreenLogicException):
+    pass
+
+
+class ScreenLogicError(ScreenLogicException):
+    pass
+
+
+class ScreenLogicRequestTimeout(ScreenLogicException):
+    pass
+
+
+class ScreenLogicRequestError(ScreenLogicException):
     pass
 
 
 class MESSAGE:
-    COM_MAX_RETRIES = 2
-    COM_RETRY_WAIT = 2
-    COM_TIMEOUT = 5
+    COM_MAX_RETRIES = 1
+    COM_RETRY_WAIT = 1
+    COM_TIMEOUT = 2
     HEADER_FORMAT = "<HHI"
     HEADER_LENGTH = struct.calcsize(HEADER_FORMAT)
 
