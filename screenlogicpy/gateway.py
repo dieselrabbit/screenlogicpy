@@ -367,7 +367,7 @@ class ScreenLogicGateway:
         try:
             return await attempt_request()
         except ScreenLogicRequestError as re:
-            _LOGGER.warning("%s. Attempting to reconnect", re.args[0])
+            _LOGGER.debug("%s. Attempting to reconnect", re.args[0])
             await self.async_disconnect(True)
             return await attempt_request()
 

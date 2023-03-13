@@ -48,7 +48,7 @@ async def async_make_request(
 
         retry_delay = MESSAGE.COM_RETRY_WAIT * (attempt + 1)
 
-        _LOGGER.warning(
+        _LOGGER.debug(
             error_message + ". Will retry %i more time(s) in %i seconds",
             max_retries - attempt,
             retry_delay,
