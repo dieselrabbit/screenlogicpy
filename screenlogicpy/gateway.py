@@ -57,7 +57,6 @@ class ScreenLogicGateway:
             max_retries
         ) if max_retries is not None else self.set_max_retries()
         self._client_manager = ClientManager(self._async_connected_request, client_id)
-        self._connection_closed_fut = None
 
     @property
     def ip(self) -> str:
@@ -138,28 +137,17 @@ class ScreenLogicGateway:
                 await self._client_manager.attach(
                     self._protocol, self.get_data(), self._max_retries
                 )
-                loop = asyncio.get_event_loop()
-                self._connection_closed_fut = loop.create_future()
                 return True
         _LOGGER.debug("Login failed")
         return False
 
     async def async_disconnect(self, force=False):
-        """Disconnect from the ScreenLogic protocol adapter"""
+        """Shutdown the connection to the ScreenLogic protocol adapter"""
         _LOGGER.debug("Disconnecting from protocol adapter")
         if self.is_client:
             await self._client_manager.async_unsubscribe_gateway()
 
-        if not force:
-            while self._protocol.requests_pending():
-                await asyncio.sleep(1)
-
-        if self._transport and not self._transport.is_closing():
-            _LOGGER.debug("Closing transport")
-            self._transport.close()
-
-        if self._connection_closed_fut and not self._connection_closed_fut.cancelled():
-            await self._connection_closed_fut
+        await self._protocol.async_close(force)
 
     async def async_update(self) -> bool:
         """
@@ -181,16 +169,18 @@ class ScreenLogicGateway:
     async def async_get_config(self):
         """Request pool configuration data."""
         _LOGGER.debug("Requesting config data")
-        self._last[DATA.KEY_CONFIG] = await self._async_connected_request(
+        if last_raw := await self._async_connected_request(
             async_request_pool_config, self._data
-        )
+        ):
+            self._last[DATA.KEY_CONFIG] = last_raw
 
     async def async_get_status(self):
         """Request pool state data."""
         _LOGGER.debug("Requesting pool status")
-        self._last["status"] = await self._async_connected_request(
+        if last_raw := await self._async_connected_request(
             async_request_pool_status, self._data
-        )
+        ):
+            self._last["status"] = last_raw
 
     async def async_get_pumps(self):
         """Request all pump state data."""
@@ -198,23 +188,26 @@ class ScreenLogicGateway:
             if self._data[DATA.KEY_PUMPS][pumpID]["data"] != 0:
                 _LOGGER.debug("Requesting pump %i data", pumpID)
                 last_pumps = self._last.setdefault(DATA.KEY_PUMPS, {})
-                last_pumps[pumpID] = await self._async_connected_request(
+                if last_raw := await self._async_connected_request(
                     async_request_pump_status, self._data, pumpID
-                )
+                ):
+                    last_pumps[pumpID] = last_raw
 
     async def async_get_chemistry(self):
         """Request IntelliChem controller data."""
         _LOGGER.debug("Requesting chemistry data")
-        self._last[DATA.KEY_CHEMISTRY] = await self._async_connected_request(
+        if last_raw := await self._async_connected_request(
             async_request_chemistry, self._data
-        )
+        ):
+            self._last[DATA.KEY_CHEMISTRY] = last_raw
 
     async def async_get_scg(self):
         """Request salt chlorine generator state data."""
         _LOGGER.debug("Requesting scg data")
-        self._last[DATA.KEY_SCG] = await self._async_connected_request(
+        if last_raw := await self._async_connected_request(
             async_request_scg_config, self._data
-        )
+        ):
+            self._last[DATA.KEY_SCG] = last_raw
 
     def get_data(self) -> dict:
         """Return the data."""
@@ -360,8 +353,8 @@ class ScreenLogicGateway:
 
         Will attempt to reconnect once if the connected request fails.
         """
-
-        kwargs["max_retries"] = self._max_retries
+        if kwargs.get("max_retries") is None:
+            kwargs["max_retries"] = self._max_retries
 
         async def attempt_request():
             if await self.async_connect():
@@ -374,13 +367,12 @@ class ScreenLogicGateway:
         try:
             return await attempt_request()
         except ScreenLogicRequestError as re:
-            _LOGGER.warning(re.args[0])
+            _LOGGER.warning("%s. Attempting to reconnect", re.args[0])
             await self.async_disconnect(True)
             return await attempt_request()
 
     def _common_connection_closed_callback(self):
         """Perform any needed cleanup."""
-        self._connection_closed_fut.set_result(True)
         if self._custom_connection_closed_callback:
             self._custom_connection_closed_callback()
 

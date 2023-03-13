@@ -24,6 +24,7 @@ async def async_make_request(
                 f"Timeout waiting for response to message code '{requestCode}'"
             )
         except asyncio.CancelledError:
+            _LOGGER.debug(f"Future for request '{requestCode}' was canceled!")
             return
 
         if not request.cancelled():
