@@ -9,7 +9,6 @@ from .const import (
     COM_KEEPALIVE,
     MESSAGE,
     ScreenLogicRequestError,
-    ScreenLogicWarning,
 )
 from .requests import (
     async_request_add_client,
@@ -170,14 +169,10 @@ class ClientManager:
 
     async def _async_remove_client(self):
         """Check connection before sending remove client request."""
-        if not self._attached():
-            raise ScreenLogicWarning(
-                "Attempted to remove_client but not attached to protocol adapter"
-            )
         _LOGGER.debug("Requesting remove client")
         try:
             return await async_request_remove_client(
-                self._protocol, self._client_id, max_retries=self._max_retries
+                self._protocol, self._client_id, max_retries=0
             )
         except ScreenLogicRequestError:
             return False
