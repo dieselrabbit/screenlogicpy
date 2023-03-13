@@ -19,7 +19,7 @@ from tests.const_data import (
 from tests.fake_gateway import error_resp, expected_resp
 
 from screenlogicpy import ScreenLogicGateway
-from screenlogicpy.const import CODE, MESSAGE, ScreenLogicWarning
+from screenlogicpy.const import CODE, MESSAGE, ScreenLogicRequestError
 
 
 @pytest.mark.asyncio
@@ -125,15 +125,29 @@ async def test_async_set_circuit_timeout(
     circuit_state = 1
     button_code = 12530
 
+    async def patched_request(self, async_method, *args, **kwargs):
+        if kwargs.get("max_retries") is None:
+            kwargs["max_retries"] = 1
+
+        async def attempt_request():
+            if await self.async_connect():
+                return await async_method(self._protocol, *args, **kwargs)
+
+        return await attempt_request()
+
     with patch(
         "screenlogicpy.requests.button.ScreenLogicProtocol.await_send_message",
         side_effect=(
             event_loop.create_future(),
             event_loop.create_future(),
         ),
-    ) as mockRequest, patch.object(MESSAGE, "COM_RETRY_WAIT", 1):
-        gateway = MockConnectedGateway
-        with pytest.raises(ScreenLogicWarning) as e_info:
+    ) as mockRequest, patch.object(
+        ScreenLogicGateway, "_async_connected_request", patched_request
+    ), patch.object(
+        MESSAGE, "COM_RETRY_WAIT", 1
+    ):
+        gateway: ScreenLogicGateway = MockConnectedGateway
+        with pytest.raises(ScreenLogicRequestError) as e_info:
             await gateway.async_set_circuit(circuit_id, circuit_state)
         await gateway.async_disconnect()
         assert "Timeout" in e_info.value.args[0]

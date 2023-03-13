@@ -59,15 +59,30 @@ async def test_async_large_data_received(event_loop):
 
 
 @pytest.mark.asyncio
-async def test_async_disconnect(event_loop):
+async def test_async_close(event_loop):
+    test_count = 5
+    fut_manager = ScreenLogicProtocol.FutureManager(event_loop)
+
+    futures = []
+    for i in range(test_count):
+        futures.append(fut_manager.create(i))
+
+    outstanding_result = fut_manager.all_done()
+    for x in range(4):
+        futures[x].set_result(True)
+        assert not outstanding_result.done()
+    futures[4].set_result(True)
+    await asyncio.sleep(0)
+    assert outstanding_result.done()
+    assert outstanding_result.result() == [True for _ in range(test_count)]
+
     fut_manager = ScreenLogicProtocol.FutureManager(event_loop)
 
     futures = []
     for i in range(5):
         futures.append(fut_manager.create(i))
 
-    for x in range(4):
-        futures[x].set_result(True)
-        assert not fut_manager.all_done()
-    futures[4].set_result(True)
-    assert fut_manager.all_done()
+    outstanding_result = fut_manager.all_done(True)
+    await asyncio.sleep(0)
+    assert outstanding_result.done()
+    assert isinstance(outstanding_result.exception(), asyncio.CancelledError)
