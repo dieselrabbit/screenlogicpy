@@ -170,7 +170,7 @@ class ScreenLogicGateway:
         """Request pool configuration data."""
         _LOGGER.debug("Requesting config data")
         if last_raw := await self._async_connected_request(
-            async_request_pool_config, self._data
+            async_request_pool_config, self._data, reconnect_delay=1
         ):
             self._last[DATA.KEY_CONFIG] = last_raw
 
@@ -178,7 +178,7 @@ class ScreenLogicGateway:
         """Request pool state data."""
         _LOGGER.debug("Requesting pool status")
         if last_raw := await self._async_connected_request(
-            async_request_pool_status, self._data
+            async_request_pool_status, self._data, reconnect_delay=1
         ):
             self._last["status"] = last_raw
 
@@ -189,7 +189,7 @@ class ScreenLogicGateway:
                 _LOGGER.debug("Requesting pump %i data", pumpID)
                 last_pumps = self._last.setdefault(DATA.KEY_PUMPS, {})
                 if last_raw := await self._async_connected_request(
-                    async_request_pump_status, self._data, pumpID
+                    async_request_pump_status, self._data, pumpID, reconnect_delay=1
                 ):
                     last_pumps[pumpID] = last_raw
 
@@ -197,7 +197,7 @@ class ScreenLogicGateway:
         """Request IntelliChem controller data."""
         _LOGGER.debug("Requesting chemistry data")
         if last_raw := await self._async_connected_request(
-            async_request_chemistry, self._data
+            async_request_chemistry, self._data, reconnect_delay=1
         ):
             self._last[DATA.KEY_CHEMISTRY] = last_raw
 
@@ -205,7 +205,7 @@ class ScreenLogicGateway:
         """Request salt chlorine generator state data."""
         _LOGGER.debug("Requesting scg data")
         if last_raw := await self._async_connected_request(
-            async_request_scg_config, self._data
+            async_request_scg_config, self._data, reconnect_delay=1
         ):
             self._last[DATA.KEY_SCG] = last_raw
 
@@ -347,7 +347,9 @@ class ScreenLogicGateway:
             async_make_request, message_code, message
         )
 
-    async def _async_connected_request(self, async_method, *args, **kwargs):
+    async def _async_connected_request(
+        self, async_method, *args, reconnect_delay: int = 0, **kwargs
+    ):
         """
         Ensure a connection to the ScreenLogic protocol adapter prior to sending the request.
 
@@ -369,6 +371,7 @@ class ScreenLogicGateway:
         except ScreenLogicRequestError as re:
             _LOGGER.debug("%s. Attempting to reconnect", re.args[0])
             await self.async_disconnect(True)
+            await asyncio.sleep(reconnect_delay)
             return await attempt_request()
 
     def _common_connection_closed_callback(self):
