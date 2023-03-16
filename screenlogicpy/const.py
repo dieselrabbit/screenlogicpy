@@ -15,7 +15,11 @@ SL_GATEWAY_NAME = "name"
 
 
 class ScreenLogicException(Exception):
-    pass
+    """Common class for all ScreenLogic exceptions."""
+
+    def __init__(self, message: str, *args: object) -> None:
+        self.msg = message
+        super().__init__(*args)
 
 
 class ScreenLogicWarning(ScreenLogicException):

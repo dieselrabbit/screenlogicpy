@@ -92,7 +92,7 @@ async def async_gateway_connect(
         )
     except ScreenLogicRequestError as re:
         raise ScreenLogicError(
-            f"Host failed to respond to challenge: : {re.args[0]}"
+            f"Host failed to respond to challenge: : {re.msg}"
         ) from re
 
 
@@ -106,7 +106,7 @@ async def async_gateway_login(protocol: ScreenLogicProtocol, max_retries: int) -
             is not None
         )
     except ScreenLogicRequestError as re:
-        raise ScreenLogicError(f"Failed to logon to gateway: {re.args[0]}") from re
+        raise ScreenLogicError(f"Failed to logon to gateway: {re.msg}") from re
 
 
 async def async_connect_to_gateway(

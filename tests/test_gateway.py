@@ -150,7 +150,7 @@ async def test_async_set_circuit_timeout(
         with pytest.raises(ScreenLogicRequestError) as e_info:
             await gateway.async_set_circuit(circuit_id, circuit_state)
         await gateway.async_disconnect()
-        assert "Timeout" in e_info.value.args[0]
+        assert "Timeout" in e_info.value.msg
         assert mockRequest.call_count == 2
         assert mockRequest.call_args.args[0] == button_code
         assert mockRequest.call_args.args[1] == struct.pack(
