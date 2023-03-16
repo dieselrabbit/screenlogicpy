@@ -21,6 +21,8 @@ class ScreenLogicProtocol(asyncio.Protocol):
         self._futures = self.FutureManager(self._loop)
         self._callbacks = {}
         self._connected = False
+        self._closing = False
+        self._closed: asyncio.Future = None
         self._last_request: float = None
         self._last_response: float = None
         self._buff = bytearray()
@@ -39,6 +41,10 @@ class ScreenLogicProtocol(asyncio.Protocol):
         return self._connected
 
     @property
+    def is_closing(self):
+        return self._closing
+
+    @property
     def last_request(self):
         """Monotonic time for the last message sent."""
         return self._last_request
@@ -53,11 +59,13 @@ class ScreenLogicProtocol(asyncio.Protocol):
         self._connected = True
         _LOGGER.debug("Connected to server")
         self.transport = transport
+        self._closed = self._loop.create_future()
 
     def send_message(self, messageID, messageCode, messageData=b"") -> None:
         """Send a message via the transport."""
         _LOGGER.debug("Sending: %i, %i, %s", messageID, messageCode, messageData)
-        self.transport.write(makeMessage(messageID, messageCode, messageData))
+        if not self.transport.is_closing():
+            self.transport.write(makeMessage(messageID, messageCode, messageData))
 
         self._last_request = time.monotonic()
 
@@ -71,13 +79,20 @@ class ScreenLogicProtocol(asyncio.Protocol):
         Sends the message and returns an awaitable asyncio.Future object that will
         contain the result of the ScreenLogic protocol adapter's response.
         """
+
         messageID = next(self.__msgID)
         fut = self._futures.create(messageID)
-        self.send_message(messageID, messageCode, messageData)
+        if self._closing:
+            fut.cancel()
+        else:
+            self.send_message(messageID, messageCode, messageData)
         return fut
 
     def data_received(self, data: bytes) -> None:
         """Called with data is received."""
+
+        if self._closing:
+            return
 
         def complete_messages(data: bytes) -> List[Tuple[int, int, bytes]]:
             """Return only complete ScreenLogic messages."""
@@ -126,8 +141,26 @@ class ScreenLogicProtocol(asyncio.Protocol):
         """Called when connection is closed/lost."""
         self._connected = False
         _LOGGER.debug("Connection closed")
+        self._closed.set_result(True)
         if self._connection_lost_callback is not None:
             self._connection_lost_callback()
+
+    async def async_close(self, force: bool = False) -> None:
+        """
+        Shutdown the protocol and close the transport.
+
+        Waits for any outstanding requests to be resolved.
+        If force == true, immediately cancel all outstanding requests.
+        """
+        self._closing = True
+        try:
+            await self._futures.all_done(force)
+        except asyncio.CancelledError:
+            pass
+        if self.transport and not self.transport.is_closing():
+            _LOGGER.debug("Closing transport")
+            self.transport.close()
+        await self._closed
 
     def register_async_message_callback(
         self,
@@ -153,10 +186,6 @@ class ScreenLogicProtocol(asyncio.Protocol):
     def remove_all_async_message_callbacks(self) -> None:
         """Remove all message callbacks."""
         self._callbacks.clear()
-
-    def requests_pending(self) -> bool:
-        """Return if requests are pending."""
-        return not self._futures.all_done()
 
     def _call_keepalive(self) -> None:
         """Schedule keepalive callback."""
@@ -237,10 +266,11 @@ class ScreenLogicProtocol(asyncio.Protocol):
                 return True
             return False
 
-        def all_done(self) -> bool:
+        def all_done(self, force: bool = False) -> asyncio.Future:
             """Return if outstanding still futures exist."""
-            fut: asyncio.Future
-            for fut in self._collection.values():
-                if not fut.done():
-                    return False
-            return True
+            outstanding_result: asyncio.Future = asyncio.gather(
+                *[fut for fut in self._collection.values()]
+            )
+            if force:
+                outstanding_result.cancel()
+            return outstanding_result

@@ -2,6 +2,7 @@
 import asyncio
 import random
 import struct
+import time
 from typing import List, Tuple
 
 from screenlogicpy.const import CODE, MESSAGE
@@ -77,6 +78,7 @@ class FakeScreenLogicTCPProtocol(asyncio.Protocol):
         return [self.process_message(message) for message in complete_messages(data)]
 
     def process_message(self, message: Tuple[int, int, bytes]) -> bytes:
+        time.sleep(0.1)
         messageID, messageCode, _ = message
         if (
             messageCode == CODE.CHALLENGE_QUERY
@@ -107,10 +109,12 @@ class FakeScreenLogicTCPProtocol(asyncio.Protocol):
 
 class FailingFakeScreenLogicTCPProtocol(FakeScreenLogicTCPProtocol):
     def process_message(self, message: Tuple[int, int, bytes]) -> bytes:
-        fail = random.randint(0, 5)
-        if fail > 3:
-            messageID, messageCode, _ = message
-            if fail == 4:
+        call_max = 75
+        messageID, messageCode, _ = message
+        call_min = messageID if messageID < call_max else call_max
+        fail = random.randint(call_min, call_max)
+        if fail > 68:
+            if fail > 72:
                 if messageCode == CODE.LOCALLOGIN_QUERY:
                     return makeMessage(messageID, CODE.ERROR_LOGIN_REJECTED)
                 else:

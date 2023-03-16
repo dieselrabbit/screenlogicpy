@@ -98,7 +98,7 @@ async def test_notify():
         nonlocal cb3_hit
         cb3_hit = True
 
-    cm = ClientManager()
+    cm = ClientManager(None)
     cm._listeners = {
         code1: {
             callback1,

@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-from ..const import CODE, MESSAGE, ScreenLogicWarning
+from ..const import CODE, MESSAGE, ScreenLogicRequestError
 from .protocol import ScreenLogicProtocol
 from .utility import asyncio_timeout
 
@@ -14,7 +14,7 @@ async def async_make_request(
     requestData: bytes = b"",
     max_retries: int = MESSAGE.COM_MAX_RETRIES,
 ) -> bytes:
-    for attempt in range(1, max_retries + 1):
+    for attempt in range(0, max_retries + 1):
         request = protocol.await_send_message(requestCode, requestData)
         try:
             async with asyncio_timeout(MESSAGE.COM_TIMEOUT):
@@ -24,6 +24,7 @@ async def async_make_request(
                 f"Timeout waiting for response to message code '{requestCode}'"
             )
         except asyncio.CancelledError:
+            _LOGGER.debug(f"Future for request '{requestCode}' was canceled!")
             return
 
         if not request.cancelled():
@@ -41,9 +42,11 @@ async def async_make_request(
                 error_message = f"Unexpected response code '{responseCode}' for request code: {requestCode}, request: {requestData}"
 
         if attempt == max_retries:
-            raise ScreenLogicWarning(f"{error_message} after {max_retries} attempts")
+            raise ScreenLogicRequestError(
+                f"{error_message} after {max_retries + 1} attempts"
+            )
 
-        retry_delay = MESSAGE.COM_RETRY_WAIT * attempt
+        retry_delay = MESSAGE.COM_RETRY_WAIT * (attempt + 1)
 
         _LOGGER.debug(
             error_message + ". Will retry %i more time(s) in %i seconds",
