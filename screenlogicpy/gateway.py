@@ -369,10 +369,13 @@ class ScreenLogicGateway:
         try:
             return await attempt_request()
         except ScreenLogicRequestError as re:
-            _LOGGER.debug("%s. Attempting to reconnect", re.args[0])
+            _LOGGER.debug("%s. Attempting to reconnect", re.msg)
             await self.async_disconnect(True)
             await asyncio.sleep(reconnect_delay)
-            return await attempt_request()
+            try:
+                return await attempt_request()
+            except ScreenLogicRequestError as re2:
+                raise ScreenLogicError(re2.msg) from re2
 
     def _common_connection_closed_callback(self):
         """Perform any needed cleanup."""
