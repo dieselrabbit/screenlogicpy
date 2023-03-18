@@ -14,26 +14,30 @@ SL_GATEWAY_SUBTYPE = "gsubtype"
 SL_GATEWAY_NAME = "name"
 
 
-class ScreenLogicError(Exception):
-    """Generic ScreenLogic error."""
+class ScreenLogicException(Exception):
+    """Common class for all ScreenLogic exceptions."""
+
+    def __init__(self, message: str, *args: object) -> None:
+        self.msg = message
+        super().__init__(*args)
 
 
-class ScreenLogicKeyError(ScreenLogicError):
-    """Mapping key not found."""
+class ScreenLogicWarning(ScreenLogicException):
+    pass
 
 
-class ScreenLogicValueRangeError(ScreenLogicError):
-    """Inappropriate argument value (out of range)."""
+class ScreenLogicError(ScreenLogicException):
+    pass
 
 
-class ScreenLogicWarning(Exception):
-    """Generic ScreenLogic warning."""
+class ScreenLogicRequestError(ScreenLogicException):
+    pass
 
 
 class MESSAGE:
-    COM_MAX_RETRIES = 2
-    COM_RETRY_WAIT = 2
-    COM_TIMEOUT = 5
+    COM_MAX_RETRIES = 1
+    COM_RETRY_WAIT = 1
+    COM_TIMEOUT = 2
     HEADER_FORMAT = "<HHI"
     HEADER_LENGTH = struct.calcsize(HEADER_FORMAT)
 

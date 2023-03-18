@@ -2,9 +2,10 @@
 import asyncio
 import random
 import struct
-from typing import Tuple
+import time
+from typing import List, Tuple
 
-from screenlogicpy.const import CODE
+from screenlogicpy.const import CODE, MESSAGE
 from screenlogicpy.requests.utility import takeMessage, makeMessage, encodeMessageString
 from tests.const_data import (
     ASYNC_SL_RESPONSES,
@@ -41,10 +42,12 @@ class FakeScreenLogicTCPProtocol(asyncio.Protocol):
         self.transport = transport
         self.connected = True
         self._connection_stage = CONNECTION_STAGE.NO_CONNECTION
+        self._buff = bytearray()
 
     def data_received(self, data: bytes) -> None:
-        if (data_to_send := self.process_request(data)) is not None:
-            self.transport.write(data_to_send)
+        for response in self.process_request(data):
+            if response is not None:
+                self.transport.write(response)
 
     def connection_lost(self, exc: Exception) -> None:
         return super().connection_lost(exc)
@@ -53,9 +56,30 @@ class FakeScreenLogicTCPProtocol(asyncio.Protocol):
         if self._connection_stage == CONNECTION_STAGE.NO_CONNECTION:
             if data == b"CONNECTSERVERHOST\r\n\r\n":
                 self._connection_stage = CONNECTION_STAGE.CONNECTSERVERHOST
-                return None
+                return []
 
-        messageID, messageCode, _ = takeMessage(data)
+        def complete_messages(data: bytes) -> List[Tuple[int, int, bytes]]:
+            """Return only complete ScreenLogic messages."""
+
+            self._buff.extend(data)
+            complete = []
+            while len(self._buff) >= MESSAGE.HEADER_LENGTH:
+                dataLen = struct.unpack_from("<I", self._buff, 4)[0]
+                totalLen = MESSAGE.HEADER_LENGTH + dataLen
+                if len(self._buff) >= totalLen:
+                    out = bytearray()
+                    for _ in range(totalLen):
+                        out.append(self._buff.pop(0))
+                    complete.append(takeMessage(bytes(out)))
+                else:
+                    break
+            return complete
+
+        return [self.process_message(message) for message in complete_messages(data)]
+
+    def process_message(self, message: Tuple[int, int, bytes]) -> bytes:
+        time.sleep(0.1)
+        messageID, messageCode, _ = message
         if (
             messageCode == CODE.CHALLENGE_QUERY
             and self._connection_stage == CONNECTION_STAGE.CONNECTSERVERHOST
@@ -82,7 +106,23 @@ class FakeScreenLogicTCPProtocol(asyncio.Protocol):
                 messageID, messageCode + 1, ASYNC_SL_RESPONSES[messageCode]
             )
 
-        return None
+
+class FailingFakeScreenLogicTCPProtocol(FakeScreenLogicTCPProtocol):
+    def process_message(self, message: Tuple[int, int, bytes]) -> bytes:
+        call_max = 75
+        messageID, messageCode, _ = message
+        call_min = messageID if messageID < call_max else call_max
+        fail = random.randint(call_min, call_max)
+        if fail > 68:
+            if fail > 72:
+                if messageCode == CODE.LOCALLOGIN_QUERY:
+                    return makeMessage(messageID, CODE.ERROR_LOGIN_REJECTED)
+                else:
+                    return makeMessage(messageID, CODE.ERROR_BAD_PARAMETER)
+            else:
+                return None
+        else:
+            return super().process_message(message)
 
 
 class FailingFakeScreenLogicTCPProtocol(FakeScreenLogicTCPProtocol):

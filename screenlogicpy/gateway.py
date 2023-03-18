@@ -9,10 +9,10 @@ from .const import (
     CIRCUIT_FUNCTION,
     DATA,
     MESSAGE,
+    RANGE,
+    SCG,
     ScreenLogicError,
-    ScreenLogicKeyError,
-    ScreenLogicValueRangeError,
-    ScreenLogicWarning,
+    ScreenLogicRequestError,
 )
 from .requests import (
     async_connect_to_gateway,
@@ -58,7 +58,7 @@ class ScreenLogicGateway:
         self._last = {}
         self.dv = DataValidation()
         client_id = client_id if self.dv.is_valid(dv_key.CLIENT_ID, client_id) else None
-        self._client_manager = ClientManager(client_id)
+        self._client_manager = ClientManager(self._async_connected_request, client_id)
         self.set_max_retries(
             max_retries
         ) if max_retries is not None else self.set_max_retries()
@@ -120,7 +120,9 @@ class ScreenLogicGateway:
         self._custom_connection_closed_callback = connection_closed_callback
 
         if not self._ip:
-            raise ScreenLogicError("IP address never provided for connection.")
+            raise ScreenLogicError(
+                "Attempted to connect when no IP address has been provided for connection."
+            )
 
         _LOGGER.debug("Beginning connection and login sequence")
         connectPkg = await async_connect_to_gateway(
@@ -146,16 +148,12 @@ class ScreenLogicGateway:
         return False
 
     async def async_disconnect(self, force=False):
-        """Disconnect from the ScreenLogic protocol adapter"""
+        """Shutdown the connection to the ScreenLogic protocol adapter"""
+        _LOGGER.debug("Disconnecting from protocol adapter")
         if self.is_client:
             await self._client_manager.async_unsubscribe_gateway()
 
-        if not force:
-            while self._protocol.requests_pending():
-                await asyncio.sleep(0)
-
-        if self._transport and not self._transport.is_closing():
-            self._transport.close()
+        await self._protocol.async_close(force)
 
     async def async_update(self) -> bool:
         """
@@ -176,61 +174,46 @@ class ScreenLogicGateway:
 
     async def async_get_config(self):
         """Request pool configuration data."""
-        if not self.is_connected:
-            raise ScreenLogicWarning(
-                "Not connected to protocol adapter. get_config failed."
-            )
         _LOGGER.debug("Requesting config data")
-        self._last[DATA.KEY_CONFIG] = await async_request_pool_config(
-            self._protocol, self._data, self._max_retries
-        )
+        if last_raw := await self._async_connected_request(
+            async_request_pool_config, self._data, reconnect_delay=1
+        ):
+            self._last[DATA.KEY_CONFIG] = last_raw
 
     async def async_get_status(self):
         """Request pool state data."""
-        if not self.is_connected:
-            raise ScreenLogicWarning(
-                "Not connected to protocol adapter. get_status failed."
-            )
         _LOGGER.debug("Requesting pool status")
-        self._last["status"] = await async_request_pool_status(
-            self._protocol, self._data, self._max_retries
-        )
+        if last_raw := await self._async_connected_request(
+            async_request_pool_status, self._data, reconnect_delay=1
+        ):
+            self._last["status"] = last_raw
 
     async def async_get_pumps(self):
         """Request all pump state data."""
-        if not self.is_connected:
-            raise ScreenLogicWarning(
-                "Not connected to protocol adapter. get_pumps failed."
-            )
         for pumpID in self._data[DATA.KEY_PUMPS]:
             if self._data[DATA.KEY_PUMPS][pumpID]["data"] != 0:
                 _LOGGER.debug("Requesting pump %i data", pumpID)
                 last_pumps = self._last.setdefault(DATA.KEY_PUMPS, {})
-                last_pumps[pumpID] = await async_request_pump_status(
-                    self._protocol, self._data, pumpID, self._max_retries
-                )
+                if last_raw := await self._async_connected_request(
+                    async_request_pump_status, self._data, pumpID, reconnect_delay=1
+                ):
+                    last_pumps[pumpID] = last_raw
 
     async def async_get_chemistry(self):
         """Request IntelliChem controller data."""
-        if not self.is_connected:
-            raise ScreenLogicWarning(
-                "Not connected to protocol adapter. get_chemistry failed."
-            )
         _LOGGER.debug("Requesting chemistry data")
-        self._last[DATA.KEY_CHEMISTRY] = await async_request_chemistry(
-            self._protocol, self._data, self._max_retries
-        )
+        if last_raw := await self._async_connected_request(
+            async_request_chemistry, self._data, reconnect_delay=1
+        ):
+            self._last[DATA.KEY_CHEMISTRY] = last_raw
 
     async def async_get_scg(self):
         """Request salt chlorine generator state data."""
-        if not self.is_connected:
-            raise ScreenLogicWarning(
-                "Not connected to protocol adapter. get_scg failed."
-            )
         _LOGGER.debug("Requesting scg data")
-        self._last[DATA.KEY_SCG] = await async_request_scg_config(
-            self._protocol, self._data, self._max_retries
-        )
+        if last_raw := await self._async_connected_request(
+            async_request_scg_config, self._data, reconnect_delay=1
+        ):
+            self._last[DATA.KEY_SCG] = last_raw
 
     def get_data(self) -> dict:
         """Return the data."""
@@ -249,47 +232,35 @@ class ScreenLogicGateway:
         self.dv.validate(dv_key.CIRCUIT, circuitID)
         self.dv.validate(dv_key.ON_OFF, circuitState)
 
-        if await self.async_connect():
-            if await async_request_pool_button_press(
-                self._protocol, circuitID, circuitState, self._max_retries
-            ):
-                return True
-        return False
+        return await self._async_connected_request(
+            async_request_pool_button_press, circuitID, circuitState
+        )
 
     async def async_set_heat_temp(self, body: int, temp: int):
         """Set the target temperature for the specified body."""
         self.dv.validate(dv_key.BODY, body)
         self.dv.validate((dv_key.HEAT_TEMP, body), temp)
 
-        if await self.async_connect():
-            if await async_request_set_heat_setpoint(
-                self._protocol, body, temp, self._max_retries
-            ):
-                return True
-        return False
+        return await self._async_connected_request(
+            async_request_set_heat_setpoint, body, temp
+        )
 
     async def async_set_heat_mode(self, body: int, mode: int):
         """Set the heating mode for the specified body."""
         self.dv.validate(dv_key.BODY, body)
         self.dv.validate(dv_key.HEAT_MODE, mode)
 
-        if await self.async_connect():
-            if await async_request_set_heat_mode(
-                self._protocol, body, mode, self._max_retries
-            ):
-                return True
-        return False
+        return await self._async_connected_request(
+            async_request_set_heat_mode, body, mode
+        )
 
     async def async_set_color_lights(self, light_command: int):
         """Set the light show mode for all capable lights."""
         self.dv.validate(dv_key.COLOR_MODE, light_command)
 
-        if await self.async_connect():
-            if await async_request_pool_lights_command(
-                self._protocol, light_command, self._max_retries
-            ):
-                return True
-        return False
+        return await self._async_connected_request(
+            async_request_pool_lights_command, light_command
+        )
 
     async def async_set_scg_config(
         self,
@@ -317,16 +288,13 @@ class ScreenLogicGateway:
         self.dv.validate(dv_key.ON_OFF, super_chlor)
         self.dv.validate(dv_key.SC_RUNTIME, super_time)
 
-        if await self.async_connect():
-            return await async_request_set_scg_config(
-                self._protocol,
-                pool_output,
-                spa_output,
-                super_chlor,
-                super_time,
-                self._max_retries,
-            )
-        return False
+        return await self._async_connected_request(
+            async_request_set_scg_config,
+            pool_output,
+            spa_output,
+            super_chlor,
+            super_time,
+        )
 
     async def async_set_chem_data(
         self,
@@ -385,18 +353,15 @@ class ScreenLogicGateway:
         self.dv.validate(dv_key.CYANURIC_ACID, cya)
         self.dv.validate(dv_key.SALT_TDS, salt_tds_ppm)
 
-        if await self.async_connect():
-            return await async_request_set_chem_data(
-                self._protocol,
-                ph_setpoint,
-                orp_setpoint,
-                calcium_harness,
-                total_alkalinity,
-                cya,
-                salt_tds_ppm,
-                self._max_retries,
-            )
-        return False
+        return await self._async_connected_request(
+            async_request_set_chem_data,
+            ph_setpoint,
+            orp_setpoint,
+            calcium_harness,
+            total_alkalinity,
+            cya,
+            salt_tds_ppm,
+        )
 
     async def async_subscribe_client(
         self, callback: Callable[..., any], code: int
@@ -435,18 +400,43 @@ class ScreenLogicGateway:
 
     async def async_send_message(self, message_code: int, message: bytes = b""):
         """Send a message to the ScreenLogic protocol adapter."""
-        if not self.is_connected:
-            raise ScreenLogicWarning(
-                "Not connected to protocol adapter. send_message failed."
-            )
         _LOGGER.debug(f"User requesting {message_code}")
-        return await async_make_request(
-            self._protocol, message_code, message, self._max_retries
+        return await self._async_connected_request(
+            async_make_request, message_code, message
         )
+
+    async def _async_connected_request(
+        self, async_method, *args, reconnect_delay: int = 0, **kwargs
+    ):
+        """
+        Ensure a connection to the ScreenLogic protocol adapter prior to sending the request.
+
+        Will attempt to reconnect once if the connected request fails.
+        """
+        if kwargs.get("max_retries") is None:
+            kwargs["max_retries"] = self._max_retries
+
+        async def attempt_request():
+            if await self.async_connect():
+                return await async_method(self._protocol, *args, **kwargs)
+
+            raise ScreenLogicError(
+                f"Not connected and unable to connect to protocol adapter to complete request: {async_method.func_name}"
+            )
+
+        try:
+            return await attempt_request()
+        except ScreenLogicRequestError as re:
+            _LOGGER.debug("%s. Attempting to reconnect", re.msg)
+            await self.async_disconnect(True)
+            await asyncio.sleep(reconnect_delay)
+            try:
+                return await attempt_request()
+            except ScreenLogicRequestError as re2:
+                raise ScreenLogicError(re2.msg) from re2
 
     def _common_connection_closed_callback(self):
         """Perform any needed cleanup."""
-        # Future internal cleanup tasks
         if self._custom_connection_closed_callback:
             self._custom_connection_closed_callback()
 

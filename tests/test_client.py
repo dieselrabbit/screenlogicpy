@@ -98,7 +98,7 @@ async def test_notify():
         nonlocal cb3_hit
         cb3_hit = True
 
-    cm = ClientManager()
+    cm = ClientManager(None)
     cm._listeners = {
         code1: {
             callback1,
@@ -174,3 +174,31 @@ async def test_attach_existing(MockProtocolAdapter):
                 (code2, gateway._data),
             ),
         }
+
+
+@pytest.mark.asyncio
+async def test_keepalive(
+    event_loop: asyncio.BaseEventLoop, MockConnectedGateway: ScreenLogicGateway
+):
+    gateway = MockConnectedGateway
+
+    result = event_loop.create_future()
+    result.set_result(expected_resp(CODE.PING_QUERY))
+
+    def callback():
+        pass
+
+    with patch("screenlogicpy.client.COM_KEEPALIVE", new=2):
+        unsub = await gateway.async_subscribe_client(callback, CODE.STATUS_CHANGED)
+        with patch(
+            "screenlogicpy.requests.client.ScreenLogicProtocol.await_send_message",
+            return_value=result,
+        ) as mockPingRequest:
+            await asyncio.sleep(3)
+            assert mockPingRequest.call_count == 1
+            assert mockPingRequest.call_args.args[0] == CODE.PING_QUERY
+            assert mockPingRequest.call_args.args[1] == b""
+
+        unsub()
+    await gateway.async_get_pumps()
+    await gateway.async_disconnect()

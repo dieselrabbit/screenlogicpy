@@ -66,7 +66,7 @@ async def test_async_login_timeout(
             gateway = ScreenLogicGateway()
             with pytest.raises(ScreenLogicError) as e_info:
                 await gateway.async_connect(**FAKE_CONNECT_INFO)
-            assert "Timeout" in e_info.value.args[0]
+            assert "Timeout" in e_info.value.msg
             assert mockRequest.call_count == 3
 
 
@@ -98,5 +98,5 @@ async def test_async_login_rejected(
             gateway = ScreenLogicGateway()
             with pytest.raises(ScreenLogicError) as e_info:
                 await gateway.async_connect(**FAKE_CONNECT_INFO)
-            assert "Rejected" in e_info.value.args[0]
+            assert "Rejected" in e_info.value.msg
             assert mockRequest.call_count == 3

@@ -2,14 +2,22 @@
 import asyncio
 import logging
 import random
-from typing import Callable
+from typing import Awaitable, Callable
 
-from .const import CODE, COM_KEEPALIVE, MESSAGE, ScreenLogicWarning
+from .const import (
+    CODE,
+    COM_KEEPALIVE,
+    MESSAGE,
+    ScreenLogicRequestError,
+)
+from .requests import (
+    async_request_add_client,
+    async_request_ping,
+    async_request_remove_client,
+)
 from .requests.chemistry import decode_chemistry
-from .requests.client import async_request_add_client, async_request_remove_client
 from .requests.lights import decode_color_update
 from .requests.status import decode_pool_status
-from .requests.ping import async_request_ping
 from .requests.protocol import ScreenLogicProtocol
 
 _LOGGER = logging.getLogger(__name__)
@@ -18,12 +26,15 @@ _LOGGER = logging.getLogger(__name__)
 class ClientManager:
     """Class to manage callback subscriptions to specific ScreenLogic messages."""
 
-    def __init__(self, client_id: int = None) -> None:
-        if client_id is not None:
-            self._client_id = client_id
-        else:
-            self._client_id = random.randint(32767, 65535)
-
+    def __init__(
+        self,
+        async_request_manager: Callable[[bytes, any], Awaitable[any]],
+        client_id: int = None,
+    ) -> None:
+        self._async_managed_request = async_request_manager
+        self._client_id = (
+            client_id if client_id is not None else random.randint(32767, 65535)
+        )
         self._listeners = {}
         self._is_client = False
         self._client_sub_unsub_lock = asyncio.Lock()
@@ -145,35 +156,26 @@ class ClientManager:
 
     async def _async_ping(self):
         """Check connection before requesting a ping."""
-        if not self._attached():
-            raise ScreenLogicWarning(
-                "Not attached to protocol adapter. request_ping failed."
-            )
         _LOGGER.debug("Requesting ping")
-        if await async_request_ping(self._protocol):
+        if await self._async_managed_request(async_request_ping):
             _LOGGER.debug("Ping successful.")
 
     async def _async_add_client(self):
         """Check connection before sending add client request."""
-        if not self._attached():
-            raise ScreenLogicWarning(
-                "Not attached to protocol adapter. add_client failed."
-            )
         _LOGGER.debug("Requesting add client")
-        return await async_request_add_client(
-            self._protocol, self._client_id, max_retries=self._max_retries
+        return await self._async_managed_request(
+            async_request_add_client, self._client_id
         )
 
     async def _async_remove_client(self):
         """Check connection before sending remove client request."""
-        if not self._attached():
-            raise ScreenLogicWarning(
-                "Not attached to protocol adapter. remove_client failed."
-            )
         _LOGGER.debug("Requesting remove client")
-        return await async_request_remove_client(
-            self._protocol, self._client_id, max_retries=self._max_retries
-        )
+        try:
+            return await async_request_remove_client(
+                self._protocol, self._client_id, max_retries=0
+            )
+        except ScreenLogicRequestError:
+            return False
 
     async def async_subscribe_gateway(self) -> bool:
         """
