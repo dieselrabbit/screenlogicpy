@@ -1,3 +1,4 @@
+from datetime import datetime
 import struct
 import sys
 from typing import Any
@@ -54,20 +55,46 @@ def takeMessages(data: bytes) -> list[tuple[int, int, bytes]]:
         ) from err
 
 
-def encodeMessageString(string) -> bytes:
-    data = string.encode()
+def encodeMessageString(string: str, utf_16: bool = False) -> bytes:
+    encoding = "utf-16" if utf_16 else "utf-8"
+    data = string.encode(encoding)
     length = len(data)
     over = length % 4
     pad = (4 - over) if over > 0 else 0  # pad string to multiple of 4
     fmt = f"<I{str(length + pad)}s"
+    if utf_16:
+        length = length | 0x80000000  # Set high bit for utf-16
     return struct.pack(fmt, length, data)
 
 
 def decodeMessageString(data) -> str:
+    encoding = "utf-8"
     size = struct.unpack_from("<I", data, 0)[0]
+    if size & 0x80000000:  # High bit signifies utf-16 encoding
+        size = size & 0x7FFFFFFF  # Strip off the high bit
+        encoding = "utf-16"
     return struct.unpack_from(f"<{str(size)}s", data, struct.calcsize("<I"))[0].decode(
-        "utf-8"
+        encoding
     )
+
+
+def encodeMessageTime(time_to_encode: datetime):
+    return struct.pack(
+        "<8H",
+        time_to_encode.year,
+        time_to_encode.month,
+        time_to_encode.weekday(),
+        time_to_encode.day,
+        time_to_encode.hour,
+        time_to_encode.minute,
+        time_to_encode.second,
+        int(time_to_encode.microsecond / 1000),
+    )
+
+
+def decodeMessageTime(data: bytes) -> datetime:
+    year, month, _, day, hour, minute, second, millisecond = struct.unpack("<8H", data)
+    return datetime(year, month, day, hour, minute, second, millisecond * 1000)
 
 
 def getSome(format, buff, offset) -> tuple[Any, int]:
@@ -98,15 +125,18 @@ def getValueAt(buff, offset, want, **kwargs):
 
 def getString(buff, offset) -> tuple[str, int]:
     fmtLen = "<I"
+    encoding = "utf-8"
     offsetLen = offset + struct.calcsize(fmtLen)
     sLen = struct.unpack_from(fmtLen, buff, offset)[0]
+    if sLen & 0x80000000:  # High bit signifies utf-16 encoding
+        sLen = sLen & 0x7FFFFFFF  # Strip off the high bit
+        encoding = "utf-16"
     if sLen % 4 != 0:
         sLen += 4 - sLen % 4
-
     fmt = f"<{sLen}s"
     newoffset = offsetLen + struct.calcsize(fmt)
     padded_str = struct.unpack_from(fmt, buff, offsetLen)[0]
-    return padded_str.decode("utf-8").strip("\0"), newoffset
+    return padded_str.decode(encoding).strip("\0"), newoffset
 
 
 def getArray(buff, offset):
@@ -117,6 +147,18 @@ def getArray(buff, offset):
     short = itemCount % 4
     paddedLen = itemCount if short == 0 else (itemCount + 4) - short
     return items, aStart + paddedLen
+
+
+def getTime(buff: bytes, offset: int) -> Tuple[datetime, int]:
+    fmt = "<8H"
+    year, month, _, day, hour, minute, second, millisecond = struct.unpack_from(
+        fmt, buff, offset
+    )
+    new_offset = offset + struct.calcsize(fmt)
+    return (
+        datetime(year, month, day, hour, minute, second, millisecond * 1000),
+        new_offset,
+    )
 
 
 def getTemperatureUnit(data: dict):
