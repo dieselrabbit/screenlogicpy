@@ -19,7 +19,7 @@ UNKNOWN                          0010 0000 0000
 UNKNOWN                          0100 0000 0000
 (Night?) cooling                 1000 0000 0000
 UNKNOWN                     0001 0000 0000 0000
-UNKNOWN                     0010 0000 0000 0000
+ultra temp?                 0010 0000 0000 0000
 UNKNOWN                     0100 0000 0000 0000
 IntelliChem                 1000 0000 0000 0000
 
