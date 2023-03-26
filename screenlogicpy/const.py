@@ -1,3 +1,4 @@
+from enum import IntEnum, IntFlag
 import struct
 
 CLIENT_ID = 49151
@@ -32,6 +33,32 @@ class ScreenLogicError(ScreenLogicException):
 
 class ScreenLogicRequestError(ScreenLogicException):
     pass
+
+
+class SLIntEnum(IntEnum):
+    @classmethod
+    def parse(cls, value: str, default=0) -> "SLIntEnum":
+        """Attempt to return and Enum from the provided string."""
+        try:
+            if value.isdigit():  # isinstance(value, int) or
+                return cls(int(value))
+            else:
+                return cls[value.replace(" ", "_").replace("'", "").upper()]
+        except (KeyError, ValueError):
+            return None if default is None else cls(default)
+
+    @classmethod
+    def parsable(cls) -> tuple:
+        """Return a tuple of all parsable values."""
+        out = []
+        for member in cls:
+            out.append(str(member.value))
+            out.append(member.name.lower())
+        return tuple(out)
+
+    @property
+    def title(self) -> str:
+        return self.name.replace("_", " ").title().replace("Dont", "Don't")
 
 
 class MESSAGE:
@@ -87,98 +114,6 @@ class DATA:
     KEY_PUMPS = "pumps"
     KEY_SCG = "scg"
     KEY_SENSORS = "sensors"
-
-
-class BODY_TYPE:
-    POOL = 0
-    SPA = 1
-
-    NAME_FOR_NUM = {POOL: "Pool", SPA: "Spa"}
-
-    NUM_FOR_NAME = {name: num for num, name in NAME_FOR_NUM.items()}
-
-
-class ON_OFF:
-    OFF = 0
-    ON = 1
-
-    NAME_FOR_NUM = {OFF: "Off", ON: "On"}
-
-    NUM_FOR_NAME = {name: num for num, name in NAME_FOR_NUM.items()}
-
-    @classmethod
-    def from_bool(cls, expresson: bool):
-        return cls.ON if expresson else cls.OFF
-
-
-class HEAT_MODE:
-    OFF = 0
-    SOLAR = 1
-    SOLAR_PREFERRED = 2
-    HEATER = 3
-    DONT_CHANGE = 4
-
-    NAME_FOR_NUM = {
-        OFF: "Off",
-        SOLAR: "Solar",
-        SOLAR_PREFERRED: "Solar Preferred",
-        HEATER: "Heater",
-        DONT_CHANGE: "Don't Change",
-    }
-
-    NUM_FOR_NAME = {name: num for num, name in NAME_FOR_NUM.items()}
-
-
-class COLOR_MODE:
-    OFF = 0
-    ON = 1
-    SET = 2
-    SYNC = 3
-    SWIM = 4
-    PARTY = 5
-    ROMANCE = 6
-    CARIBBEAN = 7
-    AMERICAN = 8
-    SUNSET = 9
-    ROYAL = 10
-    SAVE = 11
-    RECALL = 12
-    BLUE = 13
-    GREEN = 14
-    RED = 15
-    WHITE = 16
-    MAGENTA = 17
-    THUMPER = 18
-    NEXT = 19
-    RESET = 20
-    HOLD = 21
-
-    NAME_FOR_NUM = {
-        OFF: "All Off",
-        ON: "All On",
-        SET: "Color Set",
-        SYNC: "Color Sync",
-        SWIM: "Color Swim",
-        PARTY: "Party",
-        ROMANCE: "Romance",
-        CARIBBEAN: "Caribbean",
-        AMERICAN: "American",
-        SUNSET: "Sunset",
-        ROYAL: "Royal",
-        SAVE: "Save",
-        RECALL: "Recall",
-        BLUE: "Blue",
-        GREEN: "Green",
-        RED: "Red",
-        WHITE: "White",
-        MAGENTA: "Magenta",
-        THUMPER: "Thumper",
-        NEXT: "Next Mode",
-        RESET: "Reset",
-        HOLD: "Hold",
-    }
-
-    NUM_FOR_NAME = {name: num for num, name in NAME_FOR_NUM.items()}
 
 
 class RANGE:
@@ -265,32 +200,121 @@ class EQUIPMENT:
         3: "Intelliflo VSF",
     }
 
-    FLAG_SOLAR = 0x1
-    FLAG_SOLAR_AS_HEAT_PUMP = 0x2
-    FLAG_CHLORINATOR = 0x4
-    FLAG_SPA_SIDE_REMOTE = 0x20
-    FLAG_COOLING = 0x800
-    FLAG_INTELLICHEM = 0x8000
+    @classmethod
+    def ControllerModel(cls, controller_type: int, hardware_type: int) -> str:
+        try:
+            return cls.CONTROLLER_HARDWARE[controller_type][hardware_type]
+        except KeyError:
+            return f"Unknown C:{controller_type} H:{hardware_type}"
+
+    class FLAG(IntFlag):
+        """Known equipment flags."""
+
+        SOLAR = 0x1
+        SOLAR_AS_HEAT_PUMP = 0x2
+        CHLORINATOR = 0x4
+        SPA_SIDE_REMOTE = 0x20
+        ULTRATEMP_THEMALFLO = 0x200
+        HAS_COOLING = 0x800
+        INTELLICHEM = 0x8000
 
 
-class CIRCUIT_FUNCTION:
-    # Known circuit functions.
-    GENERIC = 0
+class BODY_TYPE(SLIntEnum):
+    POOL = 0
     SPA = 1
-    POOL = 2
-    MASTER_CLEANER = 5
-    LIGHT = 7
-    DIMMER = 8
-    SAM_LIGHT = 9
-    SAL_LIGHT = 10
-    PHOTONGEN = 11
-    COLOR_WHEEL = 12
-    VALVE = 13
-    SPILLWAY = 14
-    FLOOR_CLEANER = 15
-    INTELLIBRITE = 16
-    MAGICSTREAM = 17
 
+
+class CHEMISTRY:
+    class ALARM(IntFlag):
+        FLOW = 0x01
+        PH_HIGH = 0x02
+        PH_LOW = 0x04
+        ORP_HIGH = 0x08
+        ORP_LOW = 0x10
+        PH_SUPPLY = 0x20
+        ORP_SUPPLY = 0x40
+        PROBE_FAULT = 0x80
+
+    # Unconfirmed, unused.
+    # FLAG_STATUS_NORMAL = 0x01
+    # FLAG_STATUS_IDEAL = 0x02
+    # FLAG_STATUS_CORROSIVE = 0x04
+    # FLAG_STATUS_SCALING = 0x08
+
+    class DOSE:
+        class MASK(IntFlag):
+            ORP_TYPE = 0x03
+            PH_TYPE = 0x0C
+            PH_STATE = 0x30
+            ORP_STATE = 0xC0
+
+        class STATE(SLIntEnum):
+            DOSING = 0
+            MIXING = 1
+            MONITORING = 2
+
+        class TYPE:
+            class ORP(SLIntEnum):
+                NONE = 0
+                CHLORINE = 1
+                SCG = 2  # ?
+
+            class PH(SLIntEnum):
+                NONE = 0
+                ACID = 1
+                CO2 = 2
+
+    class ALERT(IntFlag):
+        PH_LOCKOUT = 0x01
+        PH_LIMIT = 0x02
+        ORP_LIMIT = 0x04
+        INVALID_SETUP = 0x08
+        CHLORINATOR_COMM_ERROR = 0x10
+
+    class FLAG(IntFlag):
+        FLOW_DELAY = 0x02
+        INTELLICHLOR = 0x04
+        PH_PRIORITY = 0x08
+        USE_CHLORINATOR = 0x10
+        ADVANCED_DISPLAY = 0x20
+        PH_SUPPLY_TYPE = 0x40
+        COMMS_LOST = 0x80  # ?
+
+    # Valid ranges listed in IntelliChem documentation
+    RANGE_PH_SETPOINT = {RANGE.MIN: 7.2, RANGE.MAX: 7.6}
+    RANGE_ORP_SETPOINT = {RANGE.MIN: 400, RANGE.MAX: 800}
+
+
+class CIRCUIT:
+    class FUNCTION(SLIntEnum):
+        # Known circuit functions.
+        GENERIC = 0
+        SPA = 1
+        POOL = 2
+        MASTER_CLEANER = 5
+        LIGHT = 7
+        DIMMER = 8
+        SAM_LIGHT = 9
+        SAL_LIGHT = 10
+        PHOTONGEN = 11
+        COLOR_WHEEL = 12
+        VALVE = 13
+        SPILLWAY = 14
+        FLOOR_CLEANER = 15
+        INTELLIBRITE = 16
+        MAGICSTREAM = 17
+
+    class INTERFACE(SLIntEnum):
+        # Known interface groups
+        POOL = 0
+        SPA = 1
+        FEATURES = 2
+        COLOR_LIGHTS = 3  # ?
+        LIGHTS = 4
+        DONT_SHOW = 5
+
+
+"""
     GROUP_CORE = {
         SPA,
         POOL,
@@ -314,89 +338,49 @@ class CIRCUIT_FUNCTION:
         *GROUP_LIGHTS_BASIC,
         *GROUP_LIGHTS_COLOR,
     }
+ """
 
 
-class INTERFACE_GROUP:
-    # Known interface groups
-    POOL = 0
-    SPA = 1
-    FEATURES = 2
-    LIGHTS_COLOR = 3  # ?
-    LIGHTS = 4
-    DONT_SHOW = 5
+class COLOR_MODE(SLIntEnum):
+    ALL_OFF = 0
+    ALL_ON = 1
+    COLOR_SET = 2
+    COLOR_SYNC = 3
+    COLOR_SWIM = 4
+    PARTY = 5
+    ROMANCE = 6
+    CARIBBEAN = 7
+    AMERICAN = 8
+    SUNSET = 9
+    ROYAL = 10
+    SAVE = 11
+    RECALL = 12
+    BLUE = 13
+    GREEN = 14
+    RED = 15
+    WHITE = 16
+    MAGENTA = 17
+    THUMPER = 18
+    NEXT_MODE = 19
+    RESET = 20
+    HOLD = 21
 
 
-class CHEMISTRY:
-    FLAG_ALARM_FLOW = 0x01
-    FLAG_ALARM_PH = 0x06
-    FLAG_ALARM_ORP = 0x18
-    FLAG_ALARM_PH_SUPPLY = 0x20
-    FLAG_ALARM_ORP_SUPPLY = 0x40
-    FLAG_ALARM_PROBE_FAULT = 0x80
+class ON_OFF(SLIntEnum):
+    OFF = 0
+    ON = 1
 
-    # Unconfirmed
-    FLAG_STATUS_NORMAL = 0x01
-    FLAG_STATUS_IDEAL = 0x02
-    FLAG_STATUS_CORROSIVE = 0x04
-    FLAG_STATUS_SCALING = 0x08
-
-    MASK_STATUS_ORP_DOSE_TYPE = 0x03
-    MASK_STATUS_PH_DOSE_TYPE = 0x0C
-    MASK_STATUS_PH_DOSING = 0x30
-    MASK_STATUS_ORP_DOSING = 0xC0
-
-    FLAG_WARNING_PH_LOCKOUT = 0x01
-    FLAG_WARNING_PH_LIMIT = 0x02
-    FLAG_WARNING_ORP_LIMIT = 0x04
-    FLAG_WARNING_INVALID_SETUP = 0x08
-    FLAG_WARNING_CHLORINATOR_COMM_ERROR = 0x10
-
-    FLAG_FLAGS_FLOW_DELAY = 0x02
-    FLAG_FLAGS_INTELLICHLOR = 0x04
-    FLAG_FLAGS_MANUAL_DOSING = 0x08
-    FLAG_FLAGS_USE_CHLORINATOR = 0x10
-    FLAG_FLAGS_ADVANCED_DISPLAY = 0x20
-    FLAG_FLAGS_PH_SUPPLY_TYPE = 0x40
-    FLAG_FLAGS_COMMS_LOST = 0x80  # ?
-
-    # Valid ranges listed in IntelliChem documentation
-    RANGE_PH_SETPOINT = {RANGE.MIN: 7.2, RANGE.MAX: 7.6}
-    RANGE_ORP_SETPOINT = {RANGE.MIN: 400, RANGE.MAX: 800}
+    @classmethod
+    def from_bool(cls, expression: bool):
+        return cls.ON.value if expression else cls.OFF.value
 
 
-class CHEM_DOSING_STATE:
-    DOSING = 0
-    MIXING = 1
-    MONITORING = 2
-
-    NAME_FOR_NUM = {DOSING: "Dosing", MIXING: "Mixing", MONITORING: "Monitoring"}
-    NUM_FOR_NAME = {name: num for num, name in NAME_FOR_NUM.items()}
-
-
-class CHEM_DOSE_TYPE:
-    class ORP:
-        NONE = 0
-        CHLORINE = 1
-        SCG = 2  # ?
-
-        NAME_FOR_NUM = {
-            NONE: "None",
-            CHLORINE: "Chlorine",
-            SCG: "Salt Chlorine Generator",
-        }
-        NUM_FOR_NAME = {name: num for num, name in NAME_FOR_NUM.items()}
-
-    class PH:
-        NONE = 0
-        ACID = 1
-        CO2 = 2
-
-        NAME_FOR_NUM = {
-            NONE: "None",
-            ACID: "Acid",
-            CO2: "CO2",
-        }
-        NUM_FOR_NAME = {name: num for num, name in NAME_FOR_NUM.items()}
+class HEAT_MODE(SLIntEnum):
+    OFF = 0
+    SOLAR = 1
+    SOLAR_PREFERRED = 2
+    HEATER = 3
+    DONT_CHANGE = 4
 
 
 class SCG:
@@ -413,12 +397,12 @@ GENERIC_CIRCUIT_NAMES = [
 DEFAULT_CIRCUIT_NAMES = ["Spa", "Pool", *GENERIC_CIRCUIT_NAMES]
 
 
-# COLOR_MODES_* may not be complete
+""" # COLOR_MODES_* may not be complete
 COLOR_MODES_GENERIC = {
     num: COLOR_MODE.NAME_FOR_NUM[num]
     for num in [
-        COLOR_MODE.OFF,
-        COLOR_MODE.ON,
+        COLOR_MODE.ALL_OFF,
+        COLOR_MODE.ALL_ON,
     ]
 }
 
@@ -438,9 +422,9 @@ COLOR_MODES_SAM = {
     **{
         num: COLOR_MODE.NAME_FOR_NUM[num]
         for num in [
-            COLOR_MODE.SET,
-            COLOR_MODE.SYNC,
-            COLOR_MODE.SWIM,
+            COLOR_MODE.COLOR_SET,
+            COLOR_MODE.COLOR_SYNC,
+            COLOR_MODE.COLOR_SWIM,
         ]
     },
     **COLOR_MODES_COLORS,
@@ -471,9 +455,10 @@ COLOR_MODES_MAGICSTREAM = {
         num: COLOR_MODE.NAME_FOR_NUM[num]
         for num in [
             COLOR_MODE.THUMPER,
-            COLOR_MODE.NEXT,
+            COLOR_MODE.NEXT_MODE,
             COLOR_MODE.RESET,
             COLOR_MODE.HOLD,
         ]
     },
 }
+ """

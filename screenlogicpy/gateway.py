@@ -7,14 +7,15 @@ from .client import ClientManager
 from .const import (
     BODY_TYPE,
     CHEMISTRY,
-    CIRCUIT_FUNCTION,
     DATA,
+    EQUIPMENT,
     MESSAGE,
     RANGE,
     SCG,
     ScreenLogicError,
     ScreenLogicRequestError,
 )
+from .data import ATTR, DEVICE, KEY, VALUE
 from .requests import (
     async_connect_to_gateway,
     async_request_gateway_version,
@@ -76,7 +77,17 @@ class ScreenLogicGateway:
 
     @property
     def version(self) -> str:
-        return self._version
+        return self.get_data(DEVICE.ADAPTER, VALUE.FIRMWARE)
+
+    @property
+    def controller_model(self) -> str:
+        return self.get_data(DEVICE.CONTROLLER, VALUE.MODEL)
+
+    @property
+    def equipment_flags(self) -> EQUIPMENT.FLAG:
+        return EQUIPMENT.FLAG(
+            self.get_data(DEVICE.CONTROLLER, KEY.EQUIPMENT, VALUE.FLAGS)
+        )
 
     @property
     def is_connected(self) -> bool:
@@ -128,10 +139,10 @@ class ScreenLogicGateway:
         )
         if connectPkg:
             self._transport, self._protocol, self._mac = connectPkg
-            self._version = await async_request_gateway_version(
-                self._protocol, self._max_retries
+            await async_request_gateway_version(
+                self._protocol, self._data, self._max_retries
             )
-            if self._version:
+            if self.version:
                 _LOGGER.debug("Login successful")
                 await self.async_get_config()
                 await self._client_manager.attach(
@@ -184,8 +195,8 @@ class ScreenLogicGateway:
 
     async def async_get_pumps(self):
         """Request all pump state data."""
-        for pumpID in self._data[DATA.KEY_PUMPS]:
-            if self._data[DATA.KEY_PUMPS][pumpID]["data"] != 0:
+        for pumpID in self._data[DEVICE.PUMP]:
+            if self._data[DEVICE.PUMP][pumpID]["data"] != 0:
                 _LOGGER.debug("Requesting pump %i data", pumpID)
                 last_pumps = self._last.setdefault(DATA.KEY_PUMPS, {})
                 if last_raw := await self._async_connected_request(
@@ -209,9 +220,42 @@ class ScreenLogicGateway:
         ):
             self._last[DATA.KEY_SCG] = last_raw
 
-    def get_data(self) -> dict:
-        """Return the data."""
-        return self._data
+    # def get_data(self) -> dict:
+    #    """Return the data."""
+    #    return self._data
+
+    def get_data(self, *keypath, auto_value: bool = True):
+        """
+        Return a data value from a key path.
+
+        Returns the value of the "value" key if present at the end of the keypath if 'auto_value' == True,
+        otherwise returns the value of the last key in the keypath. Returns None if the key is not found.
+        Returns the entire data dict if no 'keypath' is specified.
+        """
+
+        if not keypath:
+            return self._data
+
+        next = None
+
+        def get_next(key):
+            if current is None:
+                return None
+            if isinstance(current, dict):
+                return current.get(key)
+            if isinstance(current, list) and key in current:
+                return current[key]
+            return None
+
+        for key in keypath:
+            current = next if next is not None else self._data
+            next = get_next(key)
+            if next is None:
+                return None
+        if auto_value and isinstance(next, dict):
+            if (value := next.get(ATTR.VALUE)) is not None:
+                return value
+        return next
 
     def get_debug(self) -> dict:
         """Return the debug last-received data."""
@@ -384,7 +428,7 @@ class ScreenLogicGateway:
 
     def _is_valid_circuit(self, circuit):
         """Validate circuit number."""
-        return circuit in self._data[DATA.KEY_CIRCUITS]
+        return circuit in self._data[DEVICE.CIRCUIT]
 
     def _is_valid_circuit_state(self, state):
         """Validate circuit state number."""
@@ -392,7 +436,7 @@ class ScreenLogicGateway:
 
     def _is_valid_body(self, body):
         """Validate body of water number."""
-        return body in self._data[DATA.KEY_BODIES]
+        return body in self._data[DEVICE.BODY]
 
     def _is_valid_heatmode(self, heatmode):
         """Validate heat mode number."""
@@ -400,8 +444,8 @@ class ScreenLogicGateway:
 
     def _is_valid_heattemp(self, body, temp):
         """Validate heat tem for body."""
-        min_temp = self._data[DATA.KEY_BODIES][int(body)]["min_set_point"]["value"]
-        max_temp = self._data[DATA.KEY_BODIES][int(body)]["max_set_point"]["value"]
+        min_temp = self.get_data(DEVICE.BODY, int(body), ATTR.MIN_SETPOINT)
+        max_temp = self.get_data(DEVICE.BODY, int(body), ATTR.MAX_SETPOINT)
         return min_temp <= temp <= max_temp
 
     def _is_valid_color_mode(self, mode):
@@ -427,12 +471,3 @@ class ScreenLogicGateway:
             <= orp_setpoint
             <= CHEMISTRY.RANGE_ORP_SETPOINT[RANGE.MAX]
         )
-
-    # Promote?
-    def _has_color_lights(self):
-        """Return if any configured lights support color modes."""
-        if circuits := self._data.get(DATA.KEY_CIRCUITS, None):
-            for circuit in circuits.values():
-                if circuit["function"] in CIRCUIT_FUNCTION.GROUP_LIGHTS_COLOR:
-                    return True
-        return False
