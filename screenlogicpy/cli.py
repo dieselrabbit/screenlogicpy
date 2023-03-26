@@ -195,12 +195,12 @@ async def cli(cli_args):
         )
         try:
             scg_1 = (
-                scg_config_data[VALUE.SCG_POOL_SETPOINT][ATTR.VALUE]
+                scg_config_data[VALUE.POOL_SETPOINT][ATTR.VALUE]
                 if args.scg_pool == "*"
                 else int(args.scg_pool)
             )
             scg_2 = (
-                scg_config_data[VALUE.SCG_SPA_SETPOINT][ATTR.VALUE]
+                scg_config_data[VALUE.SPA_SETPOINT][ATTR.VALUE]
                 if args.scg_spa == "*"
                 else int(args.scg_spa)
             )
@@ -214,8 +214,8 @@ async def cli(cli_args):
                 DEVICE.SCG, KEY.CONFIGURATION, auto_value=False
             )
             print(
-                vFormat(new_scg_config_data[VALUE.SCG_POOL_SETPOINT]),
-                vFormat(new_scg_config_data[VALUE.SCG_SPA_SETPOINT]),
+                vFormat(new_scg_config_data[VALUE.POOL_SETPOINT]),
+                vFormat(new_scg_config_data[VALUE.SPA_SETPOINT]),
             )
             return 0
         return 64

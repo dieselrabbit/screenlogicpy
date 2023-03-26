@@ -739,8 +739,8 @@ EXPECTED_SCG_DATA = {
     "scg": {
         "scg_present": 0,
         "sensor": {
-            "scg_state": {"name": "SCG State", "value": 1},
-            "scg_salt_ppm": {
+            "state": {"name": "SCG State", "value": 1},
+            "salt_ppm": {
                 "name": "SCG Salt",
                 "value": 0,
                 "unit": "ppm",
@@ -748,19 +748,19 @@ EXPECTED_SCG_DATA = {
             },
         },
         "configuration": {
-            "scg_pool_setpoint": {
+            "pool_setpoint": {
                 "name": "Pool SCG Setpoint",
                 "value": 50,
                 "unit": "%",
             },
-            "scg_spa_setpoint": {"name": "Spa SCG Setpoint", "value": 0, "unit": "%"},
-            "scg_super_chlor_timer": {
+            "spa_setpoint": {"name": "Spa SCG Setpoint", "value": 0, "unit": "%"},
+            "super_chlor_timer": {
                 "name": "SCG Super Chlorination Timer",
                 "value": 0,
                 "unit": "hr",
             },
         },
-        "scg_flags": 0,
+        "flags": 0,
     }
 }
 
@@ -1407,8 +1407,8 @@ EXPECTED_COMPLETE_DATA = {
     "scg": {
         "scg_present": 0,
         "sensor": {
-            "scg_state": {"name": "SCG State", "value": 1},
-            "scg_salt_ppm": {
+            "state": {"name": "SCG State", "value": 1},
+            "salt_ppm": {
                 "name": "SCG Salt",
                 "value": 0,
                 "unit": "ppm",
@@ -1416,18 +1416,18 @@ EXPECTED_COMPLETE_DATA = {
             },
         },
         "configuration": {
-            "scg_pool_setpoint": {
+            "pool_setpoint": {
                 "name": "Pool SCG Setpoint",
                 "value": 50,
                 "unit": "%",
             },
-            "scg_spa_setpoint": {"name": "Spa SCG Setpoint", "value": 0, "unit": "%"},
-            "scg_super_chlor_timer": {
+            "spa_setpoint": {"name": "Spa SCG Setpoint", "value": 0, "unit": "%"},
+            "super_chlor_timer": {
                 "name": "SCG Super Chlorination Timer",
                 "value": 0,
                 "unit": "hr",
             },
         },
-        "scg_flags": 0,
+        "flags": 0,
     },
 }

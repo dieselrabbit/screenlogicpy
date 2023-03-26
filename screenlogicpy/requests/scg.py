@@ -25,7 +25,7 @@ def decode_scg_config(buff: bytes, data: dict) -> None:
     scg_sensor: dict = scg.setdefault(KEY.SENSOR, {})
 
     state, offset = getSome("I", buff, offset)  # 4
-    scg_sensor[VALUE.SCG_STATE] = {
+    scg_sensor[VALUE.STATE] = {
         ATTR.NAME: "SCG State",
         ATTR.VALUE: state,
     }
@@ -33,21 +33,21 @@ def decode_scg_config(buff: bytes, data: dict) -> None:
     scg_config: dict = scg.setdefault(KEY.CONFIGURATION, {})
 
     level1, offset = getSome("I", buff, offset)  # 8
-    scg_config[VALUE.SCG_POOL_SETPOINT] = {
+    scg_config[VALUE.POOL_SETPOINT] = {
         ATTR.NAME: "Pool SCG Setpoint",
         ATTR.VALUE: level1,
         ATTR.UNIT: UNIT.PERCENT,
     }
 
     level2, offset = getSome("I", buff, offset)  # 12
-    scg_config[VALUE.SCG_SPA_SETPOINT] = {
+    scg_config[VALUE.SPA_SETPOINT] = {
         ATTR.NAME: "Spa SCG Setpoint",
         ATTR.VALUE: level2,
         ATTR.UNIT: UNIT.PERCENT,
     }
 
     salt, offset = getSome("I", buff, offset)  # 16
-    scg_sensor[VALUE.SCG_SALT_PPM] = {
+    scg_sensor[VALUE.SALT_PPM] = {
         ATTR.NAME: "SCG Salt",
         ATTR.VALUE: (salt * 50),
         ATTR.UNIT: UNIT.PARTS_PER_MILLION,
@@ -55,10 +55,10 @@ def decode_scg_config(buff: bytes, data: dict) -> None:
     }
 
     flags, offset = getSome("I", buff, offset)  # 20
-    scg[VALUE.SCG_FLAGS] = flags
+    scg[VALUE.FLAGS] = flags
 
     superChlorTimer, offset = getSome("I", buff, offset)  # 24
-    scg_config[VALUE.SCG_SUPER_CHLOR_TIMER] = {
+    scg_config[VALUE.SUPER_CHLOR_TIMER] = {
         ATTR.NAME: "SCG Super Chlorination Timer",
         ATTR.VALUE: superChlorTimer,
         ATTR.UNIT: UNIT.HOUR,
