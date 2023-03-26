@@ -8,11 +8,13 @@ from screenlogicpy import ScreenLogicGateway
 from screenlogicpy.client import ClientManager
 from screenlogicpy.const import CODE
 from .const_data import (
-    EXPECTED_CHEMISTRY_DATA,
-    EXPECTED_STATUS_DATA,
     FAKE_CHEMISTRY_RESPONSE,
     FAKE_CONNECT_INFO,
     FAKE_STATUS_RESPONSE,
+)
+from .expected_data import (
+    EXPECTED_CHEMISTRY_DATA,
+    EXPECTED_STATUS_DATA,
 )
 from .fake_gateway import expected_resp
 

@@ -1,14 +1,16 @@
 from .const_data import (
-    EXPECTED_CONFIG_DATA,
-    EXPECTED_STATUS_DATA,
-    EXPECTED_PUMP_DATA,
-    EXPECTED_CHEMISTRY_DATA,
-    EXPECTED_SCG_DATA,
     FAKE_CONFIG_RESPONSE,
     FAKE_STATUS_RESPONSE,
     FAKE_PUMP_RESPONSE,
     FAKE_CHEMISTRY_RESPONSE,
     FAKE_SCG_RESPONSE,
+)
+from .expected_data import (
+    EXPECTED_CONFIG_DATA,
+    EXPECTED_STATUS_DATA,
+    EXPECTED_PUMP_DATA,
+    EXPECTED_CHEMISTRY_DATA,
+    EXPECTED_SCG_DATA,
 )
 from screenlogicpy.requests.config import decode_pool_config
 from screenlogicpy.requests.status import decode_pool_status

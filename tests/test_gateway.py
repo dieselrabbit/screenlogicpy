@@ -7,7 +7,6 @@ from unittest.mock import patch
 
 
 from tests.const_data import (
-    EXPECTED_COMPLETE_DATA,
     FAKE_CONNECT_INFO,
     FAKE_GATEWAY_ADDRESS,
     FAKE_GATEWAY_MAC,
@@ -16,6 +15,7 @@ from tests.const_data import (
     FAKE_GATEWAY_VERSION,
     FAKE_STATUS_RESPONSE,
 )
+from tests.expected_data import EXPECTED_COMPLETE_DATA
 from tests.fake_gateway import error_resp, expected_resp
 
 from screenlogicpy import ScreenLogicGateway
