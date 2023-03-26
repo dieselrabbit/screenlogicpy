@@ -176,7 +176,7 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
     intellichem_alarm: dict = intellichem.setdefault(KEY.ALARM, {})
 
     alarms, offset = getSome("B", buff, offset)  # 37 (32)
-    intellichem_alarm[VALUE.FLAGS] = alarms
+    intellichem_alarm[ATTR.FLAGS] = alarms
 
     intellichem_alarm[VALUE.FLOW_ALARM] = {
         ATTR.NAME: "Flow Alarm",
@@ -222,7 +222,7 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
     intellichem_alert: dict = intellichem.setdefault(KEY.ALERT, {})
 
     alerts, offset = getSome("B", buff, offset)  # 38 (33)
-    intellichem_alert[VALUE.FLAGS] = alerts
+    intellichem_alert[ATTR.FLAGS] = alerts
 
     intellichem_alert[VALUE.PH_LOCKOUT] = {
         ATTR.NAME: "pH Lockout",
@@ -238,7 +238,7 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
     }
 
     dose_flags, offset = getSome("B", buff, offset)  # 39 (34)
-    intellichem_dosing[VALUE.FLAGS] = dose_flags
+    intellichem_dosing[ATTR.FLAGS] = dose_flags
 
     intellichem_dosing[VALUE.PH_DOSING_STATE] = {
         ATTR.NAME: "pH Dosing State",
@@ -254,7 +254,7 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
     }
 
     flags, offset = getSome("B", buff, offset)  # 40 (35)
-    intellichem[VALUE.FLAGS] = flags
+    intellichem[ATTR.FLAGS] = flags
 
     vMinor, offset = getSome("B", buff, offset)  # 41 (36)
     vMajor, offset = getSome("B", buff, offset)  # 42 (37)

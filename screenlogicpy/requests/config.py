@@ -60,7 +60,7 @@ def decode_pool_config(buff: bytes, data: dict) -> dict:
 
     controller_equipment: dict = controller.setdefault(KEY.EQUIPMENT, {})
     equipFlags, offset = getSome("I", buff, offset)
-    controller_equipment[VALUE.FLAGS] = equipFlags
+    controller_equipment[ATTR.FLAGS] = equipFlags
 
     controller_equipment[VALUE.LIST] = [
         member.name  # .title().replace("_", " ")  # What's needed? Friendly name or FLAG name?

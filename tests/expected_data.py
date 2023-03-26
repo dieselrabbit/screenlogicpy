@@ -748,11 +748,7 @@ EXPECTED_SCG_DATA = {
             },
         },
         "configuration": {
-            "pool_setpoint": {
-                "name": "Pool SCG Setpoint",
-                "value": 50,
-                "unit": "%",
-            },
+            "pool_setpoint": {"name": "Pool SCG Setpoint", "value": 50, "unit": "%"},
             "spa_setpoint": {"name": "Spa SCG Setpoint", "value": 0, "unit": "%"},
             "super_chlor_timer": {
                 "name": "SCG Super Chlorination Timer",
@@ -761,6 +757,12 @@ EXPECTED_SCG_DATA = {
             },
         },
         "flags": 0,
+    }
+}
+
+EXPECTED_COLOR_DATA = {
+    "controller": {
+        "color_lights": {"color_mode": 12, "progress": 14, "limit": 15, "text": ""}
     }
 }
 
@@ -799,22 +801,10 @@ EXPECTED_COMPLETE_DATA = {
         "equipment": {"flags": 4294934584, "list": ["SPA_SIDE_REMOTE", "INTELLICHEM"]},
         "status": 1,
         "sensor": {
-            "freeze_mode": {
-                "name": "Freeze Mode",
-                "value": 0,
-            },
-            "pool_delay": {
-                "name": "Pool Delay",
-                "value": 0,
-            },
-            "spa_delay": {
-                "name": "Spa Delay",
-                "value": 0,
-            },
-            "cleaner_delay": {
-                "name": "Cleaner Delay",
-                "value": 0,
-            },
+            "freeze_mode": {"name": "Freeze Mode", "value": 0},
+            "pool_delay": {"name": "Pool Delay", "value": 0},
+            "spa_delay": {"name": "Spa Delay", "value": 0},
+            "cleaner_delay": {"name": "Cleaner Delay", "value": 0},
             "air_temperature": {
                 "name": "Air Temperature",
                 "value": 57,
@@ -875,10 +865,7 @@ EXPECTED_COMPLETE_DATA = {
                 "device_type": "temperature",
                 "state_type": "measurement",
             },
-            "heat_state": {
-                "name": "Pool Heat",
-                "value": 0,
-            },
+            "heat_state": {"name": "Pool Heat", "value": 0},
             "heat_setpoint": {
                 "name": "Pool Heat Set Point",
                 "value": 86,
@@ -890,10 +877,7 @@ EXPECTED_COMPLETE_DATA = {
                 "value": 100,
                 "unit": "°F",
             },
-            "heat_mode": {
-                "name": "Pool Heat Mode",
-                "value": 0,
-            },
+            "heat_mode": {"name": "Pool Heat Mode", "value": 0},
         },
         1: {
             "min_setpoint": 40,
@@ -1416,11 +1400,7 @@ EXPECTED_COMPLETE_DATA = {
             },
         },
         "configuration": {
-            "pool_setpoint": {
-                "name": "Pool SCG Setpoint",
-                "value": 50,
-                "unit": "%",
-            },
+            "pool_setpoint": {"name": "Pool SCG Setpoint", "value": 50, "unit": "%"},
             "spa_setpoint": {"name": "Spa SCG Setpoint", "value": 0, "unit": "%"},
             "super_chlor_timer": {
                 "name": "SCG Super Chlorination Timer",

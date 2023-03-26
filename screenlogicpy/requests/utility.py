@@ -2,7 +2,8 @@ import struct
 import sys
 from typing import Any, List, Tuple
 
-from ..const import DATA, MESSAGE, UNIT, ScreenLogicError
+from ..const import MESSAGE, UNIT, ScreenLogicError
+from ..data import ATTR, DEVICE, KEY, VALUE
 
 if sys.version_info[:2] < (3, 11):
     from async_timeout import timeout as asyncio_timeout  # noqa F401
@@ -121,8 +122,9 @@ def getArray(buff, offset):
 def getTemperatureUnit(data: dict):
     return (
         UNIT.CELSIUS
-        if DATA.KEY_CONFIG in data
-        and "is_celsius" in data[DATA.KEY_CONFIG]
-        and data[DATA.KEY_CONFIG]["is_celsius"]["value"]
+        if DEVICE.CONTROLLER in data
+        and KEY.CONFIGURATION in data[DEVICE.CONTROLLER]
+        and VALUE.IS_CELSIUS in data[DEVICE.CONTROLLER][KEY.CONFIGURATION]
+        and data[DEVICE.CONTROLLER][KEY.CONFIGURATION][VALUE.IS_CELSIUS].get(ATTR.VALUE)
         else UNIT.FAHRENHEIT
     )

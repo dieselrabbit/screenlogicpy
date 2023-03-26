@@ -55,7 +55,7 @@ def decode_scg_config(buff: bytes, data: dict) -> None:
     }
 
     flags, offset = getSome("I", buff, offset)  # 20
-    scg[VALUE.FLAGS] = flags
+    scg[ATTR.FLAGS] = flags
 
     superChlorTimer, offset = getSome("I", buff, offset)  # 24
     scg_config[VALUE.SUPER_CHLOR_TIMER] = {

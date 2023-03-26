@@ -103,17 +103,14 @@ class CODE:
     GATEWAYDATA_QUERY = 18003
 
 
-class DATA:
-    KEY_ALERTS = "alerts"
-    KEY_BODIES = "bodies"
-    KEY_CHEMISTRY = "chemistry"
-    KEY_CIRCUITS = "circuits"
-    KEY_COLORS = "colors"
-    KEY_CONFIG = "config"
-    KEY_NOTIFICATIONS = "notifications"
-    KEY_PUMPS = "pumps"
-    KEY_SCG = "scg"
-    KEY_SENSORS = "sensors"
+class DATA_REQUEST:
+    CHEMISTRY = "chemistry"
+    KEY_COLOR = "color"
+    CONFIG = "config"
+    PUMPS = "pumps"
+    SCG = "scg"
+    STATUS = "status"
+    VERSION = "version"
 
 
 class RANGE:

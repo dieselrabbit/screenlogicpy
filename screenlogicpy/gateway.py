@@ -7,7 +7,7 @@ from .client import ClientManager
 from .const import (
     BODY_TYPE,
     CHEMISTRY,
-    DATA,
+    DATA_REQUEST,
     EQUIPMENT,
     MESSAGE,
     RANGE,
@@ -86,7 +86,7 @@ class ScreenLogicGateway:
     @property
     def equipment_flags(self) -> EQUIPMENT.FLAG:
         return EQUIPMENT.FLAG(
-            self.get_data(DEVICE.CONTROLLER, KEY.EQUIPMENT, VALUE.FLAGS)
+            self.get_data(DEVICE.CONTROLLER, KEY.EQUIPMENT, ATTR.FLAGS)
         )
 
     @property
@@ -183,7 +183,7 @@ class ScreenLogicGateway:
         if last_raw := await self._async_connected_request(
             async_request_pool_config, self._data, reconnect_delay=1
         ):
-            self._last[DATA.KEY_CONFIG] = last_raw
+            self._last[DATA_REQUEST.CONFIG] = last_raw
 
     async def async_get_status(self):
         """Request pool state data."""
@@ -191,14 +191,14 @@ class ScreenLogicGateway:
         if last_raw := await self._async_connected_request(
             async_request_pool_status, self._data, reconnect_delay=1
         ):
-            self._last["status"] = last_raw
+            self._last[DATA_REQUEST.STATUS] = last_raw
 
     async def async_get_pumps(self):
         """Request all pump state data."""
         for pumpID in self._data[DEVICE.PUMP]:
             if self._data[DEVICE.PUMP][pumpID]["data"] != 0:
                 _LOGGER.debug("Requesting pump %i data", pumpID)
-                last_pumps = self._last.setdefault(DATA.KEY_PUMPS, {})
+                last_pumps = self._last.setdefault(DATA_REQUEST.PUMPS, {})
                 if last_raw := await self._async_connected_request(
                     async_request_pump_status, self._data, pumpID, reconnect_delay=1
                 ):
@@ -210,7 +210,7 @@ class ScreenLogicGateway:
         if last_raw := await self._async_connected_request(
             async_request_chemistry, self._data, reconnect_delay=1
         ):
-            self._last[DATA.KEY_CHEMISTRY] = last_raw
+            self._last[DATA_REQUEST.CHEMISTRY] = last_raw
 
     async def async_get_scg(self):
         """Request salt chlorine generator state data."""
@@ -218,7 +218,7 @@ class ScreenLogicGateway:
         if last_raw := await self._async_connected_request(
             async_request_scg_config, self._data, reconnect_delay=1
         ):
-            self._last[DATA.KEY_SCG] = last_raw
+            self._last[DATA_REQUEST.SCG] = last_raw
 
     # def get_data(self) -> dict:
     #    """Return the data."""
