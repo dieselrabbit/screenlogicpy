@@ -723,8 +723,8 @@ EXPECTED_CHEMISTRY_DATA = {
         "alert": {
             "flags": 0,
             "ph_lockout": {"name": "pH Lockout", "value": 0},
-            "ph_limit": {"name": "pH Daily Limit Reached", "value": 0},
-            "orp_limit": {"name": "ORP Daily Limit Reached", "value": 0},
+            "ph_limit": {"name": "pH Dose Limit Reached", "value": 0},
+            "orp_limit": {"name": "ORP Dose Limit Reached", "value": 0},
         },
         "flags": 32,
         "firmware": {"name": "IntelliChem Firmware", "value": "1.060"},
@@ -1378,8 +1378,8 @@ EXPECTED_COMPLETE_DATA = {
         "alert": {
             "flags": 0,
             "ph_lockout": {"name": "pH Lockout", "value": 0},
-            "ph_limit": {"name": "pH Daily Limit Reached", "value": 0},
-            "orp_limit": {"name": "ORP Daily Limit Reached", "value": 0},
+            "ph_limit": {"name": "pH Dose Limit Reached", "value": 0},
+            "orp_limit": {"name": "ORP Dose Limit Reached", "value": 0},
         },
         "flags": 32,
         "firmware": {"name": "IntelliChem Firmware", "value": "1.060"},

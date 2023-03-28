@@ -229,11 +229,11 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
         ATTR.VALUE: ON_OFF.from_bool(alerts & CHEMISTRY.ALERT.PH_LOCKOUT),
     }
     intellichem_alert[VALUE.PH_LIMIT] = {
-        ATTR.NAME: "pH Daily Limit Reached",
+        ATTR.NAME: "pH Dose Limit Reached",
         ATTR.VALUE: ON_OFF.from_bool(alerts & CHEMISTRY.ALERT.PH_LIMIT),
     }
     intellichem_alert[VALUE.ORP_LIMIT] = {
-        ATTR.NAME: "ORP Daily Limit Reached",
+        ATTR.NAME: "ORP Dose Limit Reached",
         ATTR.VALUE: ON_OFF.from_bool(alerts & CHEMISTRY.ALERT.ORP_LIMIT),
     }
 
