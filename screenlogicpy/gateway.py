@@ -33,6 +33,7 @@ from .requests import (
     async_make_request,
 )
 from .requests.protocol import ScreenLogicProtocol
+from .requests.utility import getTemperatureUnit
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -88,6 +89,10 @@ class ScreenLogicGateway:
         return EQUIPMENT.FLAG(
             self.get_data(DEVICE.CONTROLLER, KEY.EQUIPMENT, ATTR.FLAGS)
         )
+
+    @property
+    def temperature_unit(self) -> str:
+        return getTemperatureUnit(self._data)
 
     @property
     def is_connected(self) -> bool:
