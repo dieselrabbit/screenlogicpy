@@ -54,7 +54,7 @@ class VALUE:
     CIRCUIT_COUNT = "circuit_count"
     CLEANER_DELAY = "cleaner_delay"
     COLOR_COUNT = "color_count"
-    CONTROLLER_BUFFER = "controller_buffer"
+    CONTROLLER_DATA = "controller_data"
     CONTROLLER_ID = "controller_id"
     CONTROLLER_TYPE = "controller_type"
     COOL_SETPOINT = "cool_setpoint"
