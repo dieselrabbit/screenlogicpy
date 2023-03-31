@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from screenlogicpy import ScreenLogicGateway
 from screenlogicpy.client import ClientManager
-from screenlogicpy.const import CODE
+from screenlogicpy.const.msg import CODE
 from .const_data import (
     FAKE_CHEMISTRY_RESPONSE,
     FAKE_CONNECT_INFO,

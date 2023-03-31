@@ -5,7 +5,7 @@ import struct
 import time
 from typing import List, Tuple
 
-from screenlogicpy.const import CODE, MESSAGE
+from screenlogicpy.const.msg import CODE, HEADER_LENGTH
 from screenlogicpy.requests.utility import takeMessage, makeMessage, encodeMessageString
 from tests.const_data import (
     ASYNC_SL_RESPONSES,
@@ -63,9 +63,9 @@ class FakeScreenLogicTCPProtocol(asyncio.Protocol):
 
             self._buff.extend(data)
             complete = []
-            while len(self._buff) >= MESSAGE.HEADER_LENGTH:
+            while len(self._buff) >= HEADER_LENGTH:
                 dataLen = struct.unpack_from("<I", self._buff, 4)[0]
-                totalLen = MESSAGE.HEADER_LENGTH + dataLen
+                totalLen = HEADER_LENGTH + dataLen
                 if len(self._buff) >= totalLen:
                     out = bytearray()
                     for _ in range(totalLen):
@@ -105,6 +105,11 @@ class FakeScreenLogicTCPProtocol(asyncio.Protocol):
             return makeMessage(
                 messageID, messageCode + 1, ASYNC_SL_RESPONSES[messageCode]
             )
+
+    def fake_async_message(
+        self, message_id: int, message_code: int, message_data: bytes = b""
+    ) -> None:
+        self.transport.write(makeMessage(message_id, message_code, message_data))
 
 
 class FailingFakeScreenLogicTCPProtocol(FakeScreenLogicTCPProtocol):

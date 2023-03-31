@@ -14,7 +14,7 @@ EXPECTED_CONFIG_DATA = {
             "is_celsius": {"name": "Is Celsius", "value": 0},
             "controller_type": 13,
             "hardware_type": 0,
-            "controller_buffer": 0,
+            "controller_data": 0,
             "generic_circuit_name": "Water Features",
             "circuit_count": 18,
             "color_count": 8,
@@ -32,7 +32,16 @@ EXPECTED_CONFIG_DATA = {
             "show_alarms": 0,
         },
         "model": {"name": "Model", "value": "EasyTouch2 8"},
-        "equipment": {"flags": 4294934584, "list": ["SPA_SIDE_REMOTE", "INTELLICHEM"]},
+        "equipment": {
+            "flags": 98360,
+            "list": [
+                "INTELLIBRITE",
+                "INTELLIFLO_0",
+                "INTELLIFLO_1",
+                "INTELLICHEM",
+                "HYBRID_HEATER",
+            ],
+        },
     },
     "body": {
         0: {"min_setpoint": 40, "max_setpoint": 104},
@@ -776,7 +785,7 @@ EXPECTED_COMPLETE_DATA = {
             "is_celsius": {"name": "Is Celsius", "value": 0},
             "controller_type": 13,
             "hardware_type": 0,
-            "controller_buffer": 0,
+            "controller_data": 0,
             "generic_circuit_name": "Water Features",
             "circuit_count": 18,
             "color_count": 8,
@@ -798,7 +807,16 @@ EXPECTED_COMPLETE_DATA = {
             "unknown_at_offset_11": 0,
         },
         "model": {"name": "Model", "value": "EasyTouch2 8"},
-        "equipment": {"flags": 4294934584, "list": ["SPA_SIDE_REMOTE", "INTELLICHEM"]},
+        "equipment": {
+            "flags": 98360,
+            "list": [
+                "INTELLIBRITE",
+                "INTELLIFLO_0",
+                "INTELLIFLO_1",
+                "INTELLICHEM",
+                "HYBRID_HEATER",
+            ],
+        },
         "status": 1,
         "sensor": {
             "freeze_mode": {"name": "Freeze Mode", "value": 0},

@@ -19,7 +19,8 @@ from tests.expected_data import EXPECTED_COMPLETE_DATA
 from tests.fake_gateway import error_resp, expected_resp
 
 from screenlogicpy import ScreenLogicGateway
-from screenlogicpy.const import CODE, MESSAGE, ScreenLogicRequestError
+from screenlogicpy.const.common import ScreenLogicRequestError
+from screenlogicpy.const.msg import CODE
 
 
 @pytest.mark.asyncio
@@ -105,7 +106,7 @@ async def test_async_set_circuit_retry(
             req_fut(error_resp(button_code)),
             req_fut(expected_resp(button_code)),
         ),
-    ) as mockRequest, patch.object(MESSAGE, "COM_RETRY_WAIT", 1):
+    ) as mockRequest, patch("screenlogicpy.const.msg.COM_RETRY_WAIT", 1):
         gateway = MockConnectedGateway
         assert await gateway.async_set_circuit(circuit_id, circuit_state)
         await gateway.async_disconnect()
@@ -143,8 +144,8 @@ async def test_async_set_circuit_timeout(
         ),
     ) as mockRequest, patch.object(
         ScreenLogicGateway, "_async_connected_request", patched_request
-    ), patch.object(
-        MESSAGE, "COM_RETRY_WAIT", 1
+    ), patch(
+        "screenlogicpy.const.msg.COM_RETRY_WAIT", 1
     ):
         gateway: ScreenLogicGateway = MockConnectedGateway
         with pytest.raises(ScreenLogicRequestError) as e_info:
@@ -252,7 +253,7 @@ async def test_async_send_message_retry(
     with patch(
         "screenlogicpy.requests.gateway.ScreenLogicProtocol.await_send_message",
         side_effect=(event_loop.create_future(), event_loop.create_future(), result),
-    ) as mockRequest, patch.object(MESSAGE, "COM_RETRY_WAIT", 1):
+    ) as mockRequest, patch("screenlogicpy.const.msg.COM_RETRY_WAIT", 1):
         gateway = MockConnectedGateway
         gateway.set_max_retries(3)
         response = await gateway.async_send_message(

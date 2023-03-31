@@ -1,13 +1,13 @@
 import struct
 
-from screenlogicpy.const import (
-    CODE,
+from screenlogicpy.const.common import (
     SL_GATEWAY_IP,
     SL_GATEWAY_NAME,
     SL_GATEWAY_PORT,
     SL_GATEWAY_SUBTYPE,
     SL_GATEWAY_TYPE,
 )
+from screenlogicpy.const.msg import CODE
 from screenlogicpy.requests.utility import encodeMessageString
 
 FAKE_GATEWAY_ADDRESS = "127.0.0.1"
