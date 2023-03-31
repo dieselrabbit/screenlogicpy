@@ -2,8 +2,10 @@ import struct
 import sys
 from typing import Any, List, Tuple
 
-from ..const import MESSAGE, UNIT, ScreenLogicError
-from ..data import ATTR, DEVICE, KEY, VALUE
+from ..const import ScreenLogicError
+from ..const.common import UNIT
+from ..const.msg import HEADER_FORMAT, HEADER_LENGTH
+from ..const.data import ATTR, DEVICE, KEY, VALUE
 
 if sys.version_info[:2] < (3, 11):
     from async_timeout import timeout as asyncio_timeout  # noqa F401
@@ -14,7 +16,7 @@ else:
 def makeMessage(msgID: int, msgCode: int, messageData: bytes = b""):
     """Returns packed bytes formatted as a ready-to-send ScreenLogic message."""
     return struct.pack(
-        f"{MESSAGE.HEADER_FORMAT}{str(len(messageData))}s",
+        f"{HEADER_FORMAT}{str(len(messageData))}s",
         msgID,
         msgCode,
         len(messageData),
@@ -24,9 +26,9 @@ def makeMessage(msgID: int, msgCode: int, messageData: bytes = b""):
 
 def takeMessage(data: bytes) -> Tuple[int, int, bytes]:
     """Return (messageID, messageCode, message) from raw ScreenLogic message bytes."""
-    messageBytes = len(data) - MESSAGE.HEADER_LENGTH
+    messageBytes = len(data) - HEADER_LENGTH
     msgID, msgCode, msgLen, msgData = struct.unpack(
-        f"{MESSAGE.HEADER_FORMAT}{messageBytes}s", data
+        f"{HEADER_FORMAT}{messageBytes}s", data
     )
     if msgLen != messageBytes:
         raise ScreenLogicError(
@@ -122,9 +124,9 @@ def getArray(buff, offset):
 def getTemperatureUnit(data: dict):
     return (
         UNIT.CELSIUS
-        if DEVICE.CONTROLLER in data
-        and KEY.CONFIGURATION in data[DEVICE.CONTROLLER]
-        and VALUE.IS_CELSIUS in data[DEVICE.CONTROLLER][KEY.CONFIGURATION]
-        and data[DEVICE.CONTROLLER][KEY.CONFIGURATION][VALUE.IS_CELSIUS].get(ATTR.VALUE)
+        if data.get(DEVICE.CONTROLLER, {})
+        .get(KEY.CONFIGURATION, {})
+        .get(VALUE.IS_CELSIUS, {})
+        .get(ATTR.VALUE)
         else UNIT.FAHRENHEIT
     )

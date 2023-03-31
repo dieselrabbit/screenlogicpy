@@ -1,7 +1,8 @@
 import struct
 
-from ..const import CODE, DEVICE_TYPE, STATE_TYPE, UNIT
-from ..data import ATTR, DEVICE, KEY, VALUE, UNKNOWN
+from ..const.common import DEVICE_TYPE, STATE_TYPE, UNIT
+from ..const.data import ATTR, DEVICE, KEY, VALUE, UNKNOWN
+from ..const.msg import CODE
 from .protocol import ScreenLogicProtocol
 from .request import async_make_request
 from .utility import getSome

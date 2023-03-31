@@ -6,7 +6,8 @@ import struct
 import time
 from typing import Awaitable, Callable, Tuple, List
 
-from ..const import MESSAGE, ScreenLogicError
+from ..const import ScreenLogicError
+from ..const.msg import HEADER_LENGTH
 from .utility import makeMessage, takeMessage
 
 _LOGGER = logging.getLogger(__name__)
@@ -106,9 +107,9 @@ class ScreenLogicProtocol(asyncio.Protocol):
 
             self._buff.extend(data)
             complete = []
-            while len(self._buff) >= MESSAGE.HEADER_LENGTH:
+            while len(self._buff) >= HEADER_LENGTH:
                 dataLen = struct.unpack_from("<I", self._buff, 4)[0]
-                totalLen = MESSAGE.HEADER_LENGTH + dataLen
+                totalLen = HEADER_LENGTH + dataLen
                 if len(self._buff) >= totalLen:
                     out = bytearray()
                     for _ in range(totalLen):

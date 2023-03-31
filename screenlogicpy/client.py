@@ -4,11 +4,10 @@ import logging
 import random
 from typing import Awaitable, Callable
 
-from .const import (
+from .const.common import COM_KEEPALIVE, ScreenLogicRequestError
+from .const.msg import (
     CODE,
-    COM_KEEPALIVE,
-    MESSAGE,
-    ScreenLogicRequestError,
+    COM_MAX_RETRIES,
 )
 from .requests import (
     async_request_add_client,
@@ -40,7 +39,7 @@ class ClientManager:
         self._client_sub_unsub_lock = asyncio.Lock()
         self._protocol = None
         self._data = None
-        self._max_retries = MESSAGE.COM_MAX_RETRIES
+        self._max_retries = COM_MAX_RETRIES
 
     @property
     def is_client(self) -> bool:
@@ -63,7 +62,7 @@ class ClientManager:
         self,
         protocol: ScreenLogicProtocol,
         data: dict,
-        max_retries: int = MESSAGE.COM_MAX_RETRIES,
+        max_retries: int = COM_MAX_RETRIES,
     ):
         """
         Update protocol and data reference.

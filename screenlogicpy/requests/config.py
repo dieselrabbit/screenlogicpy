@@ -1,8 +1,9 @@
 # import json
 import struct
 
-from ..const import CODE, EQUIPMENT
-from ..data import ATTR, DEVICE, KEY, VALUE, UNKNOWN
+from ..const.msg import CODE
+from ..const.data import ATTR, DEVICE, KEY, VALUE, UNKNOWN
+from ..device_const.system import CONTROLLER, EQUIPMENT
 from .protocol import ScreenLogicProtocol
 from .request import async_make_request
 from .utility import getSome, getString
@@ -53,17 +54,19 @@ def decode_pool_config(buff: bytes, data: dict) -> dict:
 
     controller[VALUE.MODEL] = {
         ATTR.NAME: "Model",
-        ATTR.VALUE: EQUIPMENT.ControllerModel(c_type, h_type),
+        ATTR.VALUE: CONTROLLER.model_from_type(c_type, h_type),
     }
 
-    controller_config[VALUE.CONTROLLER_BUFFER], offset = getSome("B", buff, offset)
+    controller_config[VALUE.CONTROLLER_DATA], offset = getSome("B", buff, offset)
 
     controller_equipment: dict = controller.setdefault(KEY.EQUIPMENT, {})
     equipFlags, offset = getSome("I", buff, offset)
-    controller_equipment[ATTR.FLAGS] = equipFlags
+    # Include only known flags.
+    controller_equipment[ATTR.FLAGS] = equipFlags & EQUIPMENT.MASK
 
     controller_equipment[VALUE.LIST] = [
-        member.name  # .title().replace("_", " ")  # What's needed? Friendly name or FLAG name?
+        # What's needed? Friendly name or FLAG name?
+        member.name  # .title
         for member in EQUIPMENT.FLAG
         if member in EQUIPMENT.FLAG(equipFlags)
     ]

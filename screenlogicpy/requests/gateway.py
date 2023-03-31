@@ -1,5 +1,5 @@
-from ..const import CODE
-from ..data import ATTR, DEVICE, VALUE
+from ..const.msg import CODE
+from ..const.data import ATTR, DEVICE, VALUE
 from .protocol import ScreenLogicProtocol
 from .request import async_make_request
 from .utility import decodeMessageString

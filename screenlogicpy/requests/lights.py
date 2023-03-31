@@ -1,7 +1,7 @@
 import struct
 
-from ..const import CODE
-from ..data import ATTR, DEVICE, KEY
+from ..const.msg import CODE
+from ..const.data import ATTR, DEVICE, KEY
 from .protocol import ScreenLogicProtocol
 from .request import async_make_request
 from .utility import getSome, getString

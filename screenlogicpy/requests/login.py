@@ -3,7 +3,8 @@ import logging
 import struct
 from typing import Callable, Tuple
 
-from ..const import CODE, MESSAGE, ScreenLogicError, ScreenLogicRequestError
+from ..const import ScreenLogicError, ScreenLogicRequestError
+from ..const.msg import CODE, COM_MAX_RETRIES, COM_TIMEOUT
 from .protocol import ScreenLogicProtocol
 from .request import async_make_request
 from .utility import asyncio_timeout, decodeMessageString, encodeMessageString
@@ -37,7 +38,7 @@ def create_local_login_message() -> bytes:
 
 
 async def async_get_mac_address(
-    gateway_ip: str, gateway_port: int, max_retries: int = MESSAGE.COM_MAX_RETRIES
+    gateway_ip: str, gateway_port: int, max_retries: int = COM_MAX_RETRIES
 ) -> str:
     """Connect to a screenlogic gateway and return the mac address only."""
     transport, protocol = await async_create_connection(gateway_ip, gateway_port)
@@ -55,7 +56,7 @@ async def async_create_connection(
 
         # on_con_lost = loop.create_future()
         _LOGGER.debug("Creating connection")
-        async with asyncio_timeout(MESSAGE.COM_TIMEOUT):
+        async with asyncio_timeout(COM_TIMEOUT):
             return await loop.create_connection(
                 lambda: ScreenLogicProtocol(loop, connection_lost_callback),
                 gateway_ip,
@@ -113,7 +114,7 @@ async def async_connect_to_gateway(
     gateway_ip,
     gateway_port,
     connection_lost_callback: Callable = None,
-    max_retries: int = MESSAGE.COM_MAX_RETRIES,
+    max_retries: int = COM_MAX_RETRIES,
 ) -> Tuple[asyncio.Transport, ScreenLogicProtocol, str]:
     transport, protocol = await async_create_connection(
         gateway_ip, gateway_port, connection_lost_callback

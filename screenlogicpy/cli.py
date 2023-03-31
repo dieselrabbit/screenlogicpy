@@ -4,11 +4,7 @@ import json
 import argparse
 from screenlogicpy.discovery import async_discover
 from screenlogicpy.gateway import ScreenLogicGateway
-from screenlogicpy.const import (
-    BODY_TYPE,
-    COLOR_MODE,
-    CHEMISTRY,
-    HEAT_MODE,
+from screenlogicpy.const.common import (
     ON_OFF,
     RANGE,
     SL_GATEWAY_IP,
@@ -18,7 +14,10 @@ from screenlogicpy.const import (
     ScreenLogicError,
     ScreenLogicWarning,
 )
-from screenlogicpy.data import ATTR, DEVICE, KEY, VALUE
+from screenlogicpy.device_const.chemistry import RANGE_ORP_SETPOINT, RANGE_PH_SETPOINT
+from screenlogicpy.device_const.heat import HEAT_MODE
+from screenlogicpy.device_const.system import BODY_TYPE, COLOR_MODE
+from screenlogicpy.const.data import ATTR, DEVICE, KEY, VALUE
 
 
 def cliFormat(name: str):
@@ -399,14 +398,14 @@ async def cli(cli_args):
         type=str,
         metavar="PH_SETPOINT",
         default=None,
-        help=f"PH set point for IntelliChem. {CHEMISTRY.RANGE_PH_SETPOINT[RANGE.MIN]}-{CHEMISTRY.RANGE_PH_SETPOINT[RANGE.MAX]}, or * to keep current value.",
+        help=f"PH set point for IntelliChem. {RANGE_PH_SETPOINT[RANGE.MIN]}-{RANGE_PH_SETPOINT[RANGE.MAX]}, or * to keep current value.",
     )
     set_chem_data_parser.add_argument(
         "orp_setpoint",
         type=str,
         metavar="ORP_SETPOINT",
         default=None,
-        help=f"ORP set point for IntelliChem. {CHEMISTRY.RANGE_ORP_SETPOINT[RANGE.MIN]}-{CHEMISTRY.RANGE_ORP_SETPOINT[RANGE.MAX]}, or * to keep current value.",
+        help=f"ORP set point for IntelliChem. {RANGE_ORP_SETPOINT[RANGE.MIN]}-{RANGE_ORP_SETPOINT[RANGE.MAX]}, or * to keep current value.",
     )
     set_chem_data_parser.set_defaults(async_func=async_set_chem_data)
 

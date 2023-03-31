@@ -1,4 +1,4 @@
-from ..const import CODE
+from ..const.msg import CODE
 from .protocol import ScreenLogicProtocol
 from .request import async_make_request
 

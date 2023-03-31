@@ -4,18 +4,17 @@ import logging
 from typing import Awaitable, Callable
 
 from .client import ClientManager
-from .const import (
-    BODY_TYPE,
-    CHEMISTRY,
+from .const.common import (
     DATA_REQUEST,
-    EQUIPMENT,
-    MESSAGE,
     RANGE,
-    SCG,
     ScreenLogicError,
     ScreenLogicRequestError,
 )
-from .data import ATTR, DEVICE, KEY, VALUE
+from .const.msg import COM_MAX_RETRIES
+from .device_const.chemistry import RANGE_PH_SETPOINT, RANGE_ORP_SETPOINT
+from .device_const.system import BODY_TYPE, EQUIPMENT
+from .device_const.scg import LIMIT_FOR_BODY
+from .const.data import ATTR, DEVICE, KEY, VALUE
 from .requests import (
     async_connect_to_gateway,
     async_request_gateway_version,
@@ -266,7 +265,7 @@ class ScreenLogicGateway:
         """Return the debug last-received data."""
         return self._last
 
-    def set_max_retries(self, max_retries: int = MESSAGE.COM_MAX_RETRIES) -> None:
+    def set_max_retries(self, max_retries: int = COM_MAX_RETRIES) -> None:
         if 0 < max_retries < 6:
             self._max_retries = max_retries
         else:
@@ -459,20 +458,18 @@ class ScreenLogicGateway:
 
     def _is_valid_scg_value(self, scg_value, body_type):
         """Validate chlorinator value for body."""
-        return 0 <= scg_value <= SCG.LIMIT_FOR_BODY[body_type]
+        return 0 <= scg_value <= LIMIT_FOR_BODY[body_type]
 
     def _is_valid_ph_setpoint(self, ph_setpoint: float):
         """Validate pH setpoint."""
         return (
-            CHEMISTRY.RANGE_PH_SETPOINT[RANGE.MIN]
-            <= ph_setpoint
-            <= CHEMISTRY.RANGE_PH_SETPOINT[RANGE.MAX]
+            RANGE_PH_SETPOINT[RANGE.MIN] <= ph_setpoint <= RANGE_PH_SETPOINT[RANGE.MAX]
         )
 
     def _is_valid_orp_setpoint(self, orp_setpoint: int):
         """Validate ORP setpoint."""
         return (
-            CHEMISTRY.RANGE_ORP_SETPOINT[RANGE.MIN]
+            RANGE_ORP_SETPOINT[RANGE.MIN]
             <= orp_setpoint
-            <= CHEMISTRY.RANGE_ORP_SETPOINT[RANGE.MAX]
+            <= RANGE_ORP_SETPOINT[RANGE.MAX]
         )

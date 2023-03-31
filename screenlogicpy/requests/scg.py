@@ -1,7 +1,8 @@
 import struct
 
-from ..const import CODE, MESSAGE, STATE_TYPE, UNIT
-from ..data import ATTR, DEVICE, KEY, VALUE
+from ..const.common import STATE_TYPE, UNIT
+from ..const.msg import CODE, COM_MAX_RETRIES
+from ..const.data import ATTR, DEVICE, KEY, VALUE
 from .protocol import ScreenLogicProtocol
 from .request import async_make_request
 from .utility import getSome
@@ -71,7 +72,7 @@ async def async_request_set_scg_config(
     spa_output: int,
     super_chlor: int = 0,
     super_time: int = 0,
-    max_retries: int = MESSAGE.COM_MAX_RETRIES,
+    max_retries: int = COM_MAX_RETRIES,
 ) -> bool:
     return (
         await async_make_request(

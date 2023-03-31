@@ -1,15 +1,15 @@
 # import json
 import struct
 
-from ..const import (
-    CODE,
-    BODY_TYPE,
+from ..const.common import (
     DEVICE_TYPE,
     ON_OFF,
     STATE_TYPE,
     UNIT,
 )
-from ..data import ATTR, DEVICE, KEY, VALUE, UNKNOWN
+from ..const.msg import CODE
+from ..const.data import ATTR, DEVICE, KEY, VALUE, UNKNOWN
+from ..device_const.system import BODY_TYPE
 from .protocol import ScreenLogicProtocol
 from .request import async_make_request
 from .utility import getSome, getTemperatureUnit
