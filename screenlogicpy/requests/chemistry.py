@@ -250,13 +250,13 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
         ATTR.NAME: "pH Dosing State",
         ATTR.VALUE: (dose_flags & DOSE_MASK.PH_STATE) >> 4,
         ATTR.DEVICE_TYPE: DEVICE_TYPE.ENUM,
-        "enum_options": [state.title for state in DOSE_STATE],
+        ATTR.ENUM_OPTIONS: [state.title for state in DOSE_STATE],
     }
     intellichem_dosing[VALUE.ORP_DOSING_STATE] = {
         ATTR.NAME: "ORP Dosing State",
         ATTR.VALUE: (dose_flags & DOSE_MASK.ORP_STATE) >> 6,
         ATTR.DEVICE_TYPE: DEVICE_TYPE.ENUM,
-        "enum_options": [state.title for state in DOSE_STATE],
+        ATTR.ENUM_OPTIONS: [state.title for state in DOSE_STATE],
     }
 
     config_flags, offset = getSome("B", buff, offset)  # 40 (35)
