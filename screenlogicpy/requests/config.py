@@ -27,18 +27,17 @@ def decode_pool_config(buff: bytes, data: dict) -> dict:
 
     controller[VALUE.CONTROLLER_ID], offset = getSome("I", buff, 0)
 
-    body: dict = data.setdefault(DEVICE.BODY, {})
+    controller_config: dict = controller.setdefault(KEY.CONFIGURATION, {})
+    body_type_setpoint: dict = controller_config.setdefault(ATTR.BODY_TYPE, {})
 
     for i in range(2):
-        body_indexed: dict = body.setdefault(i, {})
+        body_type_setpoint_indexed: dict = body_type_setpoint.setdefault(i, {})
 
         minSetPoint, offset = getSome("B", buff, offset)
-        body_indexed[ATTR.MIN_SETPOINT] = minSetPoint
+        body_type_setpoint_indexed[ATTR.MIN_SETPOINT] = minSetPoint
 
         maxSetPoint, offset = getSome("B", buff, offset)
-        body_indexed[ATTR.MAX_SETPOINT] = maxSetPoint
-
-    controller_config: dict = controller.setdefault(KEY.CONFIGURATION, {})
+        body_type_setpoint_indexed[ATTR.MAX_SETPOINT] = maxSetPoint
 
     degC, offset = getSome("B", buff, offset)
     controller_config[VALUE.IS_CELSIUS] = {
@@ -87,17 +86,16 @@ def decode_pool_config(buff: bytes, data: dict) -> dict:
 
         circuit_indexed[ATTR.CIRCUIT_ID] = circuit_id
 
-        circuit_indexed_state: dict = circuit_indexed.setdefault(VALUE.STATE, {})
-        circuit_indexed_state[ATTR.NAME], offset = getString(buff, offset)
+        circuit_indexed[ATTR.NAME], offset = getString(buff, offset)
 
         circuit_indexed_config: dict = circuit_indexed.setdefault(KEY.CONFIGURATION, {})
         circuit_indexed_config[ATTR.NAME_INDEX], offset = getSome("B", buff, offset)
 
         func, offset = getSome("B", buff, offset)
-        circuit_indexed_config[ATTR.FUNCTION] = func  # CIRCUIT_FUNCTION(func)
+        circuit_indexed[ATTR.FUNCTION] = func  # CIRCUIT_FUNCTION(func)
 
         interface, offset = getSome("B", buff, offset)
-        circuit_indexed_config[ATTR.INTERFACE] = interface  # INTERFACE_GROUP(interface)
+        circuit_indexed[ATTR.INTERFACE] = interface  # INTERFACE_GROUP(interface)
 
         circuit_indexed_config[ATTR.FLAGS], offset = getSome("B", buff, offset)
 
@@ -110,7 +108,7 @@ def decode_pool_config(buff: bytes, data: dict) -> dict:
             ATTR.COLOR_STAGGER: color_stagger,
         }
 
-        circuit_indexed_config[ATTR.DEVICE_ID], offset = getSome("B", buff, offset)
+        circuit_indexed[ATTR.DEVICE_ID], offset = getSome("B", buff, offset)
 
         circuit_indexed_config[ATTR.DEFAULT_RUNTIME], offset = getSome(
             "H", buff, offset

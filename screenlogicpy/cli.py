@@ -70,9 +70,7 @@ async def cli(cli_args):
             return 4
         print(
             vFormat(
-                gateway.get_data(
-                    DEVICE.CIRCUIT, circuit_id, VALUE.STATE, auto_value=False
-                ),
+                gateway.get_data(DEVICE.CIRCUIT, circuit_id, auto_value=False),
                 ON_OFF,
             )
         )
@@ -90,9 +88,7 @@ async def cli(cli_args):
             return 4
         print(
             vFormat(
-                gateway.get_data(
-                    DEVICE.CIRCUIT, circuit_id, VALUE.STATE, auto_value=False
-                ),
+                gateway.get_data(DEVICE.CIRCUIT, circuit_id, auto_value=False),
                 ON_OFF,
             )
         )
@@ -475,8 +471,8 @@ async def cli(cli_args):
                 print(
                     "{}  {}  {}".format(
                         id,
-                        ON_OFF(circuit[VALUE.STATE][ATTR.VALUE]).title.rjust(5),
-                        circuit[VALUE.STATE][ATTR.NAME],
+                        ON_OFF(circuit[ATTR.VALUE]).title.rjust(5),
+                        circuit[ATTR.NAME],
                     )
                 )
 

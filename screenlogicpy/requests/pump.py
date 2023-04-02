@@ -1,7 +1,7 @@
 import struct
 
 from ..const.common import DEVICE_TYPE, STATE_TYPE, UNIT
-from ..const.data import ATTR, DEVICE, KEY, VALUE, UNKNOWN
+from ..const.data import ATTR, DEVICE, VALUE, UNKNOWN
 from ..const.msg import CODE
 from .protocol import ScreenLogicProtocol
 from .request import async_make_request
@@ -55,10 +55,10 @@ def decode_pump_status(buff: bytes, data: dict, pump_index: int) -> None:
             for circuit in data[DEVICE.CIRCUIT].values():
                 if (
                     pump_indexed_preset_indexed[ATTR.DEVICE_ID]
-                    == circuit[KEY.CONFIGURATION][ATTR.DEVICE_ID]
+                    == circuit[ATTR.DEVICE_ID]
                     and name == "Default"
                 ):
-                    name = circuit[VALUE.STATE][ATTR.NAME]
+                    name = circuit[ATTR.NAME]
                     break
         pump_indexed_preset_indexed[ATTR.SETPOINT], offset = getSome("I", buff, offset)
         pump_indexed_preset_indexed[ATTR.IS_RPM], offset = getSome("I", buff, offset)

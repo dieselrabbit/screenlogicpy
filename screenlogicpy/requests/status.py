@@ -10,6 +10,7 @@ from ..const.common import (
 from ..const.msg import CODE
 from ..const.data import ATTR, DEVICE, KEY, VALUE, UNKNOWN
 from ..device_const.system import BODY_TYPE
+from ..device_const.heat import HEAT_MODE, HEAT_STATE
 from .protocol import ScreenLogicProtocol
 from .request import async_make_request
 from .utility import getSome, getTemperatureUnit
@@ -80,18 +81,26 @@ def decode_pool_status(buff: bytes, data: dict) -> None:
     # Should this default to 2?
     bodiesCount = min(bodiesCount, 2)
 
+    body_setpoints: dict = (
+        data.get(DEVICE.CONTROLLER, {}).get(KEY.CONFIGURATION, {}).get(ATTR.BODY_TYPE)
+    )
+
     body: dict = data.setdefault(DEVICE.BODY, {})
 
     for i in range(bodiesCount):
         body_indexed: dict = body.setdefault(i, {})
 
         bodyType, offset = getSome("I", buff, offset)
-        if bodyType not in [type_.value for type_ in BODY_TYPE]:
-            bodyType = 0
 
-        body_indexed[ATTR.BODY_TYPE] = bodyType
+        body_type = BODY_TYPE.parse(bodyType)
+        body_indexed[ATTR.BODY_TYPE] = body_type.value
 
-        body_name = BODY_TYPE(bodyType).title
+        if body_setpoints:
+            if body_type_setpoints := body_setpoints.get(body_type.value):
+                body_indexed[ATTR.MIN_SETPOINT] = body_type_setpoints[ATTR.MIN_SETPOINT]
+                body_indexed[ATTR.MAX_SETPOINT] = body_type_setpoints[ATTR.MAX_SETPOINT]
+
+        body_indexed[ATTR.NAME] = body_name = body_type.title
 
         lastTemp, offset = getSome("i", buff, offset)
         body_indexed[VALUE.LAST_TEMPERATURE] = {
@@ -106,6 +115,8 @@ def decode_pool_status(buff: bytes, data: dict) -> None:
         body_indexed[VALUE.HEAT_STATE] = {
             ATTR.NAME: f"{body_name} Heat",
             ATTR.VALUE: heatStatus,
+            ATTR.DEVICE_TYPE: DEVICE_TYPE.ENUM,
+            ATTR.ENUM_OPTIONS: [hs.title for hs in HEAT_STATE],
         }
 
         heatSetPoint, offset = getSome("i", buff, offset)
@@ -121,12 +132,15 @@ def decode_pool_status(buff: bytes, data: dict) -> None:
             ATTR.NAME: f"{body_name} Cool Set Point",
             ATTR.VALUE: coolSetPoint,
             ATTR.UNIT: temperature_unit,
+            ATTR.DEVICE_TYPE: DEVICE_TYPE.TEMPERATURE,
         }
 
         heatMode, offset = getSome("i", buff, offset)
         body_indexed[VALUE.HEAT_MODE] = {
             ATTR.NAME: f"{body_name} Heat Mode",
             ATTR.VALUE: heatMode,
+            ATTR.DEVICE_TYPE: DEVICE_TYPE.ENUM,
+            ATTR.ENUM_OPTIONS: [hm.title for hm in HEAT_MODE],
         }
 
     circuitCount, offset = getSome("I", buff, offset)
@@ -138,12 +152,10 @@ def decode_pool_status(buff: bytes, data: dict) -> None:
 
         circuit_indexed: dict = circuit.setdefault(circuit_id, {})
 
-        if "id" not in circuit_indexed:
+        if ATTR.CIRCUIT_ID not in circuit_indexed:
             circuit_indexed[ATTR.CIRCUIT_ID] = circuit_id
 
-        circuit_indexed_state: dict = circuit_indexed.setdefault(VALUE.STATE, {})
-
-        circuit_indexed_state[ATTR.VALUE], offset = getSome("I", buff, offset)
+        circuit_indexed[ATTR.VALUE], offset = getSome("I", buff, offset)
 
         color_set, offset = getSome("B", buff, offset)
         color_position, offset = getSome("B", buff, offset)
