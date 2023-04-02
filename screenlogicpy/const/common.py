@@ -39,10 +39,13 @@ class SLIntEnum(IntEnum):
     def parse(cls, value: str, default=0) -> "SLIntEnum":
         """Attempt to return and Enum from the provided string."""
         try:
-            if value.isdigit():  # isinstance(value, int) or
-                return cls(int(value))
-            else:
-                return cls[value.replace(" ", "_").replace("'", "").upper()]
+            return (
+                cls(value)
+                if isinstance(value, int)
+                else cls(int(value))
+                if value.isdigit()
+                else cls[value.replace(" ", "_").replace("'", "").upper()]
+            )
         except (KeyError, ValueError):
             return None if default is None else cls(default)
 
