@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import struct
-from typing import Callable, Tuple
+from typing import Callable
 
 from ..const import ScreenLogicError, ScreenLogicRequestError
 from ..const.msg import CODE, COM_MAX_RETRIES, COM_TIMEOUT
@@ -50,7 +50,7 @@ async def async_get_mac_address(
 
 async def async_create_connection(
     gateway_ip: str, gateway_port: int, connection_lost_callback: Callable = None
-) -> Tuple[asyncio.Transport, ScreenLogicProtocol]:
+) -> tuple[asyncio.Transport, ScreenLogicProtocol]:
     try:
         loop = asyncio.get_running_loop()
 
@@ -115,7 +115,7 @@ async def async_connect_to_gateway(
     gateway_port,
     connection_lost_callback: Callable = None,
     max_retries: int = COM_MAX_RETRIES,
-) -> Tuple[asyncio.Transport, ScreenLogicProtocol, str]:
+) -> tuple[asyncio.Transport, ScreenLogicProtocol, str]:
     transport, protocol = await async_create_connection(
         gateway_ip, gateway_port, connection_lost_callback
     )

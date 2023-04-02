@@ -1,6 +1,6 @@
 import struct
 import sys
-from typing import Any, List, Tuple
+from typing import Any
 
 from ..const import ScreenLogicError
 from ..const.common import UNIT
@@ -24,7 +24,7 @@ def makeMessage(msgID: int, msgCode: int, messageData: bytes = b""):
     )
 
 
-def takeMessage(data: bytes) -> Tuple[int, int, bytes]:
+def takeMessage(data: bytes) -> tuple[int, int, bytes]:
     """Return (messageID, messageCode, message) from raw ScreenLogic message bytes."""
     messageBytes = len(data) - HEADER_LENGTH
     msgID, msgCode, msgLen, msgData = struct.unpack(
@@ -37,7 +37,7 @@ def takeMessage(data: bytes) -> Tuple[int, int, bytes]:
     return msgID, msgCode, msgData  # return raw data
 
 
-def takeMessages(data: bytes) -> List[Tuple[int, int, bytes]]:
+def takeMessages(data: bytes) -> list[tuple[int, int, bytes]]:
     messages = []
     pos = 0
     try:
@@ -70,7 +70,7 @@ def decodeMessageString(data) -> str:
     )
 
 
-def getSome(format, buff, offset) -> Tuple[Any, int]:
+def getSome(format, buff, offset) -> tuple[Any, int]:
     fmt = format if format.startswith(">") else f"<{format}"
     newoffset = offset + struct.calcsize(fmt)
     return struct.unpack_from(fmt, buff, offset)[0], newoffset
@@ -96,7 +96,7 @@ def getValueAt(buff, offset, want, **kwargs):
     return data, newoffset
 
 
-def getString(buff, offset) -> Tuple[str, int]:
+def getString(buff, offset) -> tuple[str, int]:
     fmtLen = "<I"
     offsetLen = offset + struct.calcsize(fmtLen)
     sLen = struct.unpack_from(fmtLen, buff, offset)[0]

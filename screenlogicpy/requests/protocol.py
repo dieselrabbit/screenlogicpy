@@ -4,7 +4,7 @@ import itertools
 import logging
 import struct
 import time
-from typing import Awaitable, Callable, Tuple, List
+from typing import Awaitable, Callable
 
 from ..const import ScreenLogicError
 from ..const.msg import HEADER_LENGTH
@@ -95,7 +95,7 @@ class ScreenLogicProtocol(asyncio.Protocol):
         if self._closing:
             return
 
-        def complete_messages(data: bytes) -> List[Tuple[int, int, bytes]]:
+        def complete_messages(data: bytes) -> list[tuple[int, int, bytes]]:
             """Return only complete ScreenLogic messages."""
 
             # Some pool configurations can require SL messages larger than can
@@ -254,7 +254,7 @@ class ScreenLogicProtocol(asyncio.Protocol):
                     return fut
             return None
 
-        def mark_done(self, message: Tuple[int, int, bytes]) -> bool:
+        def mark_done(self, message: tuple[int, int, bytes]) -> bool:
             """Mark future done and add response."""
             msgID, _, _ = message
             if (fut := self.try_get(msgID)) is not None:
