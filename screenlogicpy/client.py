@@ -2,7 +2,7 @@
 import asyncio
 import logging
 import random
-from typing import Awaitable, Callable
+from typing import Any, Awaitable, Callable
 
 from .const.common import COM_KEEPALIVE, ScreenLogicRequestError
 from .const.msg import (
@@ -27,7 +27,7 @@ class ClientManager:
 
     def __init__(
         self,
-        async_request_manager: Callable[[bytes, any], Awaitable[any]],
+        async_request_manager: Callable[[bytes, Any], Awaitable[Any]],
         client_id: int = None,
     ) -> None:
         self._async_managed_request = async_request_manager
