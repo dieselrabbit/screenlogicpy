@@ -9,7 +9,13 @@ from ..const.common import (
     UNIT,
 )
 from ..const.data import ATTR, DEVICE, KEY, VALUE, UNKNOWN
-from ..device_const.chemistry import ALARM, ALERT, DOSE
+from ..device_const.chemistry import (
+    ALARM_FLAG,
+    ALERT_FLAG,
+    BALANCE_FLAG,
+    DOSE_MASK,
+    DOSE_STATE,
+)
 from .protocol import ScreenLogicProtocol
 from .request import async_make_request
 from .utility import getSome, getTemperatureUnit
@@ -180,42 +186,42 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
 
     intellichem_alarm[VALUE.FLOW_ALARM] = {
         ATTR.NAME: "Flow Alarm",
-        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM.FLOW),
+        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM_FLAG.FLOW),
         ATTR.DEVICE_TYPE: DEVICE_TYPE.ALARM,
     }
     intellichem_alarm[VALUE.PH_HIGH_ALARM] = {
         ATTR.NAME: "pH HIGH Alarm",
-        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM.PH_HIGH),
+        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM_FLAG.PH_HIGH),
         ATTR.DEVICE_TYPE: DEVICE_TYPE.ALARM,
     }
     intellichem_alarm[VALUE.PH_LOW_ALARM] = {
         ATTR.NAME: "pH LOW Alarm",
-        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM.PH_LOW),
+        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM_FLAG.PH_LOW),
         ATTR.DEVICE_TYPE: DEVICE_TYPE.ALARM,
     }
     intellichem_alarm[VALUE.ORP_HIGH_ALARM] = {
         ATTR.NAME: "ORP HIGH Alarm",
-        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM.ORP_HIGH),
+        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM_FLAG.ORP_HIGH),
         ATTR.DEVICE_TYPE: DEVICE_TYPE.ALARM,
     }
     intellichem_alarm[VALUE.ORP_LOW_ALARM] = {
         ATTR.NAME: "ORP LOW Alarm",
-        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM.ORP_LOW),
+        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM_FLAG.ORP_LOW),
         ATTR.DEVICE_TYPE: DEVICE_TYPE.ALARM,
     }
     intellichem_alarm[VALUE.PH_SUPPLY_ALARM] = {
         ATTR.NAME: "pH Supply Alarm",
-        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM.PH_SUPPLY),
+        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM_FLAG.PH_SUPPLY),
         ATTR.DEVICE_TYPE: DEVICE_TYPE.ALARM,
     }
     intellichem_alarm[VALUE.ORP_SUPPLY_ALARM] = {
         ATTR.NAME: "ORP Supply Alarm",
-        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM.ORP_SUPPLY),
+        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM_FLAG.ORP_SUPPLY),
         ATTR.DEVICE_TYPE: DEVICE_TYPE.ALARM,
     }
     intellichem_alarm[VALUE.PROBE_FAULT_ALARM] = {
         ATTR.NAME: "Probe Fault",
-        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM.PROBE_FAULT),
+        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM_FLAG.PROBE_FAULT),
         ATTR.DEVICE_TYPE: DEVICE_TYPE.ALARM,
     }
 
@@ -226,15 +232,15 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
 
     intellichem_alert[VALUE.PH_LOCKOUT] = {
         ATTR.NAME: "pH Lockout",
-        ATTR.VALUE: ON_OFF.from_bool(alerts & ALERT.PH_LOCKOUT),
+        ATTR.VALUE: ON_OFF.from_bool(alerts & ALERT_FLAG.PH_LOCKOUT),
     }
     intellichem_alert[VALUE.PH_LIMIT] = {
         ATTR.NAME: "pH Dose Limit Reached",
-        ATTR.VALUE: ON_OFF.from_bool(alerts & ALERT.PH_LIMIT),
+        ATTR.VALUE: ON_OFF.from_bool(alerts & ALERT_FLAG.PH_LIMIT),
     }
     intellichem_alert[VALUE.ORP_LIMIT] = {
         ATTR.NAME: "ORP Dose Limit Reached",
-        ATTR.VALUE: ON_OFF.from_bool(alerts & ALERT.ORP_LIMIT),
+        ATTR.VALUE: ON_OFF.from_bool(alerts & ALERT_FLAG.ORP_LIMIT),
     }
 
     dose_flags, offset = getSome("B", buff, offset)  # 39 (34)
@@ -242,19 +248,19 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
 
     intellichem_dosing[VALUE.PH_DOSING_STATE] = {
         ATTR.NAME: "pH Dosing State",
-        ATTR.VALUE: (dose_flags & DOSE.MASK.PH_STATE) >> 4,
+        ATTR.VALUE: (dose_flags & DOSE_MASK.PH_STATE) >> 4,
         ATTR.DEVICE_TYPE: DEVICE_TYPE.ENUM,
-        "enum_options": [state.title for state in DOSE.STATE],
+        "enum_options": [state.title for state in DOSE_STATE],
     }
     intellichem_dosing[VALUE.ORP_DOSING_STATE] = {
         ATTR.NAME: "ORP Dosing State",
-        ATTR.VALUE: (dose_flags & DOSE.MASK.ORP_STATE) >> 6,
+        ATTR.VALUE: (dose_flags & DOSE_MASK.ORP_STATE) >> 6,
         ATTR.DEVICE_TYPE: DEVICE_TYPE.ENUM,
-        "enum_options": [state.title for state in DOSE.STATE],
+        "enum_options": [state.title for state in DOSE_STATE],
     }
 
-    flags, offset = getSome("B", buff, offset)  # 40 (35)
-    intellichem[ATTR.FLAGS] = flags
+    config_flags, offset = getSome("B", buff, offset)  # 40 (35)
+    intellichem_config[ATTR.FLAGS] = config_flags
 
     vMinor, offset = getSome("B", buff, offset)  # 41 (36)
     vMajor, offset = getSome("B", buff, offset)  # 42 (37)
@@ -263,10 +269,27 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
         ATTR.VALUE: f"{vMajor}.{vMinor:03}",
     }
 
-    intellichem[UNKNOWN(offset)], offset = getSome("B", buff, offset)
-    intellichem[UNKNOWN(offset)], offset = getSome("B", buff, offset)
-    intellichem[UNKNOWN(offset)], offset = getSome("B", buff, offset)
-    intellichem[UNKNOWN(offset)], offset = getSome("B", buff, offset)
+    intellichem_balance: dict = intellichem.setdefault(VALUE.WATER_BALANCE, {})
+    balance_flags, offset = getSome("B", buff, offset)  # 43
+    intellichem_balance[ATTR.FLAGS] = balance_flags
+
+    # SI <= -0.41
+    intellichem_balance[VALUE.CORROSIVE] = {
+        ATTR.NAME: "SI Corrosive",
+        ATTR.VALUE: ON_OFF.from_bool(balance_flags & BALANCE_FLAG.CORROSIVE),
+        ATTR.DEVICE_TYPE: DEVICE_TYPE.ALARM,
+    }
+
+    # SI >= +0.53
+    intellichem_balance[VALUE.SCALING] = {
+        ATTR.NAME: "SI Scaling",
+        ATTR.VALUE: ON_OFF.from_bool(balance_flags & BALANCE_FLAG.SCALING),
+        ATTR.DEVICE_TYPE: DEVICE_TYPE.ALARM,
+    }
+
+    intellichem[UNKNOWN(offset)], offset = getSome("B", buff, offset)  # 44
+    intellichem[UNKNOWN(offset)], offset = getSome("B", buff, offset)  # 45
+    intellichem[UNKNOWN(offset)], offset = getSome("B", buff, offset)  # 46
 
 
 async def async_request_set_chem_data(

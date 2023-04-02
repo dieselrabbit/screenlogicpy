@@ -58,6 +58,7 @@ class VALUE:
     CONTROLLER_ID = "controller_id"
     CONTROLLER_TYPE = "controller_type"
     COOL_SETPOINT = "cool_setpoint"
+    CORROSIVE = "corrosive"
     CYA = "cya"
     DATA = "data"
     DEFAULT_CIRCUIT_NAME = "generic_circuit_name"
@@ -113,6 +114,7 @@ class VALUE:
     SALT_PPM = "salt_ppm"
     SALT_TDS_PPM = "salt_tds_ppm"
     SATURATION = "saturation"
+    SCALING = "scaling"
     SCG_PRESENT = "scg_present"
     SHOW_ALARMS = "show_alarms"
     SPA_DELAY = "spa_delay"
@@ -121,6 +123,7 @@ class VALUE:
     STATUS = "status"
     SUPER_CHLOR_TIMER = "super_chlor_timer"
     TOTAL_ALKALINITY = "total_alkalinity"
+    WATER_BALANCE = "water_balance"
     WATTS_NOW = "watts_now"
 
 

@@ -646,6 +646,7 @@ EXPECTED_CHEMISTRY_DATA = {
             },
             "salt_tds_ppm": {"name": "Salt/TDS", "value": 1000, "unit": "ppm"},
             "probe_is_celsius": 0,
+            "flags": 32,
         },
         "dose_status": {
             "ph_last_dose_time": {
@@ -735,9 +736,12 @@ EXPECTED_CHEMISTRY_DATA = {
             "ph_limit": {"name": "pH Dose Limit Reached", "value": 0},
             "orp_limit": {"name": "ORP Dose Limit Reached", "value": 0},
         },
-        "flags": 32,
         "firmware": {"name": "IntelliChem Firmware", "value": "1.060"},
-        "unknown_at_offset_43": 0,
+        "water_balance": {
+            "flags": 0,
+            "corrosive": {"name": "SI Corrosive", "value": 0, "device_type": "alarm"},
+            "scaling": {"name": "SI Scaling", "value": 0, "device_type": "alarm"},
+        },
         "unknown_at_offset_44": 0,
         "unknown_at_offset_45": 0,
         "unknown_at_offset_46": 0,
@@ -1310,6 +1314,7 @@ EXPECTED_COMPLETE_DATA = {
             },
             "salt_tds_ppm": {"name": "Salt/TDS", "value": 1000, "unit": "ppm"},
             "probe_is_celsius": 0,
+            "flags": 32,
         },
         "dose_status": {
             "ph_last_dose_time": {
@@ -1399,9 +1404,12 @@ EXPECTED_COMPLETE_DATA = {
             "ph_limit": {"name": "pH Dose Limit Reached", "value": 0},
             "orp_limit": {"name": "ORP Dose Limit Reached", "value": 0},
         },
-        "flags": 32,
         "firmware": {"name": "IntelliChem Firmware", "value": "1.060"},
-        "unknown_at_offset_43": 0,
+        "water_balance": {
+            "flags": 0,
+            "corrosive": {"name": "SI Corrosive", "value": 0, "device_type": "alarm"},
+            "scaling": {"name": "SI Scaling", "value": 0, "device_type": "alarm"},
+        },
         "unknown_at_offset_44": 0,
         "unknown_at_offset_45": 0,
         "unknown_at_offset_46": 0,
