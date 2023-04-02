@@ -41,35 +41,36 @@ class CONTROLLER:
         except KeyError:
             return f"Unknown Model C:{controller_type} H:{hardware_type}"
 
-    class STATE(SLIntEnum):
-        READY = 1
-        SYNC = 2
-        SERVICE = 3
+
+class CONTROLLER_STATE(SLIntEnum):
+    READY = 1
+    SYNC = 2
+    SERVICE = 3
 
 
-class EQUIPMENT:
-    class FLAG(IntFlag):
-        """Equipment flags."""
+EQUIPMENT_MASK = 0x1FFFF
 
-        SOLAR = 0x1
-        SOLAR_AS_HEAT_PUMP = 0x2
-        CHLORINATOR = 0x4
-        INTELLIBRITE = 0x8
-        INTELLIFLO_0 = 0x10
-        INTELLIFLO_1 = 0x20
-        INTELLIFLO_2 = 0x40
-        INTELLIFLO_3 = 0x80
-        INTELLIFLO_4 = 0x100
-        INTELLIFLO_5 = 0x200
-        INTELLIFLO_6 = 0x400
-        INTELLIFLO_7 = 0x800
-        NO_SPECIAL_LIGHTS = 0x1000
-        HAS_COOLING = 0x2000
-        MAGIC_STREAM = 0x4000
-        INTELLICHEM = 0x8000
-        HYBRID_HEATER = 0x10000
 
-    MASK = 0x1FFFF
+class EQUIPMENT_FLAG(IntFlag):
+    """Equipment flags."""
+
+    SOLAR = 0x1
+    SOLAR_AS_HEAT_PUMP = 0x2
+    CHLORINATOR = 0x4
+    INTELLIBRITE = 0x8
+    INTELLIFLO_0 = 0x10
+    INTELLIFLO_1 = 0x20
+    INTELLIFLO_2 = 0x40
+    INTELLIFLO_3 = 0x80
+    INTELLIFLO_4 = 0x100
+    INTELLIFLO_5 = 0x200
+    INTELLIFLO_6 = 0x400
+    INTELLIFLO_7 = 0x800
+    NO_SPECIAL_LIGHTS = 0x1000
+    HAS_COOLING = 0x2000
+    MAGIC_STREAM = 0x4000
+    INTELLICHEM = 0x8000
+    HYBRID_HEATER = 0x10000
 
 
 class COLOR_MODE(SLIntEnum):

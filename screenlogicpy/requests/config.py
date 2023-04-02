@@ -3,7 +3,7 @@ import struct
 
 from ..const.msg import CODE
 from ..const.data import ATTR, DEVICE, KEY, VALUE, UNKNOWN
-from ..device_const.system import CONTROLLER, EQUIPMENT
+from ..device_const.system import CONTROLLER, EQUIPMENT_FLAG, EQUIPMENT_MASK
 from .protocol import ScreenLogicProtocol
 from .request import async_make_request
 from .utility import getSome, getString
@@ -61,14 +61,15 @@ def decode_pool_config(buff: bytes, data: dict) -> dict:
 
     controller_equipment: dict = controller.setdefault(KEY.EQUIPMENT, {})
     equipFlags, offset = getSome("I", buff, offset)
+
     # Include only known flags.
-    controller_equipment[ATTR.FLAGS] = equipFlags & EQUIPMENT.MASK
+    controller_equipment[ATTR.FLAGS] = equipFlags & EQUIPMENT_MASK
 
     controller_equipment[VALUE.LIST] = [
         # What's needed? Friendly name or FLAG name?
         member.name  # .title
-        for member in EQUIPMENT.FLAG
-        if member in EQUIPMENT.FLAG(equipFlags)
+        for member in EQUIPMENT_FLAG
+        if member in EQUIPMENT_FLAG(equipFlags)
     ]
 
     controller_config[VALUE.DEFAULT_CIRCUIT_NAME], offset = getString(buff, offset)
