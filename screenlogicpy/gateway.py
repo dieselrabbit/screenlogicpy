@@ -77,11 +77,11 @@ class ScreenLogicGateway:
 
     @property
     def version(self) -> str:
-        return self.get_data(DEVICE.ADAPTER, VALUE.FIRMWARE)
+        return self.get_value(DEVICE.ADAPTER, VALUE.FIRMWARE)
 
     @property
     def controller_model(self) -> str:
-        return self.get_data(DEVICE.CONTROLLER, VALUE.MODEL)
+        return self.get_value(DEVICE.CONTROLLER, VALUE.MODEL)
 
     @property
     def equipment_flags(self) -> EQUIPMENT_FLAG:
@@ -228,19 +228,19 @@ class ScreenLogicGateway:
     #    """Return the data."""
     #    return self._data
 
-    def get_data(self, *keypath, auto_value: bool = True):
+    def get_data(self, *keypath, strict: bool = False):
         """
         Return a data value from a key path.
 
-        Returns the value of the "value" key if present at the end of the keypath if 'auto_value' == True,
-        otherwise returns the value of the last key in the keypath. Returns None if the key is not found.
+        Returns the value of the key at the end of the keypath. Returns None if any key along the path is not found, or
+        raises a KeyError if 'strict' == True.
         Returns the entire data dict if no 'keypath' is specified.
         """
 
         if not keypath:
             return self._data
 
-        next = None
+        next = self._data
 
         def get_next(key):
             if current is None:
@@ -252,14 +252,41 @@ class ScreenLogicGateway:
             return None
 
         for key in keypath:
-            current = next if next is not None else self._data
+            current = next
             next = get_next(key)
             if next is None:
+                if strict:
+                    raise KeyError(f"{key} not found")
                 return None
-        if auto_value and isinstance(next, dict):
-            if (value := next.get(ATTR.VALUE)) is not None:
-                return value
         return next
+
+    def get_value(self, *keypath, strict: bool = False):
+        """
+        Returns the 'value' key of the dict at the end of the key path.
+
+        Shortcut to 'get_data(*keypath, "value")'.
+        """
+        data = self.get_data(*keypath, strict=strict)
+        if isinstance(data, dict) and (val := data.get(ATTR.VALUE)) is not None:
+            return val
+        else:
+            if strict:
+                raise KeyError(f"Value for {keypath} not found")
+            return None
+
+    def get_name(self, *keypath, strict: bool = False):
+        """
+        Returns the 'name' key of the dict at the end of the key path.
+
+        Shortcut to 'get_data(*keypath, "name")'.
+        """
+        data = self.get_data(*keypath, strict=strict)
+        if isinstance(data, dict) and (val := data.get(ATTR.NAME)) is not None:
+            return val
+        else:
+            if strict:
+                raise KeyError(f"Value for {keypath} not found")
+            return None
 
     def get_debug(self) -> dict:
         """Return the debug last-received data."""

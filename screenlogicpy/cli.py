@@ -70,7 +70,7 @@ async def cli(cli_args):
             return 4
         print(
             vFormat(
-                gateway.get_data(DEVICE.CIRCUIT, circuit_id, auto_value=False),
+                gateway.get_data(DEVICE.CIRCUIT, circuit_id),
                 ON_OFF,
             )
         )
@@ -88,7 +88,7 @@ async def cli(cli_args):
             return 4
         print(
             vFormat(
-                gateway.get_data(DEVICE.CIRCUIT, circuit_id, auto_value=False),
+                gateway.get_data(DEVICE.CIRCUIT, circuit_id),
                 ON_OFF,
             )
         )
@@ -98,9 +98,7 @@ async def cli(cli_args):
         body = BODY_TYPE.parse(args.body).value
         print(
             vFormat(
-                gateway.get_data(
-                    DEVICE.BODY, int(body), VALUE.HEAT_MODE, auto_value=False
-                ),
+                gateway.get_data(DEVICE.BODY, int(body), VALUE.HEAT_MODE),
                 HEAT_MODE,
             )
         )
@@ -115,7 +113,7 @@ async def cli(cli_args):
             return 8
         print(
             vFormat(
-                gateway.get_data(DEVICE.BODY, body, VALUE.HEAT_MODE, auto_value=False),
+                gateway.get_data(DEVICE.BODY, body, VALUE.HEAT_MODE),
                 HEAT_MODE,
             )
         )
@@ -125,9 +123,7 @@ async def cli(cli_args):
         body = BODY_TYPE.parse(args.body).value
         print(
             vFormat(
-                gateway.get_data(
-                    DEVICE.BODY, body, VALUE.HEAT_SETPOINT, auto_value=False
-                ),
+                gateway.get_data(DEVICE.BODY, body, VALUE.HEAT_SETPOINT),
             )
         )
         return 0
@@ -141,9 +137,7 @@ async def cli(cli_args):
                 return 16
         print(
             vFormat(
-                gateway.get_data(
-                    DEVICE.BODY, body, VALUE.HEAT_SETPOINT, auto_value=False
-                ),
+                gateway.get_data(DEVICE.BODY, body, VALUE.HEAT_SETPOINT),
             )
         )
         return 0
@@ -152,7 +146,7 @@ async def cli(cli_args):
         body = BODY_TYPE.parse(args.body).value
         print(
             vFormat(
-                gateway.get_data(DEVICE.BODY, body, VALUE.HEAT_STATE, auto_value=False),
+                gateway.get_data(DEVICE.BODY, body, VALUE.HEAT_STATE),
                 ON_OFF,
             )
         )
@@ -162,9 +156,7 @@ async def cli(cli_args):
         body = BODY_TYPE.parse(args.body)
         print(
             vFormat(
-                gateway.get_data(
-                    DEVICE.BODY, body, VALUE.LAST_TEMPERATURE, auto_value=False
-                ),
+                gateway.get_data(DEVICE.BODY, body, VALUE.LAST_TEMPERATURE),
             )
         )
         return 0
@@ -185,9 +177,7 @@ async def cli(cli_args):
             print("No new SCG values. Nothing to do.")
             return 65
 
-        scg_config_data = gateway.get_data(
-            DEVICE.SCG, KEY.CONFIGURATION, auto_value=False
-        )
+        scg_config_data = gateway.get_data(DEVICE.SCG, KEY.CONFIGURATION)
         try:
             scg_1 = (
                 scg_config_data[VALUE.POOL_SETPOINT][ATTR.VALUE]
@@ -205,9 +195,7 @@ async def cli(cli_args):
 
         if await gateway.async_set_scg_config(scg_1, scg_2):
             await gateway.async_update()
-            new_scg_config_data = gateway.get_data(
-                DEVICE.SCG, KEY.CONFIGURATION, auto_value=False
-            )
+            new_scg_config_data = gateway.get_data(DEVICE.SCG, KEY.CONFIGURATION)
             print(
                 vFormat(new_scg_config_data[VALUE.POOL_SETPOINT]),
                 vFormat(new_scg_config_data[VALUE.SPA_SETPOINT]),
@@ -220,9 +208,7 @@ async def cli(cli_args):
             print("No new setpoint values. Nothing to do.")
             return 129
 
-        chem_config_data = gateway.get_data(
-            DEVICE.INTELLICHEM, KEY.CONFIGURATION, auto_value=False
-        )
+        chem_config_data = gateway.get_data(DEVICE.INTELLICHEM, KEY.CONFIGURATION)
         try:
             ph = (
                 chem_config_data[VALUE.PH_SETPOINT][ATTR.VALUE]
@@ -247,7 +233,7 @@ async def cli(cli_args):
             await asyncio.sleep(3)
             await gateway.async_update()
             new_chem_config_data = gateway.get_data(
-                DEVICE.INTELLICHEM, KEY.CONFIGURATION, auto_value=False
+                DEVICE.INTELLICHEM, KEY.CONFIGURATION
             )
             print(
                 vFormat(new_chem_config_data[VALUE.PH_SETPOINT]),
@@ -460,7 +446,7 @@ async def cli(cli_args):
             print(
                 "{} '{}' at {}:{}".format(verb, gateway.name, gateway.ip, gateway.port)
             )
-            print(gateway.get_data(DEVICE.CONTROLLER, VALUE.MODEL, ATTR.VALUE))
+            print(gateway.get_value(DEVICE.CONTROLLER, VALUE.MODEL))
             if args.verbose:
                 print(f"Version: {gateway.version}")
 
