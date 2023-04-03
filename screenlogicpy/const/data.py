@@ -22,6 +22,7 @@ class ATTR:
     PROGRESS = "progress"
     SETPOINT = "setpoint"
     STATE_TYPE = "state_type"
+    STEP = "step"
     TEXT = "text"
     UNIT = "unit"
     VALUE = "value"

@@ -3,6 +3,8 @@ import struct
 from ..const.common import STATE_TYPE, UNIT
 from ..const.msg import CODE, COM_MAX_RETRIES
 from ..const.data import ATTR, DEVICE, KEY, VALUE
+from ..device_const.scg import LIMIT_FOR_BODY, MAX_SC_RUNTIME
+from ..device_const.system import BODY_TYPE
 from .protocol import ScreenLogicProtocol
 from .request import async_make_request
 from .utility import getSome
@@ -38,6 +40,10 @@ def decode_scg_config(buff: bytes, data: dict) -> None:
         ATTR.NAME: "Pool SCG Setpoint",
         ATTR.VALUE: level1,
         ATTR.UNIT: UNIT.PERCENT,
+        ATTR.MIN_SETPOINT: 0,
+        ATTR.MAX_SETPOINT: LIMIT_FOR_BODY[BODY_TYPE.POOL],
+        ATTR.STEP: 5,
+        ATTR.BODY_TYPE: BODY_TYPE.POOL.value,
     }
 
     level2, offset = getSome("I", buff, offset)  # 12
@@ -45,6 +51,10 @@ def decode_scg_config(buff: bytes, data: dict) -> None:
         ATTR.NAME: "Spa SCG Setpoint",
         ATTR.VALUE: level2,
         ATTR.UNIT: UNIT.PERCENT,
+        ATTR.MIN_SETPOINT: 0,
+        ATTR.MAX_SETPOINT: LIMIT_FOR_BODY[BODY_TYPE.SPA],
+        ATTR.STEP: 5,
+        ATTR.BODY_TYPE: BODY_TYPE.SPA.value,
     }
 
     salt, offset = getSome("I", buff, offset)  # 16
@@ -63,6 +73,9 @@ def decode_scg_config(buff: bytes, data: dict) -> None:
         ATTR.NAME: "SCG Super Chlorination Timer",
         ATTR.VALUE: superChlorTimer,
         ATTR.UNIT: UNIT.HOUR,
+        ATTR.MIN_SETPOINT: 1,
+        ATTR.MAX_SETPOINT: MAX_SC_RUNTIME,
+        ATTR.STEP: 1,
     }
 
 
