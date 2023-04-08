@@ -792,9 +792,9 @@ EXPECTED_SCG_DATA = {
     "scg": {
         "scg_present": 0,
         "sensor": {
-            "state": {"name": "SCG State", "value": 1},
+            "state": {"name": "Chlorinator", "value": 1},
             "salt_ppm": {
-                "name": "SCG Salt",
+                "name": "Chlorinator Salt",
                 "value": 0,
                 "unit": "ppm",
                 "state_type": "measurement",
@@ -802,7 +802,7 @@ EXPECTED_SCG_DATA = {
         },
         "configuration": {
             "pool_setpoint": {
-                "name": "Pool SCG Setpoint",
+                "name": "Pool Chlorinator Setpoint",
                 "value": 50,
                 "unit": "%",
                 "min_setpoint": 0,
@@ -811,7 +811,7 @@ EXPECTED_SCG_DATA = {
                 "body_type": 0,
             },
             "spa_setpoint": {
-                "name": "Spa SCG Setpoint",
+                "name": "Spa Chlorinator Setpoint",
                 "value": 0,
                 "unit": "%",
                 "min_setpoint": 0,
@@ -820,7 +820,7 @@ EXPECTED_SCG_DATA = {
                 "body_type": 1,
             },
             "super_chlor_timer": {
-                "name": "SCG Super Chlorination Timer",
+                "name": "Super Chlorination Timer",
                 "value": 0,
                 "unit": "hr",
                 "min_setpoint": 1,
@@ -1538,9 +1538,9 @@ EXPECTED_COMPLETE_DATA = {
     "scg": {
         "scg_present": 0,
         "sensor": {
-            "state": {"name": "SCG State", "value": 1},
+            "state": {"name": "Chlorinator", "value": 1},
             "salt_ppm": {
-                "name": "SCG Salt",
+                "name": "Chlorinator Salt",
                 "value": 0,
                 "unit": "ppm",
                 "state_type": "measurement",
@@ -1548,7 +1548,7 @@ EXPECTED_COMPLETE_DATA = {
         },
         "configuration": {
             "pool_setpoint": {
-                "name": "Pool SCG Setpoint",
+                "name": "Pool Chlorinator Setpoint",
                 "value": 50,
                 "unit": "%",
                 "min_setpoint": 0,
@@ -1557,7 +1557,7 @@ EXPECTED_COMPLETE_DATA = {
                 "body_type": 0,
             },
             "spa_setpoint": {
-                "name": "Spa SCG Setpoint",
+                "name": "Spa Chlorinator Setpoint",
                 "value": 0,
                 "unit": "%",
                 "min_setpoint": 0,
@@ -1566,7 +1566,7 @@ EXPECTED_COMPLETE_DATA = {
                 "body_type": 1,
             },
             "super_chlor_timer": {
-                "name": "SCG Super Chlorination Timer",
+                "name": "Super Chlorination Timer",
                 "value": 0,
                 "unit": "hr",
                 "min_setpoint": 1,

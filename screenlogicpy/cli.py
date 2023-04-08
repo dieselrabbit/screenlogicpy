@@ -174,7 +174,7 @@ async def cli(cli_args):
 
     async def async_set_scg_config():
         if args.scg_pool == "*" and args.scg_spa == "*":
-            print("No new SCG values. Nothing to do.")
+            print("No new Chlorinator values. Nothing to do.")
             return 65
 
         scg_config_data = gateway.get_data(DEVICE.SCG, KEY.CONFIGURATION)
@@ -190,7 +190,7 @@ async def cli(cli_args):
                 else int(args.scg_spa)
             )
         except ValueError:
-            print("Invalid SCG value")
+            print("Invalid Chlorinator value")
             return 66
 
         if await gateway.async_set_scg_config(scg_1, scg_2):

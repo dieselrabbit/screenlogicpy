@@ -29,7 +29,7 @@ def decode_scg_config(buff: bytes, data: dict) -> None:
 
     state, offset = getSome("I", buff, offset)  # 4
     scg_sensor[VALUE.STATE] = {
-        ATTR.NAME: "SCG State",
+        ATTR.NAME: "Chlorinator",
         ATTR.VALUE: state,
     }
 
@@ -37,7 +37,7 @@ def decode_scg_config(buff: bytes, data: dict) -> None:
 
     level1, offset = getSome("I", buff, offset)  # 8
     scg_config[VALUE.POOL_SETPOINT] = {
-        ATTR.NAME: "Pool SCG Setpoint",
+        ATTR.NAME: "Pool Chlorinator Setpoint",
         ATTR.VALUE: level1,
         ATTR.UNIT: UNIT.PERCENT,
         ATTR.MIN_SETPOINT: 0,
@@ -48,7 +48,7 @@ def decode_scg_config(buff: bytes, data: dict) -> None:
 
     level2, offset = getSome("I", buff, offset)  # 12
     scg_config[VALUE.SPA_SETPOINT] = {
-        ATTR.NAME: "Spa SCG Setpoint",
+        ATTR.NAME: "Spa Chlorinator Setpoint",
         ATTR.VALUE: level2,
         ATTR.UNIT: UNIT.PERCENT,
         ATTR.MIN_SETPOINT: 0,
@@ -59,7 +59,7 @@ def decode_scg_config(buff: bytes, data: dict) -> None:
 
     salt, offset = getSome("I", buff, offset)  # 16
     scg_sensor[VALUE.SALT_PPM] = {
-        ATTR.NAME: "SCG Salt",
+        ATTR.NAME: "Chlorinator Salt",
         ATTR.VALUE: (salt * 50),
         ATTR.UNIT: UNIT.PARTS_PER_MILLION,
         ATTR.STATE_TYPE: STATE_TYPE.MEASUREMENT,
@@ -70,7 +70,7 @@ def decode_scg_config(buff: bytes, data: dict) -> None:
 
     superChlorTimer, offset = getSome("I", buff, offset)  # 24
     scg_config[VALUE.SUPER_CHLOR_TIMER] = {
-        ATTR.NAME: "SCG Super Chlorination Timer",
+        ATTR.NAME: "Super Chlorination Timer",
         ATTR.VALUE: superChlorTimer,
         ATTR.UNIT: UNIT.HOUR,
         ATTR.MIN_SETPOINT: 1,
