@@ -10,7 +10,6 @@ class ATTR:
     DEVICE_ID = "device_id"
     DEVICE_TYPE = "device_type"
     ENUM_OPTIONS = "enum_options"
-    FLAGS = "flags"
     FUNCTION = "function"
     INTERFACE = "interface"
     IS_RPM = "is_rpm"
@@ -38,18 +37,20 @@ class DEVICE:
     PUMP = "pump"
 
 
-class KEY:
+class GROUP:
     ALARM = "alarm"
+    ALERT = "alert"
     COLOR = "color"
     COLOR_LIGHTS = "color_lights"
     CONFIGURATION = "configuration"
+    DOSE_STATUS = "dose_status"
     EQUIPMENT = "equipment"
-    ALERT = "alert"
     SENSOR = "sensor"
+    WATER_BALANCE = "water_balance"
 
 
 class VALUE:
-    ACTIVE_ALARM = "active_alarm"
+    ACTIVE_ALERT = "active_alert"
     AIR_TEMPERATURE = "air_temperature"
     CALCIUM_HARNESS = "calcium_harness"
     CIRCUIT_COUNT = "circuit_count"
@@ -57,14 +58,15 @@ class VALUE:
     COLOR_COUNT = "color_count"
     CONTROLLER_DATA = "controller_data"
     CONTROLLER_ID = "controller_id"
+    CONTROLLER_STATUS = "controller_status"
     CONTROLLER_TYPE = "controller_type"
     COOL_SETPOINT = "cool_setpoint"
     CORROSIVE = "corrosive"
     CYA = "cya"
     DATA = "data"
     DEFAULT_CIRCUIT_NAME = "generic_circuit_name"
-    DOSE_STATUS = "dose_status"
     FIRMWARE = "firmware"
+    FLAGS = "flags"
     FLOW_ALARM = "flow_alarm"
     FREEZE_MODE = "freeze_mode"
     GPM_NOW = "gpm_now"
@@ -77,7 +79,6 @@ class VALUE:
     LAST_TEMPERATURE = "last_temperature"
     LIST = "list"
     MODEL = "model"
-    OK = "ok"
     ORP = "orp"
     ORP_DOSING_STATE = "orp_dosing_state"
     ORP_HIGH_ALARM = "orp_high_alarm"
@@ -109,7 +110,6 @@ class VALUE:
     PROBE_IS_CELSIUS = "probe_is_celsius"
     PROGRESS_LIMIT = "progress_limit"
     PROGRESS_NOW = "progress_now"
-    PUMP_TYPE = "pump_type"
     REMOTES = "remotes"
     RPM_NOW = "rpm_now"
     SALT_PPM = "salt_ppm"
@@ -121,12 +121,25 @@ class VALUE:
     SPA_DELAY = "spa_delay"
     SPA_SETPOINT = "spa_setpoint"
     STATE = "state"
-    STATUS = "status"
     SUPER_CHLOR_TIMER = "super_chlor_timer"
     TOTAL_ALKALINITY = "total_alkalinity"
-    WATER_BALANCE = "water_balance"
+    TYPE = "type"
     WATTS_NOW = "watts_now"
 
 
 def UNKNOWN(offset: int) -> str:
     return f"unknown_at_offset_{offset:02}"
+
+
+SHARED_VALUES = (
+    VALUE.DATA,
+    VALUE.FIRMWARE,
+    VALUE.FLAGS,
+    VALUE.GPM_NOW,
+    VALUE.RPM_NOW,
+    VALUE.SALT_PPM,
+    VALUE.SATURATION,
+    VALUE.STATE,
+    VALUE.TYPE,
+    VALUE.WATTS_NOW,
+)

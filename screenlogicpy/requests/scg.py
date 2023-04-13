@@ -2,7 +2,7 @@ import struct
 
 from ..const.common import STATE_TYPE, UNIT
 from ..const.msg import CODE, COM_MAX_RETRIES
-from ..const.data import ATTR, DEVICE, KEY, VALUE
+from ..const.data import ATTR, DEVICE, GROUP, VALUE
 from ..device_const.scg import LIMIT_FOR_BODY, MAX_SC_RUNTIME
 from ..device_const.system import BODY_TYPE
 from .protocol import ScreenLogicProtocol
@@ -25,7 +25,7 @@ def decode_scg_config(buff: bytes, data: dict) -> None:
 
     scg[VALUE.SCG_PRESENT], offset = getSome("I", buff, 0)  # 0
 
-    scg_sensor: dict = scg.setdefault(KEY.SENSOR, {})
+    scg_sensor: dict = scg.setdefault(GROUP.SENSOR, {})
 
     state, offset = getSome("I", buff, offset)  # 4
     scg_sensor[VALUE.STATE] = {
@@ -33,7 +33,7 @@ def decode_scg_config(buff: bytes, data: dict) -> None:
         ATTR.VALUE: state,
     }
 
-    scg_config: dict = scg.setdefault(KEY.CONFIGURATION, {})
+    scg_config: dict = scg.setdefault(GROUP.CONFIGURATION, {})
 
     level1, offset = getSome("I", buff, offset)  # 8
     scg_config[VALUE.POOL_SETPOINT] = {
@@ -66,7 +66,7 @@ def decode_scg_config(buff: bytes, data: dict) -> None:
     }
 
     flags, offset = getSome("I", buff, offset)  # 20
-    scg[ATTR.FLAGS] = flags
+    scg[VALUE.FLAGS] = flags
 
     superChlorTimer, offset = getSome("I", buff, offset)  # 24
     scg_config[VALUE.SUPER_CHLOR_TIMER] = {

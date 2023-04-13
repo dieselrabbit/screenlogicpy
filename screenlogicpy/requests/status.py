@@ -8,8 +8,8 @@ from ..const.common import (
     UNIT,
 )
 from ..const.msg import CODE
-from ..const.data import ATTR, DEVICE, KEY, VALUE, UNKNOWN
-from ..device_const.system import BODY_TYPE
+from ..const.data import ATTR, DEVICE, GROUP, VALUE, UNKNOWN
+from ..device_const.system import BODY_TYPE, CONTROLLER_STATE
 from ..device_const.heat import HEAT_MODE, HEAT_STATE
 from .protocol import ScreenLogicProtocol
 from .request import async_make_request
@@ -29,9 +29,15 @@ async def async_request_pool_status(
 def decode_pool_status(buff: bytes, data: dict) -> None:
     controller: dict = data.setdefault(DEVICE.CONTROLLER, {})
 
-    controller[VALUE.STATUS], offset = getSome("I", buff, 0)  # byte offset 0
+    controller_sensor: dict = controller.setdefault(GROUP.SENSOR, {})
 
-    controller_sensor: dict = controller.setdefault(KEY.SENSOR, {})
+    state, offset = getSome("I", buff, 0)  # byte offset 0
+    controller_sensor[VALUE.STATE] = {
+        ATTR.NAME: "Controller State",
+        ATTR.VALUE: state,
+        ATTR.DEVICE_TYPE: DEVICE_TYPE.ENUM,
+        ATTR.ENUM_OPTIONS: [state.title for state in CONTROLLER_STATE],
+    }
 
     freezeMode, offset = getSome("B", buff, offset)  # byte offset 4
     controller_sensor[VALUE.FREEZE_MODE] = {
@@ -39,7 +45,7 @@ def decode_pool_status(buff: bytes, data: dict) -> None:
         ATTR.VALUE: ON_OFF.from_bool(freezeMode & 0x08),
     }
 
-    controller_config: dict = controller.setdefault(KEY.CONFIGURATION, {})
+    controller_config: dict = controller.setdefault(GROUP.CONFIGURATION, {})
 
     controller_config[VALUE.REMOTES], offset = getSome("B", buff, offset)  # 5
 
@@ -82,7 +88,7 @@ def decode_pool_status(buff: bytes, data: dict) -> None:
     bodiesCount = min(bodiesCount, 2)
 
     body_setpoints: dict = (
-        data.get(DEVICE.CONTROLLER, {}).get(KEY.CONFIGURATION, {}).get(ATTR.BODY_TYPE)
+        data.get(DEVICE.CONTROLLER, {}).get(GROUP.CONFIGURATION, {}).get(ATTR.BODY_TYPE)
     )
 
     body: dict = data.setdefault(DEVICE.BODY, {})
@@ -160,13 +166,15 @@ def decode_pool_status(buff: bytes, data: dict) -> None:
         color_set, offset = getSome("B", buff, offset)
         color_position, offset = getSome("B", buff, offset)
         color_stagger, offset = getSome("B", buff, offset)
-        circuit_indexed[KEY.COLOR] = {
+        circuit_indexed[GROUP.COLOR] = {
             ATTR.COLOR_SET: color_set,
             ATTR.COLOR_POSITION: color_position,
             ATTR.COLOR_STAGGER: color_stagger,
         }
 
-        circuit_indexed_config: dict = circuit_indexed.setdefault(KEY.CONFIGURATION, {})
+        circuit_indexed_config: dict = circuit_indexed.setdefault(
+            GROUP.CONFIGURATION, {}
+        )
         circuit_indexed_config[ATTR.DELAY], offset = getSome("B", buff, offset)
 
     pH, offset = getSome("i", buff, offset)
@@ -215,9 +223,9 @@ def decode_pool_status(buff: bytes, data: dict) -> None:
         ATTR.STATE_TYPE: STATE_TYPE.MEASUREMENT,
     }
 
-    alarm, offset = getSome("i", buff, offset)
-    controller_sensor[VALUE.ACTIVE_ALARM] = {
-        ATTR.NAME: "Active Alarm",
-        ATTR.VALUE: alarm,
+    alert, offset = getSome("i", buff, offset)
+    controller_sensor[VALUE.ACTIVE_ALERT] = {
+        ATTR.NAME: "Active Alert",
+        ATTR.VALUE: alert,
         ATTR.DEVICE_TYPE: DEVICE_TYPE.ALARM,
     }

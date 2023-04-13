@@ -14,7 +14,7 @@ from .const.msg import COM_MAX_RETRIES
 from .device_const.chemistry import RANGE_PH_SETPOINT, RANGE_ORP_SETPOINT
 from .device_const.system import BODY_TYPE, EQUIPMENT_FLAG
 from .device_const.scg import LIMIT_FOR_BODY
-from .const.data import ATTR, DEVICE, KEY, VALUE
+from .const.data import ATTR, DEVICE, GROUP, VALUE
 from .requests import (
     async_connect_to_gateway,
     async_request_gateway_version,
@@ -86,7 +86,7 @@ class ScreenLogicGateway:
     @property
     def equipment_flags(self) -> EQUIPMENT_FLAG:
         return EQUIPMENT_FLAG(
-            self.get_data(DEVICE.CONTROLLER, KEY.EQUIPMENT, ATTR.FLAGS)
+            self.get_data(DEVICE.CONTROLLER, GROUP.EQUIPMENT, VALUE.FLAGS)
         )
 
     @property
@@ -200,7 +200,7 @@ class ScreenLogicGateway:
     async def async_get_pumps(self):
         """Request all pump state data."""
         for pumpID in self._data[DEVICE.PUMP]:
-            if self._data[DEVICE.PUMP][pumpID]["data"] != 0:
+            if self._data[DEVICE.PUMP][pumpID][VALUE.DATA] != 0:
                 _LOGGER.debug("Requesting pump %i data", pumpID)
                 last_pumps = self._last.setdefault(DATA_REQUEST.PUMPS, {})
                 if last_raw := await self._async_connected_request(

@@ -43,6 +43,7 @@ class CONTROLLER:
 
 
 class CONTROLLER_STATE(SLIntEnum):
+    UNKNOWN = 0
     READY = 1
     SYNC = 2
     SERVICE = 3

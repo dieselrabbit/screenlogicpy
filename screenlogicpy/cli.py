@@ -17,7 +17,7 @@ from screenlogicpy.const.common import (
 from screenlogicpy.device_const.chemistry import RANGE_ORP_SETPOINT, RANGE_PH_SETPOINT
 from screenlogicpy.device_const.heat import HEAT_MODE
 from screenlogicpy.device_const.system import BODY_TYPE, COLOR_MODE
-from screenlogicpy.const.data import ATTR, DEVICE, KEY, VALUE
+from screenlogicpy.const.data import ATTR, DEVICE, GROUP, VALUE
 
 
 def cliFormat(name: str):
@@ -177,7 +177,7 @@ async def cli(cli_args):
             print("No new Chlorinator values. Nothing to do.")
             return 65
 
-        scg_config_data = gateway.get_data(DEVICE.SCG, KEY.CONFIGURATION)
+        scg_config_data = gateway.get_data(DEVICE.SCG, GROUP.CONFIGURATION)
         try:
             scg_1 = (
                 scg_config_data[VALUE.POOL_SETPOINT][ATTR.VALUE]
@@ -195,7 +195,7 @@ async def cli(cli_args):
 
         if await gateway.async_set_scg_config(scg_1, scg_2):
             await gateway.async_update()
-            new_scg_config_data = gateway.get_data(DEVICE.SCG, KEY.CONFIGURATION)
+            new_scg_config_data = gateway.get_data(DEVICE.SCG, GROUP.CONFIGURATION)
             print(
                 vFormat(new_scg_config_data[VALUE.POOL_SETPOINT]),
                 vFormat(new_scg_config_data[VALUE.SPA_SETPOINT]),
@@ -208,7 +208,7 @@ async def cli(cli_args):
             print("No new setpoint values. Nothing to do.")
             return 129
 
-        chem_config_data = gateway.get_data(DEVICE.INTELLICHEM, KEY.CONFIGURATION)
+        chem_config_data = gateway.get_data(DEVICE.INTELLICHEM, GROUP.CONFIGURATION)
         try:
             ph = (
                 chem_config_data[VALUE.PH_SETPOINT][ATTR.VALUE]
@@ -233,7 +233,7 @@ async def cli(cli_args):
             await asyncio.sleep(3)
             await gateway.async_update()
             new_chem_config_data = gateway.get_data(
-                DEVICE.INTELLICHEM, KEY.CONFIGURATION
+                DEVICE.INTELLICHEM, GROUP.CONFIGURATION
             )
             print(
                 vFormat(new_chem_config_data[VALUE.PH_SETPOINT]),

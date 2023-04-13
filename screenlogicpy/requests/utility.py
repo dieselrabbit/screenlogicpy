@@ -5,7 +5,7 @@ from typing import Any
 from ..const import ScreenLogicError
 from ..const.common import UNIT
 from ..const.msg import HEADER_FORMAT, HEADER_LENGTH
-from ..const.data import ATTR, DEVICE, KEY, VALUE
+from ..const.data import ATTR, DEVICE, GROUP, VALUE
 
 if sys.version_info[:2] < (3, 11):
     from async_timeout import timeout as asyncio_timeout  # noqa F401
@@ -125,7 +125,7 @@ def getTemperatureUnit(data: dict):
     return (
         UNIT.CELSIUS
         if data.get(DEVICE.CONTROLLER, {})
-        .get(KEY.CONFIGURATION, {})
+        .get(GROUP.CONFIGURATION, {})
         .get(VALUE.IS_CELSIUS, {})
         .get(ATTR.VALUE)
         else UNIT.FAHRENHEIT

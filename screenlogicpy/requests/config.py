@@ -2,7 +2,7 @@
 import struct
 
 from ..const.msg import CODE
-from ..const.data import ATTR, DEVICE, KEY, VALUE, UNKNOWN
+from ..const.data import ATTR, DEVICE, GROUP, VALUE, UNKNOWN
 from ..device_const.system import CONTROLLER, EQUIPMENT_FLAG, EQUIPMENT_MASK
 from .protocol import ScreenLogicProtocol
 from .request import async_make_request
@@ -27,7 +27,7 @@ def decode_pool_config(buff: bytes, data: dict) -> dict:
 
     controller[VALUE.CONTROLLER_ID], offset = getSome("I", buff, 0)
 
-    controller_config: dict = controller.setdefault(KEY.CONFIGURATION, {})
+    controller_config: dict = controller.setdefault(GROUP.CONFIGURATION, {})
     body_type_setpoint: dict = controller_config.setdefault(ATTR.BODY_TYPE, {})
 
     for i in range(2):
@@ -58,11 +58,11 @@ def decode_pool_config(buff: bytes, data: dict) -> dict:
 
     controller_config[VALUE.CONTROLLER_DATA], offset = getSome("B", buff, offset)
 
-    controller_equipment: dict = controller.setdefault(KEY.EQUIPMENT, {})
+    controller_equipment: dict = controller.setdefault(GROUP.EQUIPMENT, {})
     equipFlags, offset = getSome("I", buff, offset)
 
     # Include only known flags.
-    controller_equipment[ATTR.FLAGS] = equipFlags & EQUIPMENT_MASK
+    controller_equipment[VALUE.FLAGS] = equipFlags & EQUIPMENT_MASK
 
     controller_equipment[VALUE.LIST] = [
         # What's needed? Friendly name or FLAG name?
@@ -88,7 +88,9 @@ def decode_pool_config(buff: bytes, data: dict) -> dict:
 
         circuit_indexed[ATTR.NAME], offset = getString(buff, offset)
 
-        circuit_indexed_config: dict = circuit_indexed.setdefault(KEY.CONFIGURATION, {})
+        circuit_indexed_config: dict = circuit_indexed.setdefault(
+            GROUP.CONFIGURATION, {}
+        )
         circuit_indexed_config[ATTR.NAME_INDEX], offset = getSome("B", buff, offset)
 
         func, offset = getSome("B", buff, offset)
@@ -97,12 +99,12 @@ def decode_pool_config(buff: bytes, data: dict) -> dict:
         interface, offset = getSome("B", buff, offset)
         circuit_indexed[ATTR.INTERFACE] = interface  # INTERFACE_GROUP(interface)
 
-        circuit_indexed_config[ATTR.FLAGS], offset = getSome("B", buff, offset)
+        circuit_indexed_config[VALUE.FLAGS], offset = getSome("B", buff, offset)
 
         color_set, offset = getSome("B", buff, offset)
         color_position, offset = getSome("B", buff, offset)
         color_stagger, offset = getSome("B", buff, offset)
-        circuit_indexed[KEY.COLOR] = {
+        circuit_indexed[GROUP.COLOR] = {
             ATTR.COLOR_SET: color_set,
             ATTR.COLOR_POSITION: color_position,
             ATTR.COLOR_STAGGER: color_stagger,
@@ -121,7 +123,7 @@ def decode_pool_config(buff: bytes, data: dict) -> dict:
     colorCount, offset = getSome("I", buff, offset)
     controller_config[VALUE.COLOR_COUNT] = colorCount
 
-    color: list = controller_config.setdefault(KEY.COLOR, [])
+    color: list = controller_config.setdefault(GROUP.COLOR, [])
 
     for i in range(colorCount):
         colorName, offset = getString(buff, offset)

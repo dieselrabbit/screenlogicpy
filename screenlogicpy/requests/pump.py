@@ -23,7 +23,7 @@ def decode_pump_status(buff: bytes, data: dict, pump_index: int) -> None:
 
     pump_indexed: dict = pump.setdefault(pump_index, {})
 
-    pump_indexed[VALUE.PUMP_TYPE], offset = getSome("I", buff, 0)
+    pump_indexed[VALUE.TYPE], offset = getSome("I", buff, 0)
     pump_state, offset = getSome("I", buff, offset)
     pump_indexed_state: dict = pump_indexed.setdefault(
         VALUE.STATE, {ATTR.NAME: "", ATTR.VALUE: 0}

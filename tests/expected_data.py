@@ -333,8 +333,13 @@ EXPECTED_CONFIG_DATA = {
 
 EXPECTED_STATUS_DATA = {
     "controller": {
-        "status": 1,
         "sensor": {
+            "state": {
+                "name": "Controller State",
+                "value": 1,
+                "device_type": "enum",
+                "enum_options": ["Unknown", "Ready", "Sync", "Service"],
+            },
             "freeze_mode": {"name": "Freeze Mode", "value": 0},
             "pool_delay": {"name": "Pool Delay", "value": 0},
             "spa_delay": {"name": "Spa Delay", "value": 0},
@@ -380,8 +385,8 @@ EXPECTED_STATUS_DATA = {
                 "value": 4,
                 "state_type": "measurement",
             },
-            "active_alarm": {
-                "name": "Active Alarm",
+            "active_alert": {
+                "name": "Active Alert",
                 "value": 1,
                 "device_type": "alarm",
             },
@@ -592,7 +597,7 @@ EXPECTED_STATUS_DATA = {
 EXPECTED_PUMP_DATA = {
     "pump": {
         0: {
-            "pump_type": 3,
+            "type": 3,
             "state": {"name": "Default Pump", "value": 0},
             "watts_now": {
                 "name": "Default Pump Watts Now",
@@ -884,8 +889,13 @@ EXPECTED_COMPLETE_DATA = {
                 "HYBRID_HEATER",
             ],
         },
-        "status": 1,
         "sensor": {
+            "state": {
+                "name": "Controller State",
+                "value": 1,
+                "device_type": "enum",
+                "enum_options": ["Unknown", "Ready", "Sync", "Service"],
+            },
             "freeze_mode": {"name": "Freeze Mode", "value": 0},
             "pool_delay": {"name": "Pool Delay", "value": 0},
             "spa_delay": {"name": "Spa Delay", "value": 0},
@@ -931,8 +941,8 @@ EXPECTED_COMPLETE_DATA = {
                 "value": 4,
                 "state_type": "measurement",
             },
-            "active_alarm": {
-                "name": "Active Alarm",
+            "active_alert": {
+                "name": "Active Alert",
                 "value": 1,
                 "device_type": "alarm",
             },
@@ -1249,7 +1259,7 @@ EXPECTED_COMPLETE_DATA = {
     "pump": {
         0: {
             "data": 70,
-            "pump_type": 3,
+            "type": 3,
             "state": {"name": "Pool Low Pump", "value": 0},
             "watts_now": {
                 "name": "Pool Low Pump Watts Now",

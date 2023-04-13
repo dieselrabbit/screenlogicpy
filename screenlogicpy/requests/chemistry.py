@@ -8,7 +8,7 @@ from ..const.common import (
     STATE_TYPE,
     UNIT,
 )
-from ..const.data import ATTR, DEVICE, KEY, VALUE, UNKNOWN
+from ..const.data import ATTR, DEVICE, GROUP, VALUE, UNKNOWN
 from ..device_const.chemistry import (
     ALARM_FLAG,
     ALERT_FLAG,
@@ -41,7 +41,7 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
     # unknown value
     intellichem[UNKNOWN(offset)], offset = getSome("B", buff, offset)  # byte offset 4
 
-    intellichem_sensor: dict = intellichem.setdefault(KEY.SENSOR, {})
+    intellichem_sensor: dict = intellichem.setdefault(GROUP.SENSOR, {})
 
     pH, offset = getSome(">H", buff, offset)  # 5
     intellichem_sensor[VALUE.PH_NOW] = {
@@ -59,7 +59,7 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
         ATTR.STATE_TYPE: STATE_TYPE.MEASUREMENT,
     }
 
-    intellichem_config: dict = intellichem.setdefault(KEY.CONFIGURATION, {})
+    intellichem_config: dict = intellichem.setdefault(GROUP.CONFIGURATION, {})
 
     pHSetpoint, offset = getSome(">H", buff, offset)  # 9
     intellichem_config[VALUE.PH_SETPOINT] = {
@@ -75,7 +75,7 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
         ATTR.UNIT: UNIT.MILLIVOLT,
     }
 
-    intellichem_dosing: dict = intellichem.setdefault(VALUE.DOSE_STATUS, {})
+    intellichem_dosing: dict = intellichem.setdefault(GROUP.DOSE_STATUS, {})
 
     pHDoseTime, offset = getSome(">I", buff, offset)  # 13
     intellichem_dosing[VALUE.PH_LAST_DOSE_TIME] = {
@@ -179,10 +179,10 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
         ATTR.STATE_TYPE: STATE_TYPE.MEASUREMENT,
     }
 
-    intellichem_alarm: dict = intellichem.setdefault(KEY.ALARM, {})
+    intellichem_alarm: dict = intellichem.setdefault(GROUP.ALARM, {})
 
     alarms, offset = getSome("B", buff, offset)  # 37 (32)
-    intellichem_alarm[ATTR.FLAGS] = alarms
+    intellichem_alarm[VALUE.FLAGS] = alarms
 
     intellichem_alarm[VALUE.FLOW_ALARM] = {
         ATTR.NAME: "Flow Alarm",
@@ -225,10 +225,10 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
         ATTR.DEVICE_TYPE: DEVICE_TYPE.ALARM,
     }
 
-    intellichem_alert: dict = intellichem.setdefault(KEY.ALERT, {})
+    intellichem_alert: dict = intellichem.setdefault(GROUP.ALERT, {})
 
     alerts, offset = getSome("B", buff, offset)  # 38 (33)
-    intellichem_alert[ATTR.FLAGS] = alerts
+    intellichem_alert[VALUE.FLAGS] = alerts
 
     intellichem_alert[VALUE.PH_LOCKOUT] = {
         ATTR.NAME: "pH Lockout",
@@ -244,7 +244,7 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
     }
 
     dose_flags, offset = getSome("B", buff, offset)  # 39 (34)
-    intellichem_dosing[ATTR.FLAGS] = dose_flags
+    intellichem_dosing[VALUE.FLAGS] = dose_flags
 
     intellichem_dosing[VALUE.PH_DOSING_STATE] = {
         ATTR.NAME: "pH Dosing State",
@@ -260,7 +260,7 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
     }
 
     config_flags, offset = getSome("B", buff, offset)  # 40 (35)
-    intellichem_config[ATTR.FLAGS] = config_flags
+    intellichem_config[VALUE.FLAGS] = config_flags
 
     vMinor, offset = getSome("B", buff, offset)  # 41 (36)
     vMajor, offset = getSome("B", buff, offset)  # 42 (37)
@@ -269,9 +269,9 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
         ATTR.VALUE: f"{vMajor}.{vMinor:03}",
     }
 
-    intellichem_balance: dict = intellichem.setdefault(VALUE.WATER_BALANCE, {})
+    intellichem_balance: dict = intellichem.setdefault(GROUP.WATER_BALANCE, {})
     balance_flags, offset = getSome("B", buff, offset)  # 43
-    intellichem_balance[ATTR.FLAGS] = balance_flags
+    intellichem_balance[VALUE.FLAGS] = balance_flags
 
     # SI <= -0.41
     intellichem_balance[VALUE.CORROSIVE] = {
