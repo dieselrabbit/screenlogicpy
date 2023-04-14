@@ -256,7 +256,7 @@ class ScreenLogicGateway:
             next = get_next(key)
             if next is None:
                 if strict:
-                    raise KeyError(f"{key} not found")
+                    raise KeyError(f"'{key}' not found in '{keypath}'")
                 return None
         return next
 
