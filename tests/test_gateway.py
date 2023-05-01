@@ -61,6 +61,125 @@ async def test_gateway_late_connect(MockProtocolAdapter):
         await gateway.async_disconnect()
 
 
+@pytest.mark.parametrize(
+    "path, expected",
+    [
+        (
+            ("controller", "sensor", "air_temperature"),
+            {
+                "name": "Air Temperature",
+                "value": 57,
+                "unit": "°F",
+                "device_type": "temperature",
+                "state_type": "measurement",
+            },
+        ),
+        (
+            ("controller", "equipment"),
+            {
+                "flags": 98360,
+                "list": [
+                    "INTELLIBRITE",
+                    "INTELLIFLO_0",
+                    "INTELLIFLO_1",
+                    "INTELLICHEM",
+                    "HYBRID_HEATER",
+                ],
+            },
+        ),
+        (
+            ("adapter",),
+            {"firmware": {"name": "Protocol Adapter Firmware", "value": "fake 0.0.3"}},
+        ),
+        (
+            ("intellichem", "alarm", "does_not_exist"),
+            None,
+        ),
+        (
+            ("controller", "configuration", "color", 20),
+            None,
+        ),
+    ],
+)
+def test_get_data(MockConnectedGateway: ScreenLogicGateway, path, expected):
+    assert MockConnectedGateway.get_data(*path) == expected
+
+
+@pytest.mark.parametrize(
+    "path, expected",
+    [
+        (
+            ("controller", "configuration", "color", 2),
+            (0, 255, 80),
+        ),
+        (
+            ("controller", "sensor", "air_temperature"),
+            57,
+        ),
+        (
+            ("circuit", 502),
+            1,
+        ),
+        (
+            ("intellichem", "alarm", "does_not_exist"),
+            None,
+        ),
+        (
+            ("controller", "configuration", "color", 20),
+            None,
+        ),
+    ],
+)
+def test_get_value(MockConnectedGateway: ScreenLogicGateway, path, expected):
+    assert MockConnectedGateway.get_value(*path) == expected
+
+
+@pytest.mark.parametrize(
+    "path, expected",
+    [
+        (
+            ("controller", "configuration", "color", 2),
+            "Green",
+        ),
+        (
+            ("controller", "sensor", "air_temperature"),
+            "Air Temperature",
+        ),
+        (
+            ("circuit", 502),
+            "Pool Light",
+        ),
+        (
+            ("intellichem", "alarm", "does_not_exist"),
+            None,
+        ),
+        (
+            ("controller", "configuration", "color", 20),
+            None,
+        ),
+    ],
+)
+def test_get_name(MockConnectedGateway: ScreenLogicGateway, path, expected):
+    assert MockConnectedGateway.get_name(*path) == expected
+
+
+def test_get_strict(MockConnectedGateway: ScreenLogicGateway):
+    with pytest.raises(KeyError):
+        MockConnectedGateway.get_data(
+            "intellichem", "alarm", "does_not_exist", strict=True
+        )
+
+    with pytest.raises(KeyError):
+        MockConnectedGateway.get_value(
+            "controller", "configuration", "body_type", 0, strict=True
+        )
+
+    with pytest.raises(KeyError):
+        MockConnectedGateway.get_name(
+            "controller", "configuration", "color", 20, strict=True
+        )
+
+
 @pytest.mark.asyncio
 async def test_async_set_circuit(
     event_loop: asyncio.AbstractEventLoop, MockConnectedGateway
