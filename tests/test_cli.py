@@ -8,10 +8,12 @@ from .const_data import (
     FAKE_GATEWAY_NAME,
     FAKE_GATEWAY_PORT,
     FAKE_CONNECT_INFO,
+)
+from .expected_data import (
+    EXPECTED_COMPLETE_DATA,
     EXPECTED_DASHBOARD,
     EXPECTED_VERBOSE_PREAMBLE,
 )
-from .expected_data import EXPECTED_COMPLETE_DATA
 
 
 async def run_cli_test(

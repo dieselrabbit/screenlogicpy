@@ -1,3 +1,44 @@
+EXPECTED_DASHBOARD = """Discovered 'Fake: 00-00-00' at 127.0.0.1:6448
+EasyTouch2 8
+**************************
+Pool temperature is last 56°F
+Pool Heat Set Point: 86°F
+Pool Heat: Off
+Pool Heat Mode: Off
+--------------------------
+Spa temperature is last 97°F
+Spa Heat Set Point: 97°F
+Spa Heat: Off
+Spa Heat Mode: Heater
+--------------------------
+**************************
+ ID  STATE  NAME
+--------------------------
+500    Off  Spa
+501    Off  Waterfall
+502     On  Pool Light
+503     On  Spa Light
+504     On  Cleaner
+505    Off  Pool Low
+506     On  Yard Light
+507    Off  Aux 6
+508    Off  Pool High
+510    Off  Feature 1
+511    Off  Feature 2
+512    Off  Feature 3
+513    Off  Feature 4
+514    Off  Feature 5
+515    Off  Feature 6
+516    Off  Feature 7
+517    Off  Feature 8
+519    Off  AuxEx
+**************************"""
+
+EXPECTED_VERBOSE_PREAMBLE = """Discovered 'Fake: 00-00-00' at 127.0.0.1:6448
+EasyTouch2 8
+Version: fake 0.0.3
+"""
+
 EXPECTED_VERSION_DATA = {
     "adapter": {
         "firmware": {
