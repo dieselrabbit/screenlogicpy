@@ -247,7 +247,7 @@ class ScreenLogicGateway:
                 return None
             if isinstance(current, dict):
                 return current.get(key)
-            if isinstance(current, list) and key in current:
+            if isinstance(current, list) and key in range(len(current)):
                 return current[key]
             return None
 
@@ -257,7 +257,7 @@ class ScreenLogicGateway:
             if next is None:
                 if strict:
                     raise KeyError(f"'{key}' not found in '{keypath}'")
-                return None
+                break
         return next
 
     def get_value(self, *keypath, strict: bool = False):
