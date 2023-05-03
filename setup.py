@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="screenlogicpy",
-    version="0.8.2",
+    version="0.9.0",
     author="Kevin Worrel",
     author_email="kevinworrel@yahoo.com",
     description="Interface for Pentair ScreenLogic connected pool controllers over IP via Python",
@@ -15,7 +15,6 @@ setuptools.setup(
     url="https://github.com/dieselrabbit/screenlogicpy",
     packages=setuptools.find_packages(include=["screenlogicpy", "screenlogicpy.*"]),
     classifiers=[
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
@@ -23,7 +22,7 @@ setuptools.setup(
         "Operating System :: OS Independent",
         "Development Status :: 3 - Alpha",
     ],
-    python_requires=">=3.8",
+    python_requires=">=3.9",
     install_requires=[
         "async_timeout>=3.0.0",
     ],

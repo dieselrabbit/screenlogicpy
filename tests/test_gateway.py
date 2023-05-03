@@ -7,7 +7,6 @@ from unittest.mock import patch
 
 
 from tests.const_data import (
-    EXPECTED_COMPLETE_DATA,
     FAKE_CONNECT_INFO,
     FAKE_GATEWAY_ADDRESS,
     FAKE_GATEWAY_MAC,
@@ -16,10 +15,12 @@ from tests.const_data import (
     FAKE_GATEWAY_VERSION,
     FAKE_STATUS_RESPONSE,
 )
+from tests.expected_data import EXPECTED_COMPLETE_DATA
 from tests.fake_gateway import error_resp, expected_resp
 
 from screenlogicpy import ScreenLogicGateway
-from screenlogicpy.const import CODE, MESSAGE, ScreenLogicRequestError
+from screenlogicpy.const.common import ScreenLogicRequestError
+from screenlogicpy.const.msg import CODE
 
 
 @pytest.mark.asyncio
@@ -58,6 +59,125 @@ async def test_gateway_late_connect(MockProtocolAdapter):
         assert gateway.mac == FAKE_GATEWAY_MAC
         assert gateway.is_connected
         await gateway.async_disconnect()
+
+
+@pytest.mark.parametrize(
+    "path, expected",
+    [
+        (
+            ("controller", "sensor", "air_temperature"),
+            {
+                "name": "Air Temperature",
+                "value": 57,
+                "unit": "°F",
+                "device_type": "temperature",
+                "state_type": "measurement",
+            },
+        ),
+        (
+            ("controller", "equipment"),
+            {
+                "flags": 98360,
+                "list": [
+                    "INTELLIBRITE",
+                    "INTELLIFLO_0",
+                    "INTELLIFLO_1",
+                    "INTELLICHEM",
+                    "HYBRID_HEATER",
+                ],
+            },
+        ),
+        (
+            ("adapter",),
+            {"firmware": {"name": "Protocol Adapter Firmware", "value": "fake 0.0.3"}},
+        ),
+        (
+            ("intellichem", "alarm", "does_not_exist"),
+            None,
+        ),
+        (
+            ("controller", "configuration", "color", 20),
+            None,
+        ),
+    ],
+)
+def test_get_data(MockConnectedGateway: ScreenLogicGateway, path, expected):
+    assert MockConnectedGateway.get_data(*path) == expected
+
+
+@pytest.mark.parametrize(
+    "path, expected",
+    [
+        (
+            ("controller", "configuration", "color", 2),
+            (0, 255, 80),
+        ),
+        (
+            ("controller", "sensor", "air_temperature"),
+            57,
+        ),
+        (
+            ("circuit", 502),
+            1,
+        ),
+        (
+            ("intellichem", "alarm", "does_not_exist"),
+            None,
+        ),
+        (
+            ("controller", "configuration", "color", 20),
+            None,
+        ),
+    ],
+)
+def test_get_value(MockConnectedGateway: ScreenLogicGateway, path, expected):
+    assert MockConnectedGateway.get_value(*path) == expected
+
+
+@pytest.mark.parametrize(
+    "path, expected",
+    [
+        (
+            ("controller", "configuration", "color", 2),
+            "Green",
+        ),
+        (
+            ("controller", "sensor", "air_temperature"),
+            "Air Temperature",
+        ),
+        (
+            ("circuit", 502),
+            "Pool Light",
+        ),
+        (
+            ("intellichem", "alarm", "does_not_exist"),
+            None,
+        ),
+        (
+            ("controller", "configuration", "color", 20),
+            None,
+        ),
+    ],
+)
+def test_get_name(MockConnectedGateway: ScreenLogicGateway, path, expected):
+    assert MockConnectedGateway.get_name(*path) == expected
+
+
+def test_get_strict(MockConnectedGateway: ScreenLogicGateway):
+    with pytest.raises(KeyError):
+        MockConnectedGateway.get_data(
+            "intellichem", "alarm", "does_not_exist", strict=True
+        )
+
+    with pytest.raises(KeyError):
+        MockConnectedGateway.get_value(
+            "controller", "configuration", "body_type", 0, strict=True
+        )
+
+    with pytest.raises(KeyError):
+        MockConnectedGateway.get_name(
+            "controller", "configuration", "color", 20, strict=True
+        )
 
 
 @pytest.mark.asyncio
@@ -105,7 +225,7 @@ async def test_async_set_circuit_retry(
             req_fut(error_resp(button_code)),
             req_fut(expected_resp(button_code)),
         ),
-    ) as mockRequest, patch.object(MESSAGE, "COM_RETRY_WAIT", 1):
+    ) as mockRequest, patch("screenlogicpy.const.msg.COM_RETRY_WAIT", 1):
         gateway = MockConnectedGateway
         assert await gateway.async_set_circuit(circuit_id, circuit_state)
         await gateway.async_disconnect()
@@ -143,8 +263,8 @@ async def test_async_set_circuit_timeout(
         ),
     ) as mockRequest, patch.object(
         ScreenLogicGateway, "_async_connected_request", patched_request
-    ), patch.object(
-        MESSAGE, "COM_RETRY_WAIT", 1
+    ), patch(
+        "screenlogicpy.const.msg.COM_RETRY_WAIT", 1
     ):
         gateway: ScreenLogicGateway = MockConnectedGateway
         with pytest.raises(ScreenLogicRequestError) as e_info:
@@ -252,7 +372,7 @@ async def test_async_send_message_retry(
     with patch(
         "screenlogicpy.requests.gateway.ScreenLogicProtocol.await_send_message",
         side_effect=(event_loop.create_future(), event_loop.create_future(), result),
-    ) as mockRequest, patch.object(MESSAGE, "COM_RETRY_WAIT", 1):
+    ) as mockRequest, patch("screenlogicpy.const.msg.COM_RETRY_WAIT", 1):
         gateway = MockConnectedGateway
         gateway.set_max_retries(3)
         response = await gateway.async_send_message(

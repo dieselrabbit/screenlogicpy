@@ -4,21 +4,20 @@ import json
 import argparse
 from screenlogicpy.discovery import async_discover
 from screenlogicpy.gateway import ScreenLogicGateway
-from screenlogicpy.const import (
-    BODY_TYPE,
-    COLOR_MODE,
-    CHEMISTRY,
-    DATA,
-    EQUIPMENT,
-    HEAT_MODE,
+from screenlogicpy.const.common import (
     ON_OFF,
     RANGE,
     SL_GATEWAY_IP,
     SL_GATEWAY_NAME,
     SL_GATEWAY_PORT,
+    SLIntEnum,
     ScreenLogicError,
     ScreenLogicWarning,
 )
+from screenlogicpy.device_const.chemistry import RANGE_ORP_SETPOINT, RANGE_PH_SETPOINT
+from screenlogicpy.device_const.heat import HEAT_MODE
+from screenlogicpy.device_const.system import BODY_TYPE, COLOR_MODE
+from screenlogicpy.const.data import ATTR, DEVICE, GROUP, VALUE
 
 
 def cliFormat(name: str):
@@ -51,169 +50,155 @@ async def cli(cli_args):
     def vFormat(slElement: dict, slClass=None):
         if args.verbose:
             if slClass:
-                return (
-                    f"{slElement['name']}: {slClass.NAME_FOR_NUM[slElement['value']]}"
-                )
+                if issubclass(slClass, SLIntEnum):
+                    return f"{slElement[ATTR.NAME]}: {slClass(slElement[ATTR.VALUE]).title}"
+                else:
+                    return f"{slElement[ATTR.NAME]}: {slClass.NAME_FOR_NUM[slElement[ATTR.VALUE]]}"
             else:
-                return f"{slElement['name']}: {slElement['value']}"
+                return f"{slElement[ATTR.NAME]}: {slElement[ATTR.VALUE]}"
         else:
-            return slElement["value"]
+            if slClass and issubclass(slClass, SLIntEnum):
+                return slClass(slElement[ATTR.VALUE]).value
+            else:
+                return slElement[ATTR.VALUE]
 
     # Parser functions
     async def async_get_circuit():
-        if not int(args.circuit_num) in gateway.get_data()[DATA.KEY_CIRCUITS]:
+        circuit_id = int(args.circuit_num)
+        if circuit_id not in gateway.get_data(DEVICE.CIRCUIT):
             print(f"Invalid circuit number: {args.circuit_num}")
             return 4
         print(
             vFormat(
-                gateway.get_data()[DATA.KEY_CIRCUITS][int(args.circuit_num)],
+                gateway.get_data(DEVICE.CIRCUIT, circuit_id),
                 ON_OFF,
             )
         )
         return 0
 
     async def async_set_circuit():
-        state = 0
-        if args.state == "1" or args.state.lower() == "on":
-            state = 1
-        if not int(args.circuit_num) in gateway.get_data()[DATA.KEY_CIRCUITS]:
+        state = ON_OFF.parse(args.state).value
+        circuit_id = int(args.circuit_num)
+        if circuit_id not in gateway.get_data(DEVICE.CIRCUIT):
             print(f"Invalid circuit number: {args.circuit_num}")
             return 4
-        if await gateway.async_set_circuit(int(args.circuit_num), state):
+        if await gateway.async_set_circuit(circuit_id, state):
             await gateway.async_update()
         else:
             return 4
         print(
             vFormat(
-                gateway.get_data()[DATA.KEY_CIRCUITS][int(args.circuit_num)],
+                gateway.get_data(DEVICE.CIRCUIT, circuit_id),
                 ON_OFF,
             )
         )
         return 0
 
     async def async_get_heat_mode():
-        body = 0
-        if args.body == "1" or args.body.lower() == "spa":
-            body = 1
+        body = BODY_TYPE.parse(args.body).value
         print(
             vFormat(
-                gateway.get_data()[DATA.KEY_BODIES][int(body)]["heat_mode"],
+                gateway.get_data(DEVICE.BODY, int(body), VALUE.HEAT_MODE),
                 HEAT_MODE,
             )
         )
         return 0
 
     async def async_set_heat_mode():
-        body = 0
-        mode = 0
-        if args.body == "1" or args.body.lower() == "spa":
-            body = 1
-        if args.mode in cliFormatDict(HEAT_MODE.NUM_FOR_NAME):
-            mode = cliFormatDict(HEAT_MODE.NUM_FOR_NAME)[args.mode]
-        else:
-            mode = int(args.mode)
-        if await gateway.async_set_heat_mode(int(body), mode):
+        body = BODY_TYPE.parse(args.body).value
+        mode = HEAT_MODE.parse(args.mode).value
+        if await gateway.async_set_heat_mode(body, mode):
             await gateway.async_update()
         else:
             return 8
         print(
             vFormat(
-                gateway.get_data()[DATA.KEY_BODIES][int(body)]["heat_mode"],
+                gateway.get_data(DEVICE.BODY, body, VALUE.HEAT_MODE),
                 HEAT_MODE,
             )
         )
         return 0
 
     async def async_get_heat_temp():
-        body = 0
-        if args.body == "1" or args.body.lower() == "spa":
-            body = 1
+        body = BODY_TYPE.parse(args.body).value
         print(
             vFormat(
-                gateway.get_data()[DATA.KEY_BODIES][int(body)]["heat_set_point"],
+                gateway.get_data(DEVICE.BODY, body, VALUE.HEAT_SETPOINT),
             )
         )
         return 0
 
     async def async_set_heat_temp():
-        body = 0
-        if args.body == "1" or args.body.lower() == "spa":
-            body = 1
+        body = BODY_TYPE.parse(args.body).value
         if args.temp != -1:
-            if await gateway.async_set_heat_temp(int(body), int(args.temp)):
+            if await gateway.async_set_heat_temp(body, int(args.temp)):
                 await gateway.async_update()
             else:
                 return 16
         print(
             vFormat(
-                gateway.get_data()[DATA.KEY_BODIES][int(body)]["heat_set_point"],
+                gateway.get_data(DEVICE.BODY, body, VALUE.HEAT_SETPOINT),
             )
         )
         return 0
 
     async def async_get_heat_state():
-        body = 0
-        if args.body == "1" or args.body.lower() == "spa":
-            body = 1
+        body = BODY_TYPE.parse(args.body).value
         print(
             vFormat(
-                gateway.get_data()[DATA.KEY_BODIES][int(body)]["heat_status"],
+                gateway.get_data(DEVICE.BODY, body, VALUE.HEAT_STATE),
                 ON_OFF,
             )
         )
         return 0
 
     async def async_get_current_temp():
-        body = 0
-        if args.body == "1" or args.body.lower() == "spa":
-            body = 1
+        body = BODY_TYPE.parse(args.body)
         print(
             vFormat(
-                gateway.get_data()[DATA.KEY_BODIES][int(body)]["last_temperature"],
+                gateway.get_data(DEVICE.BODY, body, VALUE.LAST_TEMPERATURE),
             )
         )
         return 0
 
     async def async_set_color_light():
-        mode = cliFormatDict(COLOR_MODE.NUM_FOR_NAME).get(args.mode)
+        mode = COLOR_MODE.parse(args.mode).value
         if mode is None:
             mode = int(args.mode)
         if await gateway.async_set_color_lights(mode):
             print(
-                f"Set color mode to {COLOR_MODE.NAME_FOR_NUM[mode]}"
-                if args.verbose
-                else mode
+                f"Set color mode to {COLOR_MODE(mode).title}" if args.verbose else mode
             )
             return 0
         return 32
 
     async def async_set_scg_config():
         if args.scg_pool == "*" and args.scg_spa == "*":
-            print("No new SCG values. Nothing to do.")
+            print("No new Chlorinator values. Nothing to do.")
             return 65
 
-        scg_data = gateway.get_data()[DATA.KEY_SCG]
+        scg_config_data = gateway.get_data(DEVICE.SCG, GROUP.CONFIGURATION)
         try:
             scg_1 = (
-                scg_data["scg_level1"]["value"]
+                scg_config_data[VALUE.POOL_SETPOINT][ATTR.VALUE]
                 if args.scg_pool == "*"
                 else int(args.scg_pool)
             )
             scg_2 = (
-                scg_data["scg_level2"]["value"]
+                scg_config_data[VALUE.SPA_SETPOINT][ATTR.VALUE]
                 if args.scg_spa == "*"
                 else int(args.scg_spa)
             )
         except ValueError:
-            print("Invalid SCG value")
+            print("Invalid Chlorinator value")
             return 66
 
         if await gateway.async_set_scg_config(scg_1, scg_2):
             await gateway.async_update()
-            new_data = gateway.get_data()
+            new_scg_config_data = gateway.get_data(DEVICE.SCG, GROUP.CONFIGURATION)
             print(
-                vFormat(new_data[DATA.KEY_SCG]["scg_level1"]),
-                vFormat(new_data[DATA.KEY_SCG]["scg_level2"]),
+                vFormat(new_scg_config_data[VALUE.POOL_SETPOINT]),
+                vFormat(new_scg_config_data[VALUE.SPA_SETPOINT]),
             )
             return 0
         return 64
@@ -223,15 +208,15 @@ async def cli(cli_args):
             print("No new setpoint values. Nothing to do.")
             return 129
 
-        chem_data = gateway.get_data()[DATA.KEY_CHEMISTRY]
+        chem_config_data = gateway.get_data(DEVICE.INTELLICHEM, GROUP.CONFIGURATION)
         try:
             ph = (
-                chem_data["ph_setpoint"]["value"]
+                chem_config_data[VALUE.PH_SETPOINT][ATTR.VALUE]
                 if args.ph_setpoint == "*"
                 else float(args.ph_setpoint)
             )
             orp = (
-                chem_data["orp_setpoint"]["value"]
+                chem_config_data[VALUE.ORP_SETPOINT][ATTR.VALUE]
                 if args.orp_setpoint == "*"
                 else int(args.orp_setpoint)
             )
@@ -239,22 +224,25 @@ async def cli(cli_args):
             print("Invalid Chemistry Setpoint value")
             return 130
 
-        ch = chem_data["calcium_harness"]["value"]
-        ta = chem_data["total_alkalinity"]["value"]
-        ca = chem_data["cya"]["value"]
-        sa = chem_data["salt_tds_ppm"]["value"]
+        ch = chem_config_data[VALUE.CALCIUM_HARNESS][ATTR.VALUE]
+        ta = chem_config_data[VALUE.TOTAL_ALKALINITY][ATTR.VALUE]
+        ca = chem_config_data[VALUE.CYA][ATTR.VALUE]
+        sa = chem_config_data[VALUE.SALT_TDS_PPM][ATTR.VALUE]
 
         if await gateway.async_set_chem_data(ph, orp, ch, ta, ca, sa):
             await asyncio.sleep(3)
             await gateway.async_update()
-            new_data = gateway.get_data()
+            new_chem_config_data = gateway.get_data(
+                DEVICE.INTELLICHEM, GROUP.CONFIGURATION
+            )
             print(
-                vFormat(new_data[DATA.KEY_CHEMISTRY]["ph_setpoint"]),
-                vFormat(new_data[DATA.KEY_CHEMISTRY]["orp_setpoint"]),
+                vFormat(new_chem_config_data[VALUE.PH_SETPOINT]),
+                vFormat(new_chem_config_data[VALUE.ORP_SETPOINT]),
             )
             return 0
         return 128
 
+    # Begin Parser Setup
     async def async_get_json():
         print(json.dumps(gateway.get_data(), indent=2))
         return 0
@@ -290,7 +278,7 @@ async def cli(cli_args):
     get_circuit_parser.add_argument(**ARGUMENT_CIRCUIT_NUM)
     get_circuit_parser.set_defaults(async_func=async_get_circuit)
 
-    body_options = optionsFromDict(BODY_TYPE.NAME_FOR_NUM)
+    body_options = BODY_TYPE.parsable()
     ARGUMENT_BODY = {
         "dest": "body",
         "metavar": "BODY",
@@ -322,7 +310,7 @@ async def cli(cli_args):
     set_subparsers = set_parser.add_subparsers(dest="set_option")
     set_subparsers.required = True
 
-    on_off_options = optionsFromDict(ON_OFF.NAME_FOR_NUM)
+    on_off_options = ON_OFF.parsable()
     set_circuit_parser = set_subparsers.add_parser("circuit", aliases=["c"])
     set_circuit_parser.add_argument(**ARGUMENT_CIRCUIT_NUM)
     set_circuit_parser.add_argument(
@@ -333,7 +321,7 @@ async def cli(cli_args):
         help=f"State to set. One of {on_off_options}",
     )
 
-    cl_options = optionsFromDict(COLOR_MODE.NAME_FOR_NUM)
+    cl_options = COLOR_MODE.parsable()
     set_circuit_parser.set_defaults(async_func=async_set_circuit)
     set_color_light_parser = set_subparsers.add_parser("color-lights", aliases=["cl"])
     set_color_light_parser.add_argument(
@@ -347,7 +335,7 @@ async def cli(cli_args):
 
     set_heat_mode_parser = set_subparsers.add_parser("heat-mode", aliases=["hm"])
     set_heat_mode_parser.add_argument(**ARGUMENT_BODY)
-    hm_options = optionsFromDict(HEAT_MODE.NAME_FOR_NUM)
+    hm_options = HEAT_MODE.parsable()
     set_heat_mode_parser.add_argument(
         "mode",
         metavar="MODE",
@@ -392,14 +380,14 @@ async def cli(cli_args):
         type=str,
         metavar="PH_SETPOINT",
         default=None,
-        help=f"PH set point for IntelliChem. {CHEMISTRY.RANGE_PH_SETPOINT[RANGE.MIN]}-{CHEMISTRY.RANGE_PH_SETPOINT[RANGE.MAX]}, or * to keep current value.",
+        help=f"PH set point for IntelliChem. {RANGE_PH_SETPOINT[RANGE.MIN]}-{RANGE_PH_SETPOINT[RANGE.MAX]}, or * to keep current value.",
     )
     set_chem_data_parser.add_argument(
         "orp_setpoint",
         type=str,
         metavar="ORP_SETPOINT",
         default=None,
-        help=f"ORP set point for IntelliChem. {CHEMISTRY.RANGE_ORP_SETPOINT[RANGE.MIN]}-{CHEMISTRY.RANGE_ORP_SETPOINT[RANGE.MAX]}, or * to keep current value.",
+        help=f"ORP set point for IntelliChem. {RANGE_ORP_SETPOINT[RANGE.MIN]}-{RANGE_ORP_SETPOINT[RANGE.MAX]}, or * to keep current value.",
     )
     set_chem_data_parser.set_defaults(async_func=async_set_chem_data)
 
@@ -450,64 +438,56 @@ async def cli(cli_args):
 
         await gateway.async_update()
 
-        if DATA.KEY_CONFIG not in gateway.get_data():
+        if DEVICE.CONTROLLER not in gateway.get_data():
             return 1
 
         def print_gateway():
-            verb = "Using"
-            if discovered:
-                verb = "Discovered"
+            verb = "Discovered" if discovered else "Using"
             print(
                 "{} '{}' at {}:{}".format(verb, gateway.name, gateway.ip, gateway.port)
             )
-            print(
-                EQUIPMENT.CONTROLLER_HARDWARE[
-                    gateway.get_data()[DATA.KEY_CONFIG]["controller_type"]
-                ][gateway.get_data()[DATA.KEY_CONFIG]["hardware_type"]]
-            )
+            print(gateway.get_value(DEVICE.CONTROLLER, VALUE.MODEL))
             if args.verbose:
                 print(f"Version: {gateway.version}")
 
         def print_circuits():
             print("{}  {}  {}".format("ID".rjust(3), "STATE", "NAME"))
             print("--------------------------")
-            for id in gateway.get_data()[DATA.KEY_CIRCUITS]:
-                circuit = gateway.get_data()[DATA.KEY_CIRCUITS][int(id)]
+            for id, circuit in gateway.get_data(DEVICE.CIRCUIT).items():
                 print(
                     "{}  {}  {}".format(
-                        circuit["id"],
-                        ON_OFF.NAME_FOR_NUM[circuit["value"]].rjust(5),
-                        circuit["name"],
+                        id,
+                        ON_OFF(circuit[ATTR.VALUE]).title.rjust(5),
+                        circuit[ATTR.NAME],
                     )
                 )
 
         def print_heat():
-            for id in gateway.get_data()[DATA.KEY_BODIES]:
-                body = gateway.get_data()[DATA.KEY_BODIES][int(id)]
+            for body in gateway.get_data(DEVICE.BODY).values():
                 print(
                     "{} temperature is last {}{}".format(
-                        BODY_TYPE.NAME_FOR_NUM[body["body_type"]["value"]],
-                        body["last_temperature"]["value"],
-                        body["last_temperature"]["unit"],
+                        BODY_TYPE(body[ATTR.BODY_TYPE]).title,
+                        body[VALUE.LAST_TEMPERATURE][ATTR.VALUE],
+                        body[VALUE.LAST_TEMPERATURE][ATTR.UNIT],
                     )
                 )
                 print(
                     "{}: {}{}".format(
-                        body["heat_set_point"]["name"],
-                        body["heat_set_point"]["value"],
-                        body["last_temperature"]["unit"],
+                        body[VALUE.HEAT_SETPOINT][ATTR.NAME],
+                        body[VALUE.HEAT_SETPOINT][ATTR.VALUE],
+                        body[VALUE.LAST_TEMPERATURE][ATTR.UNIT],
                     )
                 )
                 print(
                     "{}: {}".format(
-                        body["heat_status"]["name"],
-                        HEAT_MODE.NAME_FOR_NUM[body["heat_status"]["value"]],
+                        body[VALUE.HEAT_STATE][ATTR.NAME],
+                        HEAT_MODE(body[VALUE.HEAT_STATE][ATTR.VALUE]).title,
                     )
                 )
                 print(
                     "{}: {}".format(
-                        body["heat_mode"]["name"],
-                        HEAT_MODE.NAME_FOR_NUM[body["heat_mode"]["value"]],
+                        body[VALUE.HEAT_MODE][ATTR.NAME],
+                        HEAT_MODE(body[VALUE.HEAT_MODE][ATTR.VALUE]).title,
                     )
                 )
                 print("--------------------------")

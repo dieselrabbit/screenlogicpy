@@ -1,6 +1,10 @@
 import struct
 
-from ..const import CODE, DATA, MESSAGE, STATE_TYPE, UNIT
+from ..const.common import STATE_TYPE, UNIT
+from ..const.msg import CODE, COM_MAX_RETRIES
+from ..const.data import ATTR, DEVICE, GROUP, VALUE
+from ..device_const.scg import LIMIT_FOR_BODY, MAX_SC_RUNTIME
+from ..device_const.system import BODY_TYPE
 from .protocol import ScreenLogicProtocol
 from .request import async_make_request
 from .utility import getSome
@@ -17,47 +21,61 @@ async def async_request_scg_config(
 
 
 def decode_scg_config(buff: bytes, data: dict) -> None:
-    scg = data.setdefault(DATA.KEY_SCG, {})
+    scg: dict = data.setdefault(DEVICE.SCG, {})
 
-    present, offset = getSome("I", buff, 0)  # 0
-    scg["scg_present"] = present
+    scg[VALUE.SCG_PRESENT], offset = getSome("I", buff, 0)  # 0
 
-    status, offset = getSome("I", buff, offset)  # 4
-    scg["scg_status"] = {
-        "name": "SCG Status",
-        "value": status,
+    scg_sensor: dict = scg.setdefault(GROUP.SENSOR, {})
+
+    state, offset = getSome("I", buff, offset)  # 4
+    scg_sensor[VALUE.STATE] = {
+        ATTR.NAME: "Chlorinator",
+        ATTR.VALUE: state,
     }
 
+    scg_config: dict = scg.setdefault(GROUP.CONFIGURATION, {})
+
     level1, offset = getSome("I", buff, offset)  # 8
-    scg["scg_level1"] = {
-        "name": "Pool SCG Level",
-        "value": level1,
-        "unit": UNIT.PERCENT,
+    scg_config[VALUE.POOL_SETPOINT] = {
+        ATTR.NAME: "Pool Chlorinator Setpoint",
+        ATTR.VALUE: level1,
+        ATTR.UNIT: UNIT.PERCENT,
+        ATTR.MIN_SETPOINT: 0,
+        ATTR.MAX_SETPOINT: LIMIT_FOR_BODY[BODY_TYPE.POOL],
+        ATTR.STEP: 5,
+        ATTR.BODY_TYPE: BODY_TYPE.POOL.value,
     }
 
     level2, offset = getSome("I", buff, offset)  # 12
-    scg["scg_level2"] = {
-        "name": "Spa SCG Level",
-        "value": level2,
-        "unit": UNIT.PERCENT,
+    scg_config[VALUE.SPA_SETPOINT] = {
+        ATTR.NAME: "Spa Chlorinator Setpoint",
+        ATTR.VALUE: level2,
+        ATTR.UNIT: UNIT.PERCENT,
+        ATTR.MIN_SETPOINT: 0,
+        ATTR.MAX_SETPOINT: LIMIT_FOR_BODY[BODY_TYPE.SPA],
+        ATTR.STEP: 5,
+        ATTR.BODY_TYPE: BODY_TYPE.SPA.value,
     }
 
     salt, offset = getSome("I", buff, offset)  # 16
-    scg["scg_salt_ppm"] = {
-        "name": "SCG Salt",
-        "value": (salt * 50),
-        "unit": UNIT.PARTS_PER_MILLION,
-        "state_type": STATE_TYPE.MEASUREMENT,
+    scg_sensor[VALUE.SALT_PPM] = {
+        ATTR.NAME: "Chlorinator Salt",
+        ATTR.VALUE: (salt * 50),
+        ATTR.UNIT: UNIT.PARTS_PER_MILLION,
+        ATTR.STATE_TYPE: STATE_TYPE.MEASUREMENT,
     }
 
     flags, offset = getSome("I", buff, offset)  # 20
-    scg["scg_flags"] = flags
+    scg[VALUE.FLAGS] = flags
 
     superChlorTimer, offset = getSome("I", buff, offset)  # 24
-    scg["scg_super_chlor_timer"] = {
-        "name": "SCG Super Chlorination Timer",
-        "value": superChlorTimer,
-        "unit": UNIT.HOUR,
+    scg_config[VALUE.SUPER_CHLOR_TIMER] = {
+        ATTR.NAME: "Super Chlorination Timer",
+        ATTR.VALUE: superChlorTimer,
+        ATTR.UNIT: UNIT.HOUR,
+        ATTR.MIN_SETPOINT: 1,
+        ATTR.MAX_SETPOINT: MAX_SC_RUNTIME,
+        ATTR.STEP: 1,
     }
 
 
@@ -67,7 +85,7 @@ async def async_request_set_scg_config(
     spa_output: int,
     super_chlor: int = 0,
     super_time: int = 0,
-    max_retries: int = MESSAGE.COM_MAX_RETRIES,
+    max_retries: int = COM_MAX_RETRIES,
 ) -> bool:
     return (
         await async_make_request(

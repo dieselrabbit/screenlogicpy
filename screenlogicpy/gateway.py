@@ -4,17 +4,17 @@ import logging
 from typing import Awaitable, Callable
 
 from .client import ClientManager
-from .const import (
-    BODY_TYPE,
-    CHEMISTRY,
-    CIRCUIT_FUNCTION,
-    DATA,
-    MESSAGE,
+from .const.common import (
+    DATA_REQUEST,
     RANGE,
-    SCG,
     ScreenLogicError,
     ScreenLogicRequestError,
 )
+from .const.msg import COM_MAX_RETRIES
+from .device_const.chemistry import RANGE_PH_SETPOINT, RANGE_ORP_SETPOINT
+from .device_const.system import BODY_TYPE, EQUIPMENT_FLAG
+from .device_const.scg import LIMIT_FOR_BODY
+from .const.data import ATTR, DEVICE, GROUP, VALUE
 from .requests import (
     async_connect_to_gateway,
     async_request_gateway_version,
@@ -32,6 +32,7 @@ from .requests import (
     async_make_request,
 )
 from .requests.protocol import ScreenLogicProtocol
+from .requests.utility import getTemperatureUnit
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -76,7 +77,21 @@ class ScreenLogicGateway:
 
     @property
     def version(self) -> str:
-        return self._version
+        return self.get_value(DEVICE.ADAPTER, VALUE.FIRMWARE)
+
+    @property
+    def controller_model(self) -> str:
+        return self.get_value(DEVICE.CONTROLLER, VALUE.MODEL)
+
+    @property
+    def equipment_flags(self) -> EQUIPMENT_FLAG:
+        return EQUIPMENT_FLAG(
+            self.get_data(DEVICE.CONTROLLER, GROUP.EQUIPMENT, VALUE.FLAGS)
+        )
+
+    @property
+    def temperature_unit(self) -> str:
+        return getTemperatureUnit(self._data)
 
     @property
     def is_connected(self) -> bool:
@@ -128,10 +143,10 @@ class ScreenLogicGateway:
         )
         if connectPkg:
             self._transport, self._protocol, self._mac = connectPkg
-            self._version = await async_request_gateway_version(
-                self._protocol, self._max_retries
+            await async_request_gateway_version(
+                self._protocol, self._data, self._max_retries
             )
-            if self._version:
+            if self.version:
                 _LOGGER.debug("Login successful")
                 await self.async_get_config()
                 await self._client_manager.attach(
@@ -172,7 +187,7 @@ class ScreenLogicGateway:
         if last_raw := await self._async_connected_request(
             async_request_pool_config, self._data, reconnect_delay=1
         ):
-            self._last[DATA.KEY_CONFIG] = last_raw
+            self._last[DATA_REQUEST.CONFIG] = last_raw
 
     async def async_get_status(self):
         """Request pool state data."""
@@ -180,14 +195,14 @@ class ScreenLogicGateway:
         if last_raw := await self._async_connected_request(
             async_request_pool_status, self._data, reconnect_delay=1
         ):
-            self._last["status"] = last_raw
+            self._last[DATA_REQUEST.STATUS] = last_raw
 
     async def async_get_pumps(self):
         """Request all pump state data."""
-        for pumpID in self._data[DATA.KEY_PUMPS]:
-            if self._data[DATA.KEY_PUMPS][pumpID]["data"] != 0:
+        for pumpID in self._data[DEVICE.PUMP]:
+            if self._data[DEVICE.PUMP][pumpID][VALUE.DATA] != 0:
                 _LOGGER.debug("Requesting pump %i data", pumpID)
-                last_pumps = self._last.setdefault(DATA.KEY_PUMPS, {})
+                last_pumps = self._last.setdefault(DATA_REQUEST.PUMPS, {})
                 if last_raw := await self._async_connected_request(
                     async_request_pump_status, self._data, pumpID, reconnect_delay=1
                 ):
@@ -199,7 +214,7 @@ class ScreenLogicGateway:
         if last_raw := await self._async_connected_request(
             async_request_chemistry, self._data, reconnect_delay=1
         ):
-            self._last[DATA.KEY_CHEMISTRY] = last_raw
+            self._last[DATA_REQUEST.CHEMISTRY] = last_raw
 
     async def async_get_scg(self):
         """Request salt chlorine generator state data."""
@@ -207,17 +222,77 @@ class ScreenLogicGateway:
         if last_raw := await self._async_connected_request(
             async_request_scg_config, self._data, reconnect_delay=1
         ):
-            self._last[DATA.KEY_SCG] = last_raw
+            self._last[DATA_REQUEST.SCG] = last_raw
 
-    def get_data(self) -> dict:
-        """Return the data."""
-        return self._data
+    # def get_data(self) -> dict:
+    #    """Return the data."""
+    #    return self._data
+
+    def get_data(self, *keypath, strict: bool = False):
+        """
+        Return a data value from a key path.
+
+        Returns the value of the key at the end of the keypath. Returns None if any key along the path is not found, or
+        raises a KeyError if 'strict' == True.
+        Returns the entire data dict if no 'keypath' is specified.
+        """
+
+        if not keypath:
+            return self._data
+
+        next = self._data
+
+        def get_next(key):
+            if current is None:
+                return None
+            if isinstance(current, dict):
+                return current.get(key)
+            if isinstance(current, list) and key in range(len(current)):
+                return current[key]
+            return None
+
+        for key in keypath:
+            current = next
+            next = get_next(key)
+            if next is None:
+                if strict:
+                    raise KeyError(f"'{key}' not found in '{keypath}'")
+                break
+        return next
+
+    def get_value(self, *keypath, strict: bool = False):
+        """
+        Returns the 'value' key of the dict at the end of the key path.
+
+        Shortcut to 'get_data(*keypath, "value")'.
+        """
+        data = self.get_data(*keypath, strict=strict)
+        if isinstance(data, dict) and (val := data.get(ATTR.VALUE)) is not None:
+            return val
+        else:
+            if strict:
+                raise KeyError(f"Value for {keypath} not found")
+            return None
+
+    def get_name(self, *keypath, strict: bool = False):
+        """
+        Returns the 'name' key of the dict at the end of the key path.
+
+        Shortcut to 'get_data(*keypath, "name")'.
+        """
+        data = self.get_data(*keypath, strict=strict)
+        if isinstance(data, dict) and (val := data.get(ATTR.NAME)) is not None:
+            return val
+        else:
+            if strict:
+                raise KeyError(f"Value for {keypath} not found")
+            return None
 
     def get_debug(self) -> dict:
         """Return the debug last-received data."""
         return self._last
 
-    def set_max_retries(self, max_retries: int = MESSAGE.COM_MAX_RETRIES) -> None:
+    def set_max_retries(self, max_retries: int = COM_MAX_RETRIES) -> None:
         if 0 < max_retries < 6:
             self._max_retries = max_retries
         else:
@@ -384,7 +459,7 @@ class ScreenLogicGateway:
 
     def _is_valid_circuit(self, circuit):
         """Validate circuit number."""
-        return circuit in self._data[DATA.KEY_CIRCUITS]
+        return circuit in self._data[DEVICE.CIRCUIT]
 
     def _is_valid_circuit_state(self, state):
         """Validate circuit state number."""
@@ -392,7 +467,7 @@ class ScreenLogicGateway:
 
     def _is_valid_body(self, body):
         """Validate body of water number."""
-        return body in self._data[DATA.KEY_BODIES]
+        return body in self._data[DEVICE.BODY]
 
     def _is_valid_heatmode(self, heatmode):
         """Validate heat mode number."""
@@ -400,8 +475,8 @@ class ScreenLogicGateway:
 
     def _is_valid_heattemp(self, body, temp):
         """Validate heat tem for body."""
-        min_temp = self._data[DATA.KEY_BODIES][int(body)]["min_set_point"]["value"]
-        max_temp = self._data[DATA.KEY_BODIES][int(body)]["max_set_point"]["value"]
+        min_temp = self.get_data(DEVICE.BODY, int(body), ATTR.MIN_SETPOINT)
+        max_temp = self.get_data(DEVICE.BODY, int(body), ATTR.MAX_SETPOINT)
         return min_temp <= temp <= max_temp
 
     def _is_valid_color_mode(self, mode):
@@ -410,29 +485,18 @@ class ScreenLogicGateway:
 
     def _is_valid_scg_value(self, scg_value, body_type):
         """Validate chlorinator value for body."""
-        return 0 <= scg_value <= SCG.LIMIT_FOR_BODY[body_type]
+        return 0 <= scg_value <= LIMIT_FOR_BODY[body_type]
 
     def _is_valid_ph_setpoint(self, ph_setpoint: float):
         """Validate pH setpoint."""
         return (
-            CHEMISTRY.RANGE_PH_SETPOINT[RANGE.MIN]
-            <= ph_setpoint
-            <= CHEMISTRY.RANGE_PH_SETPOINT[RANGE.MAX]
+            RANGE_PH_SETPOINT[RANGE.MIN] <= ph_setpoint <= RANGE_PH_SETPOINT[RANGE.MAX]
         )
 
     def _is_valid_orp_setpoint(self, orp_setpoint: int):
         """Validate ORP setpoint."""
         return (
-            CHEMISTRY.RANGE_ORP_SETPOINT[RANGE.MIN]
+            RANGE_ORP_SETPOINT[RANGE.MIN]
             <= orp_setpoint
-            <= CHEMISTRY.RANGE_ORP_SETPOINT[RANGE.MAX]
+            <= RANGE_ORP_SETPOINT[RANGE.MAX]
         )
-
-    # Promote?
-    def _has_color_lights(self):
-        """Return if any configured lights support color modes."""
-        if circuits := self._data.get(DATA.KEY_CIRCUITS, None):
-            for circuit in circuits.values():
-                if circuit["function"] in CIRCUIT_FUNCTION.GROUP_LIGHTS_COLOR:
-                    return True
-        return False

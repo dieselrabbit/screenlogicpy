@@ -1,15 +1,16 @@
 # import json
 import struct
 
-from ..const import (
-    CODE,
-    BODY_TYPE,
-    DATA,
+from ..const.common import (
     DEVICE_TYPE,
     ON_OFF,
     STATE_TYPE,
     UNIT,
 )
+from ..const.msg import CODE
+from ..const.data import ATTR, DEVICE, GROUP, VALUE, UNKNOWN
+from ..device_const.system import BODY_TYPE, CONTROLLER_STATE
+from ..device_const.heat import HEAT_MODE, HEAT_STATE
 from .protocol import ScreenLogicProtocol
 from .request import async_make_request
 from .utility import getSome, getTemperatureUnit
@@ -26,44 +27,59 @@ async def async_request_pool_status(
 
 
 def decode_pool_status(buff: bytes, data: dict) -> None:
-    config = data.setdefault(DATA.KEY_CONFIG, {})
+    controller: dict = data.setdefault(DEVICE.CONTROLLER, {})
 
-    ok, offset = getSome("I", buff, 0)  # byte offset 0
-    config["ok"] = ok
+    controller_sensor: dict = controller.setdefault(GROUP.SENSOR, {})
 
-    freezeMode, offset = getSome("B", buff, offset)  # byte offset 4
-    config["freeze_mode"] = {
-        "name": "Freeze Mode",
-        "value": ON_OFF.from_bool(freezeMode & 0x08),
+    state, offset = getSome("I", buff, 0)  # byte offset 0
+    controller_sensor[VALUE.STATE] = {
+        ATTR.NAME: "Controller State",
+        ATTR.VALUE: state,
+        ATTR.DEVICE_TYPE: DEVICE_TYPE.ENUM,
+        ATTR.ENUM_OPTIONS: [state.title for state in CONTROLLER_STATE],
     }
 
-    remotes, offset = getSome("B", buff, offset)  # 5
-    config["remotes"] = {"name": "Remotes", "value": remotes}
+    freezeMode, offset = getSome("B", buff, offset)  # byte offset 4
+    controller_sensor[VALUE.FREEZE_MODE] = {
+        ATTR.NAME: "Freeze Mode",
+        ATTR.VALUE: ON_OFF.from_bool(freezeMode & 0x08),
+    }
+
+    controller_config: dict = controller.setdefault(GROUP.CONFIGURATION, {})
+
+    controller_config[VALUE.REMOTES], offset = getSome("B", buff, offset)  # 5
 
     poolDelay, offset = getSome("B", buff, offset)  # 6
-    config["pool_delay"] = {"name": "Pool Delay", "value": poolDelay}
+    controller_sensor[VALUE.POOL_DELAY] = {
+        ATTR.NAME: "Pool Delay",
+        ATTR.VALUE: poolDelay,
+    }
 
     spaDelay, offset = getSome("B", buff, offset)  # 7
-    config["spa_delay"] = {"name": "Spa Delay", "value": spaDelay}
+    controller_sensor[VALUE.SPA_DELAY] = {
+        ATTR.NAME: "Spa Delay",
+        ATTR.VALUE: spaDelay,
+    }
 
     cleanerDelay, offset = getSome("B", buff, offset)  # 8
-    config["cleaner_delay"] = {"name": "Cleaner Delay", "value": cleanerDelay}
+    controller_sensor[VALUE.CLEANER_DELAY] = {
+        ATTR.NAME: "Cleaner Delay",
+        ATTR.VALUE: cleanerDelay,
+    }
 
-    config[f"unknown_at_offset_{offset:02}"], offset = getSome("B", buff, offset)  # 9
-    config[f"unknown_at_offset_{offset:02}"], offset = getSome("B", buff, offset)  # 10
-    config[f"unknown_at_offset_{offset:02}"], offset = getSome("B", buff, offset)  # 11
-
-    sensors = data.setdefault(DATA.KEY_SENSORS, {})
+    controller_config[UNKNOWN(offset)], offset = getSome("B", buff, offset)  # 9
+    controller_config[UNKNOWN(offset)], offset = getSome("B", buff, offset)  # 10
+    controller_config[UNKNOWN(offset)], offset = getSome("B", buff, offset)  # 11
 
     temperature_unit = getTemperatureUnit(data)
 
     airTemp, offset = getSome("i", buff, offset)  # 12
-    sensors["air_temperature"] = {
-        "name": "Air Temperature",
-        "value": airTemp,
-        "unit": temperature_unit,
-        "device_type": DEVICE_TYPE.TEMPERATURE,
-        "state_type": STATE_TYPE.MEASUREMENT,
+    controller_sensor[VALUE.AIR_TEMPERATURE] = {
+        ATTR.NAME: "Air Temperature",
+        ATTR.VALUE: airTemp,
+        ATTR.UNIT: temperature_unit,
+        ATTR.DEVICE_TYPE: DEVICE_TYPE.TEMPERATURE,
+        ATTR.STATE_TYPE: STATE_TYPE.MEASUREMENT,
     }
 
     bodiesCount, offset = getSome("I", buff, offset)  # 16
@@ -71,135 +87,145 @@ def decode_pool_status(buff: bytes, data: dict) -> None:
     # Should this default to 2?
     bodiesCount = min(bodiesCount, 2)
 
-    bodies: dict = data.setdefault(DATA.KEY_BODIES, {})
+    body_setpoints: dict = (
+        data.get(DEVICE.CONTROLLER, {}).get(GROUP.CONFIGURATION, {}).get(ATTR.BODY_TYPE)
+    )
+
+    body: dict = data.setdefault(DEVICE.BODY, {})
 
     for i in range(bodiesCount):
-        currentBody: dict = bodies.setdefault(i, {})
+        body_indexed: dict = body.setdefault(i, {})
 
         bodyType, offset = getSome("I", buff, offset)
-        if bodyType not in range(2):
-            bodyType = 0
 
-        currentBody.setdefault("min_set_point", {})["unit"] = temperature_unit
+        body_type = BODY_TYPE.parse(bodyType)
+        body_indexed[ATTR.BODY_TYPE] = body_type.value
 
-        currentBody.setdefault("max_set_point", {})["unit"] = temperature_unit
+        if body_setpoints:
+            if body_type_setpoints := body_setpoints.get(body_type.value):
+                body_indexed[ATTR.MIN_SETPOINT] = body_type_setpoints[ATTR.MIN_SETPOINT]
+                body_indexed[ATTR.MAX_SETPOINT] = body_type_setpoints[ATTR.MAX_SETPOINT]
 
-        currentBody["body_type"] = {"name": "Type of body of water", "value": bodyType}
+        body_indexed[ATTR.NAME] = body_name = body_type.title
 
         lastTemp, offset = getSome("i", buff, offset)
-        bodyName = "Last {} Temperature".format(BODY_TYPE.NAME_FOR_NUM[bodyType])
-        currentBody["last_temperature"] = {
-            "name": bodyName,
-            "value": lastTemp,
-            "unit": temperature_unit,
-            "device_type": DEVICE_TYPE.TEMPERATURE,
-            "state_type": STATE_TYPE.MEASUREMENT,
+        body_indexed[VALUE.LAST_TEMPERATURE] = {
+            ATTR.NAME: f"Last {body_name} Temperature",
+            ATTR.VALUE: lastTemp,
+            ATTR.UNIT: temperature_unit,
+            ATTR.DEVICE_TYPE: DEVICE_TYPE.TEMPERATURE,
+            ATTR.STATE_TYPE: STATE_TYPE.MEASUREMENT,
         }
 
         heatStatus, offset = getSome("i", buff, offset)
-        heaterName = "{} Heat".format(BODY_TYPE.NAME_FOR_NUM[bodyType])
-        currentBody["heat_status"] = {"name": heaterName, "value": heatStatus}
+        body_indexed[VALUE.HEAT_STATE] = {
+            ATTR.NAME: f"{body_name} Heat",
+            ATTR.VALUE: heatStatus,
+            ATTR.DEVICE_TYPE: DEVICE_TYPE.ENUM,
+            ATTR.ENUM_OPTIONS: [hs.title for hs in HEAT_STATE],
+        }
 
         heatSetPoint, offset = getSome("i", buff, offset)
-        hspName = "{} Heat Set Point".format(BODY_TYPE.NAME_FOR_NUM[bodyType])
-        currentBody["heat_set_point"] = {
-            "name": hspName,
-            "value": heatSetPoint,
-            "unit": temperature_unit,
-            "device_type": DEVICE_TYPE.TEMPERATURE,
+        body_indexed[VALUE.HEAT_SETPOINT] = {
+            ATTR.NAME: f"{body_name} Heat Set Point",
+            ATTR.VALUE: heatSetPoint,
+            ATTR.UNIT: temperature_unit,
+            ATTR.DEVICE_TYPE: DEVICE_TYPE.TEMPERATURE,
         }
 
         coolSetPoint, offset = getSome("i", buff, offset)
-        cspName = "{} Cool Set Point".format(BODY_TYPE.NAME_FOR_NUM[bodyType])
-        currentBody["cool_set_point"] = {
-            "name": cspName,
-            "value": coolSetPoint,
-            "unit": temperature_unit,
+        body_indexed[VALUE.COOL_SETPOINT] = {
+            ATTR.NAME: f"{body_name} Cool Set Point",
+            ATTR.VALUE: coolSetPoint,
+            ATTR.UNIT: temperature_unit,
+            ATTR.DEVICE_TYPE: DEVICE_TYPE.TEMPERATURE,
         }
 
         heatMode, offset = getSome("i", buff, offset)
-        hmName = "{} Heat Mode".format(BODY_TYPE.NAME_FOR_NUM[bodyType])
-        currentBody["heat_mode"] = {
-            "name": hmName,
-            "value": heatMode,
+        body_indexed[VALUE.HEAT_MODE] = {
+            ATTR.NAME: f"{body_name} Heat Mode",
+            ATTR.VALUE: heatMode,
+            ATTR.DEVICE_TYPE: DEVICE_TYPE.ENUM,
+            ATTR.ENUM_OPTIONS: [hm.title for hm in HEAT_MODE],
         }
 
     circuitCount, offset = getSome("I", buff, offset)
 
-    circuits: dict = data.setdefault(DATA.KEY_CIRCUITS, {})
+    circuit: dict = data.setdefault(DEVICE.CIRCUIT, {})
 
     for i in range(circuitCount):
-        circuitID, offset = getSome("I", buff, offset)
+        circuit_id, offset = getSome("I", buff, offset)
 
-        currentCircuit = circuits.setdefault(circuitID, {})
+        circuit_indexed: dict = circuit.setdefault(circuit_id, {})
 
-        if "id" not in currentCircuit:
-            currentCircuit["id"] = circuitID
+        if ATTR.CIRCUIT_ID not in circuit_indexed:
+            circuit_indexed[ATTR.CIRCUIT_ID] = circuit_id
 
-        circuitState, offset = getSome("I", buff, offset)
-        currentCircuit["value"] = circuitState
+        circuit_indexed[ATTR.VALUE], offset = getSome("I", buff, offset)
 
-        cColorSet, offset = getSome("B", buff, offset)
-        currentCircuit["color_set"] = cColorSet
+        color_set, offset = getSome("B", buff, offset)
+        color_position, offset = getSome("B", buff, offset)
+        color_stagger, offset = getSome("B", buff, offset)
+        circuit_indexed[GROUP.COLOR] = {
+            ATTR.COLOR_SET: color_set,
+            ATTR.COLOR_POSITION: color_position,
+            ATTR.COLOR_STAGGER: color_stagger,
+        }
 
-        cColorPos, offset = getSome("B", buff, offset)
-        currentCircuit["color_position"] = cColorPos
-
-        cColorStagger, offset = getSome("B", buff, offset)
-        currentCircuit["color_stagger"] = cColorStagger
-
-        circuitDelay, offset = getSome("B", buff, offset)
-        currentCircuit["delay"] = circuitDelay
+        circuit_indexed_config: dict = circuit_indexed.setdefault(
+            GROUP.CONFIGURATION, {}
+        )
+        circuit_indexed_config[ATTR.DELAY], offset = getSome("B", buff, offset)
 
     pH, offset = getSome("i", buff, offset)
-    sensors["ph"] = {
-        "name": "pH",
-        "value": (pH / 100),
-        "unit": UNIT.PH,
-        "state_type": STATE_TYPE.MEASUREMENT,
+    controller_sensor[VALUE.PH] = {
+        ATTR.NAME: "pH",
+        ATTR.VALUE: (pH / 100),
+        ATTR.UNIT: UNIT.PH,
+        ATTR.STATE_TYPE: STATE_TYPE.MEASUREMENT,
     }
 
     orp, offset = getSome("i", buff, offset)
-    sensors["orp"] = {
-        "name": "ORP",
-        "value": orp,
-        "unit": UNIT.MILLIVOLT,
-        "state_type": STATE_TYPE.MEASUREMENT,
+    controller_sensor[VALUE.ORP] = {
+        ATTR.NAME: "ORP",
+        ATTR.VALUE: orp,
+        ATTR.UNIT: UNIT.MILLIVOLT,
+        ATTR.STATE_TYPE: STATE_TYPE.MEASUREMENT,
     }
 
     saturation, offset = getSome("i", buff, offset)
-    sensors["saturation"] = {
-        "name": "Saturation Index",
-        "value": (saturation / 100),
-        "unit": UNIT.SATURATION_INDEX,
-        "state_type": STATE_TYPE.MEASUREMENT,
+    controller_sensor[VALUE.SATURATION] = {
+        ATTR.NAME: "Saturation Index",
+        ATTR.VALUE: (saturation / 100),
+        ATTR.UNIT: UNIT.SATURATION_INDEX,
+        ATTR.STATE_TYPE: STATE_TYPE.MEASUREMENT,
     }
 
     saltPPM, offset = getSome("i", buff, offset)
-    sensors["salt_ppm"] = {
-        "name": "Salt",
-        "value": (saltPPM * 50),
-        "unit": UNIT.PARTS_PER_MILLION,
-        "state_type": STATE_TYPE.MEASUREMENT,
+    controller_sensor[VALUE.SALT_PPM] = {
+        ATTR.NAME: "Salt",
+        ATTR.VALUE: (saltPPM * 50),
+        ATTR.UNIT: UNIT.PARTS_PER_MILLION,
+        ATTR.STATE_TYPE: STATE_TYPE.MEASUREMENT,
     }
 
     pHTank, offset = getSome("i", buff, offset)
-    sensors["ph_supply_level"] = {
-        "name": "pH Supply Level",
-        "value": pHTank,
-        "state_type": STATE_TYPE.MEASUREMENT,
+    controller_sensor[VALUE.PH_SUPPLY_LEVEL] = {
+        ATTR.NAME: "pH Supply Level",
+        ATTR.VALUE: pHTank,
+        ATTR.STATE_TYPE: STATE_TYPE.MEASUREMENT,
     }
 
     orpTank, offset = getSome("i", buff, offset)
-    sensors["orp_supply_level"] = {
-        "name": "ORP Supply Level",
-        "value": orpTank,
-        "state_type": STATE_TYPE.MEASUREMENT,
+    controller_sensor[VALUE.ORP_SUPPLY_LEVEL] = {
+        ATTR.NAME: "ORP Supply Level",
+        ATTR.VALUE: orpTank,
+        ATTR.STATE_TYPE: STATE_TYPE.MEASUREMENT,
     }
 
-    alarm, offset = getSome("i", buff, offset)
-    sensors["chem_alarm"] = {
-        "name": "Chemistry Alarm",
-        "value": alarm,
-        "device_type": DEVICE_TYPE.ALARM,
+    alert, offset = getSome("i", buff, offset)
+    controller_sensor[VALUE.ACTIVE_ALERT] = {
+        ATTR.NAME: "Active Alert",
+        ATTR.VALUE: alert,
+        ATTR.DEVICE_TYPE: DEVICE_TYPE.ALARM,
     }

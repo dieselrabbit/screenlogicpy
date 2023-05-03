@@ -3,9 +3,8 @@ import asyncio
 import random
 import struct
 import time
-from typing import List, Tuple
 
-from screenlogicpy.const import CODE, MESSAGE
+from screenlogicpy.const.msg import CODE, HEADER_LENGTH
 from screenlogicpy.requests.utility import takeMessage, makeMessage, encodeMessageString
 from tests.const_data import (
     ASYNC_SL_RESPONSES,
@@ -58,14 +57,14 @@ class FakeScreenLogicTCPProtocol(asyncio.Protocol):
                 self._connection_stage = CONNECTION_STAGE.CONNECTSERVERHOST
                 return []
 
-        def complete_messages(data: bytes) -> List[Tuple[int, int, bytes]]:
+        def complete_messages(data: bytes) -> list[tuple[int, int, bytes]]:
             """Return only complete ScreenLogic messages."""
 
             self._buff.extend(data)
             complete = []
-            while len(self._buff) >= MESSAGE.HEADER_LENGTH:
+            while len(self._buff) >= HEADER_LENGTH:
                 dataLen = struct.unpack_from("<I", self._buff, 4)[0]
-                totalLen = MESSAGE.HEADER_LENGTH + dataLen
+                totalLen = HEADER_LENGTH + dataLen
                 if len(self._buff) >= totalLen:
                     out = bytearray()
                     for _ in range(totalLen):
@@ -77,7 +76,7 @@ class FakeScreenLogicTCPProtocol(asyncio.Protocol):
 
         return [self.process_message(message) for message in complete_messages(data)]
 
-    def process_message(self, message: Tuple[int, int, bytes]) -> bytes:
+    def process_message(self, message: tuple[int, int, bytes]) -> bytes:
         time.sleep(0.1)
         messageID, messageCode, _ = message
         if (
@@ -106,9 +105,14 @@ class FakeScreenLogicTCPProtocol(asyncio.Protocol):
                 messageID, messageCode + 1, ASYNC_SL_RESPONSES[messageCode]
             )
 
+    def fake_async_message(
+        self, message_id: int, message_code: int, message_data: bytes = b""
+    ) -> None:
+        self.transport.write(makeMessage(message_id, message_code, message_data))
+
 
 class FailingFakeScreenLogicTCPProtocol(FakeScreenLogicTCPProtocol):
-    def process_message(self, message: Tuple[int, int, bytes]) -> bytes:
+    def process_message(self, message: tuple[int, int, bytes]) -> bytes:
         call_max = 75
         messageID, messageCode, _ = message
         call_min = messageID if messageID < call_max else call_max
@@ -129,7 +133,7 @@ class FakeScreenLogicUDPProtocol(asyncio.DatagramProtocol):
     def connection_made(self, transport: asyncio.DatagramTransport):
         self.transport = transport
 
-    def datagram_received(self, data: bytes, addr: Tuple[str, int]) -> None:
+    def datagram_received(self, data: bytes, addr: tuple[str, int]) -> None:
         if struct.unpack("<8b", data) == (1, 0, 0, 0, 0, 0, 0, 0):
             ip1, ip2, ip3, ip4 = FAKE_GATEWAY_ADDRESS.split(".")
             response = struct.pack(

@@ -1,15 +1,20 @@
 # import json
 import struct
 
-from ..const import (
-    CHEMISTRY,
-    CHEM_DOSING_STATE,
-    CODE,
-    DATA,
+from ..const.msg import CODE
+from ..const.common import (
     DEVICE_TYPE,
     ON_OFF,
     STATE_TYPE,
     UNIT,
+)
+from ..const.data import ATTR, DEVICE, GROUP, VALUE, UNKNOWN
+from ..device_const.chemistry import (
+    ALARM_FLAG,
+    ALERT_FLAG,
+    BALANCE_FLAG,
+    DOSE_MASK,
+    DOSE_STATE,
 )
 from .protocol import ScreenLogicProtocol
 from .request import async_make_request
@@ -28,248 +33,263 @@ async def async_request_chemistry(
 
 # pylint: disable=unused-variable
 def decode_chemistry(buff: bytes, data: dict) -> None:
-    def is_set(bits, mask) -> bool:
-        return True if (bits & mask) == mask else False
-
-    chemistry: dict = data.setdefault(DATA.KEY_CHEMISTRY, {})
-
-    offset = 0
+    intellichem: dict = data.setdefault(DEVICE.INTELLICHEM, {})
 
     # size of msg?
-    chemistry[f"unknown_at_offset_{offset:02}"], offset = getSome(
-        "I", buff, offset
-    )  # byte offset 0
+    intellichem[UNKNOWN(0)], offset = getSome("I", buff, 0)  # byte offset 0
 
     # unknown value
-    chemistry[f"unknown_at_offset_{offset:02}"], offset = getSome(
-        "B", buff, offset
-    )  # byte offset 4
+    intellichem[UNKNOWN(offset)], offset = getSome("B", buff, offset)  # byte offset 4
+
+    intellichem_sensor: dict = intellichem.setdefault(GROUP.SENSOR, {})
 
     pH, offset = getSome(">H", buff, offset)  # 5
-    chemistry["current_ph"] = {
-        "name": "Current pH",
-        "value": (pH / 100),
-        "unit": UNIT.PH,
-        "state_type": STATE_TYPE.MEASUREMENT,
+    intellichem_sensor[VALUE.PH_NOW] = {
+        ATTR.NAME: "pH Now",
+        ATTR.VALUE: (pH / 100),
+        ATTR.UNIT: UNIT.PH,
+        ATTR.STATE_TYPE: STATE_TYPE.MEASUREMENT,
     }
 
     orp, offset = getSome(">H", buff, offset)  # 7
-    chemistry["current_orp"] = {
-        "name": "Current ORP",
-        "value": orp,
-        "unit": UNIT.MILLIVOLT,
-        "state_type": STATE_TYPE.MEASUREMENT,
+    intellichem_sensor[VALUE.ORP_NOW] = {
+        ATTR.NAME: "ORP Now",
+        ATTR.VALUE: orp,
+        ATTR.UNIT: UNIT.MILLIVOLT,
+        ATTR.STATE_TYPE: STATE_TYPE.MEASUREMENT,
     }
 
+    intellichem_config: dict = intellichem.setdefault(GROUP.CONFIGURATION, {})
+
     pHSetpoint, offset = getSome(">H", buff, offset)  # 9
-    chemistry["ph_setpoint"] = {
-        "name": "pH Setpoint",
-        "value": (pHSetpoint / 100),
-        "unit": UNIT.PH,
+    intellichem_config[VALUE.PH_SETPOINT] = {
+        ATTR.NAME: "pH Setpoint",
+        ATTR.VALUE: (pHSetpoint / 100),
+        ATTR.UNIT: UNIT.PH,
     }
 
     orpSetpoint, offset = getSome(">H", buff, offset)  # 11
-    chemistry["orp_setpoint"] = {
-        "name": "ORP Setpoint",
-        "value": orpSetpoint,
-        "unit": UNIT.MILLIVOLT,
+    intellichem_config[VALUE.ORP_SETPOINT] = {
+        ATTR.NAME: "ORP Setpoint",
+        ATTR.VALUE: orpSetpoint,
+        ATTR.UNIT: UNIT.MILLIVOLT,
     }
 
+    intellichem_dosing: dict = intellichem.setdefault(GROUP.DOSE_STATUS, {})
+
     pHDoseTime, offset = getSome(">I", buff, offset)  # 13
-    chemistry["ph_last_dose_time"] = {
-        "name": "Last pH Dose Time",
-        "value": pHDoseTime,
-        "unit": UNIT.SECOND,
-        "device_type": DEVICE_TYPE.DURATION,
-        "state_type": STATE_TYPE.TOTAL_INCREASING,
+    intellichem_dosing[VALUE.PH_LAST_DOSE_TIME] = {
+        ATTR.NAME: "Last pH Dose Time",
+        ATTR.VALUE: pHDoseTime,
+        ATTR.UNIT: UNIT.SECOND,
+        ATTR.DEVICE_TYPE: DEVICE_TYPE.DURATION,
+        ATTR.STATE_TYPE: STATE_TYPE.TOTAL_INCREASING,
     }
 
     orpDoseTime, offset = getSome(">I", buff, offset)  # 17
-    chemistry["orp_last_dose_time"] = {
-        "name": "Last ORP Dose Time",
-        "value": orpDoseTime,
-        "unit": UNIT.SECOND,
-        "device_type": DEVICE_TYPE.DURATION,
-        "state_type": STATE_TYPE.TOTAL_INCREASING,
+    intellichem_dosing[VALUE.ORP_LAST_DOSE_TIME] = {
+        ATTR.NAME: "Last ORP Dose Time",
+        ATTR.VALUE: orpDoseTime,
+        ATTR.UNIT: UNIT.SECOND,
+        ATTR.DEVICE_TYPE: DEVICE_TYPE.DURATION,
+        ATTR.STATE_TYPE: STATE_TYPE.TOTAL_INCREASING,
     }
 
     pHDoseVolume, offset = getSome(">H", buff, offset)  # 21
-    chemistry["ph_last_dose_volume"] = {
-        "name": "Last pH Dose Volume",
-        "value": pHDoseVolume,
-        "unit": UNIT.MILLILITER,
-        "device_type": DEVICE_TYPE.VOLUME,
-        "state_type": STATE_TYPE.TOTAL_INCREASING,
+    intellichem_dosing[VALUE.PH_LAST_DOSE_VOLUME] = {
+        ATTR.NAME: "Last pH Dose Volume",
+        ATTR.VALUE: pHDoseVolume,
+        ATTR.UNIT: UNIT.MILLILITER,
+        ATTR.DEVICE_TYPE: DEVICE_TYPE.VOLUME,
+        ATTR.STATE_TYPE: STATE_TYPE.TOTAL_INCREASING,
     }
 
     orpDoseVolume, offset = getSome(">H", buff, offset)  # 23
-    chemistry["orp_last_dose_volume"] = {
-        "name": "Last ORP Dose Volume",
-        "value": orpDoseVolume,
-        "unit": UNIT.MILLILITER,
-        "device_type": DEVICE_TYPE.VOLUME,
-        "state_type": STATE_TYPE.TOTAL_INCREASING,
+    intellichem_dosing[VALUE.ORP_LAST_DOSE_VOLUME] = {
+        ATTR.NAME: "Last ORP Dose Volume",
+        ATTR.VALUE: orpDoseVolume,
+        ATTR.UNIT: UNIT.MILLILITER,
+        ATTR.DEVICE_TYPE: DEVICE_TYPE.VOLUME,
+        ATTR.STATE_TYPE: STATE_TYPE.TOTAL_INCREASING,
     }
 
     pHSupplyLevel, offset = getSome("B", buff, offset)  # 25
-    chemistry["ph_supply_level"] = {
-        "name": "pH Supply Level",
-        "value": pHSupplyLevel,
-        "state_type": STATE_TYPE.MEASUREMENT,
+    intellichem_sensor[VALUE.PH_SUPPLY_LEVEL] = {
+        ATTR.NAME: "pH Supply Level",
+        ATTR.VALUE: pHSupplyLevel,
+        ATTR.STATE_TYPE: STATE_TYPE.MEASUREMENT,
     }
 
     orpSupplyLevel, offset = getSome("B", buff, offset)  # 26 (21)
-    chemistry["orp_supply_level"] = {
-        "name": "ORP Supply Level",
-        "value": orpSupplyLevel,
-        "state_type": STATE_TYPE.MEASUREMENT,
+    intellichem_sensor[VALUE.ORP_SUPPLY_LEVEL] = {
+        ATTR.NAME: "ORP Supply Level",
+        ATTR.VALUE: orpSupplyLevel,
+        ATTR.STATE_TYPE: STATE_TYPE.MEASUREMENT,
     }
 
     saturation, offset = getSome("B", buff, offset)  # 27
-    chemistry["saturation"] = {
-        "name": "Saturation Index",
-        "value": (saturation - 256) / 100
-        if is_set(saturation, 0x80)
-        else saturation / 100,
-        "unit": UNIT.SATURATION_INDEX,
-        "state_type": STATE_TYPE.MEASUREMENT,
+    intellichem_sensor[VALUE.SATURATION] = {
+        ATTR.NAME: "Saturation Index",
+        ATTR.VALUE: (saturation - 256) / 100 if saturation & 0x80 else saturation / 100,
+        ATTR.UNIT: UNIT.SATURATION_INDEX,
+        ATTR.STATE_TYPE: STATE_TYPE.MEASUREMENT,
     }
 
     cal, offset = getSome(">H", buff, offset)  # 28
-    chemistry["calcium_harness"] = {
-        "name": "Calcium Hardness",
-        "value": cal,
-        "unit": UNIT.PARTS_PER_MILLION,
+    intellichem_config[VALUE.CALCIUM_HARNESS] = {
+        ATTR.NAME: "Calcium Hardness",
+        ATTR.VALUE: cal,
+        ATTR.UNIT: UNIT.PARTS_PER_MILLION,
     }
 
     cya, offset = getSome(">H", buff, offset)  # 30
-    chemistry["cya"] = {
-        "name": "Cyanuric Acid",
-        "value": cya,
-        "unit": "ppm",
+    intellichem_config[VALUE.CYA] = {
+        ATTR.NAME: "Cyanuric Acid",
+        ATTR.VALUE: cya,
+        ATTR.UNIT: UNIT.PARTS_PER_MILLION,
     }
 
     alk, offset = getSome(">H", buff, offset)  # 32
-    chemistry["total_alkalinity"] = {
-        "name": "Total Alkalinity",
-        "value": alk,
-        "unit": UNIT.PARTS_PER_MILLION,
+    intellichem_config[VALUE.TOTAL_ALKALINITY] = {
+        ATTR.NAME: "Total Alkalinity",
+        ATTR.VALUE: alk,
+        ATTR.UNIT: UNIT.PARTS_PER_MILLION,
     }
 
     saltPPM, offset = getSome("B", buff, offset)  # 34
-    chemistry["salt_tds_ppm"] = {
-        "name": "Salt/TDS",
-        "value": (saltPPM * 50),
-        "unit": UNIT.PARTS_PER_MILLION,
+    intellichem_config[VALUE.SALT_TDS_PPM] = {
+        ATTR.NAME: "Salt/TDS",
+        ATTR.VALUE: (saltPPM * 50),
+        ATTR.UNIT: UNIT.PARTS_PER_MILLION,
     }
 
     # Probe temp unit is Celsius?
-    probIsC, offset = getSome("B", buff, offset)  # 35
-    chemistry["probe_is_celsius"] = probIsC
+    intellichem_config[VALUE.PROBE_IS_CELSIUS], offset = getSome(
+        "B", buff, offset
+    )  # 35
 
     temperature_unit = getTemperatureUnit(data)
 
     waterTemp, offset = getSome("B", buff, offset)  # 36
-    chemistry["ph_probe_water_temp"] = {
-        "name": "pH Probe Water Temperature",
-        "value": waterTemp,
-        "unit": temperature_unit,
-        "device_type": DEVICE_TYPE.TEMPERATURE,
-        "state_type": STATE_TYPE.MEASUREMENT,
+    intellichem_sensor[VALUE.PH_PROBE_WATER_TEMP] = {
+        ATTR.NAME: "pH Probe Water Temperature",
+        ATTR.VALUE: waterTemp,
+        ATTR.UNIT: temperature_unit,
+        ATTR.DEVICE_TYPE: DEVICE_TYPE.TEMPERATURE,
+        ATTR.STATE_TYPE: STATE_TYPE.MEASUREMENT,
     }
 
-    alerts = chemistry.setdefault(DATA.KEY_ALERTS, {})
+    intellichem_alarm: dict = intellichem.setdefault(GROUP.ALARM, {})
 
     alarms, offset = getSome("B", buff, offset)  # 37 (32)
-    alerts["_raw"] = alarms
+    intellichem_alarm[VALUE.FLAGS] = alarms
 
-    alerts["flow_alarm"] = {
-        "name": "Flow Alarm",
-        "value": ON_OFF.from_bool(is_set(alarms, CHEMISTRY.FLAG_ALARM_FLOW)),
-        "device_type": DEVICE_TYPE.ALARM,
+    intellichem_alarm[VALUE.FLOW_ALARM] = {
+        ATTR.NAME: "Flow Alarm",
+        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM_FLAG.FLOW),
+        ATTR.DEVICE_TYPE: DEVICE_TYPE.ALARM,
     }
-    alerts["ph_alarm"] = {
-        "name": "pH Alarm",
-        "value": ON_OFF.from_bool(is_set(alarms, CHEMISTRY.FLAG_ALARM_PH)),
-        "device_type": DEVICE_TYPE.ALARM,
+    intellichem_alarm[VALUE.PH_HIGH_ALARM] = {
+        ATTR.NAME: "pH HIGH Alarm",
+        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM_FLAG.PH_HIGH),
+        ATTR.DEVICE_TYPE: DEVICE_TYPE.ALARM,
     }
-    alerts["orp_alarm"] = {
-        "name": "ORP Alarm",
-        "value": ON_OFF.from_bool(is_set(alarms, CHEMISTRY.FLAG_ALARM_ORP)),
-        "device_type": DEVICE_TYPE.ALARM,
+    intellichem_alarm[VALUE.PH_LOW_ALARM] = {
+        ATTR.NAME: "pH LOW Alarm",
+        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM_FLAG.PH_LOW),
+        ATTR.DEVICE_TYPE: DEVICE_TYPE.ALARM,
     }
-    alerts["ph_supply_alarm"] = {
-        "name": "pH Supply Alarm",
-        "value": ON_OFF.from_bool(is_set(alarms, CHEMISTRY.FLAG_ALARM_PH_SUPPLY)),
-        "device_type": DEVICE_TYPE.ALARM,
+    intellichem_alarm[VALUE.ORP_HIGH_ALARM] = {
+        ATTR.NAME: "ORP HIGH Alarm",
+        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM_FLAG.ORP_HIGH),
+        ATTR.DEVICE_TYPE: DEVICE_TYPE.ALARM,
     }
-    alerts["orp_supply_alarm"] = {
-        "name": "ORP Supply Alarm",
-        "value": ON_OFF.from_bool(is_set(alarms, CHEMISTRY.FLAG_ALARM_ORP_SUPPLY)),
-        "device_type": DEVICE_TYPE.ALARM,
+    intellichem_alarm[VALUE.ORP_LOW_ALARM] = {
+        ATTR.NAME: "ORP LOW Alarm",
+        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM_FLAG.ORP_LOW),
+        ATTR.DEVICE_TYPE: DEVICE_TYPE.ALARM,
     }
-    alerts["probe_fault_alarm"] = {
-        "name": "Probe Fault",
-        "value": ON_OFF.from_bool(is_set(alarms, CHEMISTRY.FLAG_ALARM_PROBE_FAULT)),
-        "device_type": DEVICE_TYPE.ALARM,
+    intellichem_alarm[VALUE.PH_SUPPLY_ALARM] = {
+        ATTR.NAME: "pH Supply Alarm",
+        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM_FLAG.PH_SUPPLY),
+        ATTR.DEVICE_TYPE: DEVICE_TYPE.ALARM,
     }
-
-    notifications = chemistry.setdefault(DATA.KEY_NOTIFICATIONS, {})
-
-    warnings, offset = getSome("B", buff, offset)  # 38 (33)
-    notifications["_raw"] = warnings
-
-    notifications["ph_lockout"] = {
-        "name": "pH Lockout",
-        "value": ON_OFF.from_bool(is_set(warnings, CHEMISTRY.FLAG_WARNING_PH_LOCKOUT)),
+    intellichem_alarm[VALUE.ORP_SUPPLY_ALARM] = {
+        ATTR.NAME: "ORP Supply Alarm",
+        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM_FLAG.ORP_SUPPLY),
+        ATTR.DEVICE_TYPE: DEVICE_TYPE.ALARM,
     }
-    notifications["ph_limit"] = {
-        "name": "pH Daily Limit Reached",
-        "value": ON_OFF.from_bool(is_set(warnings, CHEMISTRY.FLAG_WARNING_PH_LIMIT)),
-    }
-    notifications["orp_limit"] = {
-        "name": "ORP Daily Limit Reached",
-        "value": ON_OFF.from_bool(is_set(warnings, CHEMISTRY.FLAG_WARNING_ORP_LIMIT)),
+    intellichem_alarm[VALUE.PROBE_FAULT_ALARM] = {
+        ATTR.NAME: "Probe Fault",
+        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM_FLAG.PROBE_FAULT),
+        ATTR.DEVICE_TYPE: DEVICE_TYPE.ALARM,
     }
 
-    status, offset = getSome("B", buff, offset)  # 39 (34)
-    chemistry["status"] = status
-    # notifications["corrosive"] = {
-    #    "name": "Corrosive",
-    #    "value": ON_OFF.from_bool(is_set(status, CHEMISTRY.FLAG_STATUS_CORROSIVE)),
-    # }
-    # notifications["scaling"] = {
-    #    "name": "Scaling",
-    #    "value": ON_OFF.from_bool(is_set(status, CHEMISTRY.FLAG_STATUS_SCALING)),
-    # }
+    intellichem_alert: dict = intellichem.setdefault(GROUP.ALERT, {})
 
-    chemistry["ph_dosing_state"] = {
-        "name": "pH Dosing State",
-        "value": (status & CHEMISTRY.MASK_STATUS_PH_DOSING) >> 4,
-        "device_type": DEVICE_TYPE.ENUM,
-        "enum_options": [v for v in CHEM_DOSING_STATE.NAME_FOR_NUM.values()],
+    alerts, offset = getSome("B", buff, offset)  # 38 (33)
+    intellichem_alert[VALUE.FLAGS] = alerts
+
+    intellichem_alert[VALUE.PH_LOCKOUT] = {
+        ATTR.NAME: "pH Lockout",
+        ATTR.VALUE: ON_OFF.from_bool(alerts & ALERT_FLAG.PH_LOCKOUT),
     }
-    chemistry["orp_dosing_state"] = {
-        "name": "ORP Dosing State",
-        "value": (status & CHEMISTRY.MASK_STATUS_ORP_DOSING) >> 6,
-        "device_type": DEVICE_TYPE.ENUM,
-        "enum_options": [v for v in CHEM_DOSING_STATE.NAME_FOR_NUM.values()],
+    intellichem_alert[VALUE.PH_LIMIT] = {
+        ATTR.NAME: "pH Dose Limit Reached",
+        ATTR.VALUE: ON_OFF.from_bool(alerts & ALERT_FLAG.PH_LIMIT),
+    }
+    intellichem_alert[VALUE.ORP_LIMIT] = {
+        ATTR.NAME: "ORP Dose Limit Reached",
+        ATTR.VALUE: ON_OFF.from_bool(alerts & ALERT_FLAG.ORP_LIMIT),
     }
 
-    flags, offset = getSome("B", buff, offset)  # 40 (35)
-    chemistry["flags"] = flags
+    dose_flags, offset = getSome("B", buff, offset)  # 39 (34)
+    intellichem_dosing[VALUE.FLAGS] = dose_flags
+
+    intellichem_dosing[VALUE.PH_DOSING_STATE] = {
+        ATTR.NAME: "pH Dosing State",
+        ATTR.VALUE: (dose_flags & DOSE_MASK.PH_STATE) >> 4,
+        ATTR.DEVICE_TYPE: DEVICE_TYPE.ENUM,
+        ATTR.ENUM_OPTIONS: [state.title for state in DOSE_STATE],
+    }
+    intellichem_dosing[VALUE.ORP_DOSING_STATE] = {
+        ATTR.NAME: "ORP Dosing State",
+        ATTR.VALUE: (dose_flags & DOSE_MASK.ORP_STATE) >> 6,
+        ATTR.DEVICE_TYPE: DEVICE_TYPE.ENUM,
+        ATTR.ENUM_OPTIONS: [state.title for state in DOSE_STATE],
+    }
+
+    config_flags, offset = getSome("B", buff, offset)  # 40 (35)
+    intellichem_config[VALUE.FLAGS] = config_flags
 
     vMinor, offset = getSome("B", buff, offset)  # 41 (36)
     vMajor, offset = getSome("B", buff, offset)  # 42 (37)
-    chemistry["firmware"] = {
-        "name": "IntelliChem Firmware Version",
-        "value": f"{vMajor}.{vMinor:03}",
+    intellichem[VALUE.FIRMWARE] = {
+        ATTR.NAME: "IntelliChem Firmware",
+        ATTR.VALUE: f"{vMajor}.{vMinor:03}",
     }
 
-    chemistry[f"unknown_at_offset_{offset:02}"], offset = getSome("B", buff, offset)
-    chemistry[f"unknown_at_offset_{offset:02}"], offset = getSome("B", buff, offset)
-    chemistry[f"unknown_at_offset_{offset:02}"], offset = getSome("B", buff, offset)
-    chemistry[f"unknown_at_offset_{offset:02}"], offset = getSome("B", buff, offset)
+    intellichem_balance: dict = intellichem.setdefault(GROUP.WATER_BALANCE, {})
+    balance_flags, offset = getSome("B", buff, offset)  # 43
+    intellichem_balance[VALUE.FLAGS] = balance_flags
+
+    # SI <= -0.41
+    intellichem_balance[VALUE.CORROSIVE] = {
+        ATTR.NAME: "SI Corrosive",
+        ATTR.VALUE: ON_OFF.from_bool(balance_flags & BALANCE_FLAG.CORROSIVE),
+        ATTR.DEVICE_TYPE: DEVICE_TYPE.ALARM,
+    }
+
+    # SI >= +0.53
+    intellichem_balance[VALUE.SCALING] = {
+        ATTR.NAME: "SI Scaling",
+        ATTR.VALUE: ON_OFF.from_bool(balance_flags & BALANCE_FLAG.SCALING),
+        ATTR.DEVICE_TYPE: DEVICE_TYPE.ALARM,
+    }
+
+    intellichem[UNKNOWN(offset)], offset = getSome("B", buff, offset)  # 44
+    intellichem[UNKNOWN(offset)], offset = getSome("B", buff, offset)  # 45
+    intellichem[UNKNOWN(offset)], offset = getSome("B", buff, offset)  # 46
 
 
 async def async_request_set_chem_data(

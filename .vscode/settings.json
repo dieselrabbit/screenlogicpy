@@ -9,10 +9,9 @@
     "cSpell.ignoreWords": [
         "SCGCONFIG",
         "asyncio",
-        "struct"
-    ],
-    "cSpell.words": [
+        "struct",
         "capsys",
+        "intellichem",
         "screenlogicpy"
     ]
 }

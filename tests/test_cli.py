@@ -8,6 +8,8 @@ from .const_data import (
     FAKE_GATEWAY_NAME,
     FAKE_GATEWAY_PORT,
     FAKE_CONNECT_INFO,
+)
+from .expected_data import (
     EXPECTED_COMPLETE_DATA,
     EXPECTED_DASHBOARD,
     EXPECTED_VERBOSE_PREAMBLE,
@@ -170,10 +172,11 @@ async def test_set_color_lights(MockProtocolAdapter, capsys, args, ret, expected
         (
             "-v set scg 20 0",
             0,
-            EXPECTED_VERBOSE_PREAMBLE + "Pool SCG Level: 50 Spa SCG Level: 0",
+            EXPECTED_VERBOSE_PREAMBLE
+            + "Pool Chlorinator Setpoint: 50 Spa Chlorinator Setpoint: 0",
         ),
-        ("set scg * *", 65, "No new SCG values. Nothing to do."),
-        ("set scg f *", 66, "Invalid SCG value"),
+        ("set scg * *", 65, "No new Chlorinator values. Nothing to do."),
+        ("set scg f *", 66, "Invalid Chlorinator value"),
     ],
 )
 async def test_set_scg(MockProtocolAdapter, capsys, args, ret, expected):

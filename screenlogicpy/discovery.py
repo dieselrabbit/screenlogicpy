@@ -5,7 +5,7 @@ import logging
 import socket
 import struct
 
-from .const import (  # pylint: disable=relative-beyond-top-level
+from .const.common import (  # pylint: disable=relative-beyond-top-level
     SL_GATEWAY_IP,
     SL_GATEWAY_NAME,
     SL_GATEWAY_PORT,
