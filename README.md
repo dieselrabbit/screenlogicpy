@@ -131,9 +131,9 @@ The `ScreenLogicGateway` class caches all data from the ScreenLogic protocol ada
 data = gateway.get_data()
 ```
 
-`get_data()` now supports specifying a path directly to the data desired. A path can be any length. By default, if the data path is not found, `get_data()` will return `None`, similar to `dict.get()`.
+`get_data()` now supports specifying a path directly to the data desired. A path can be any length. By default, if the data path is not found, `get_data()` will return `None`, similar to `dict.get()`. Alternatively `strict=True` keyword argument can be added to force the `ScreenLogicGateway` to raise a `KeyError` exception if the path is not found.
 
-The majority of data points normally available to the end-user via the official apps are presented as `dict` objects containing "name" and "value" keys/pairs. Additional keys amy be present depending on the type of data.
+The majority of data points normally available to the end-user via the official apps are presented as `dict` objects containing "name" and "value" keys/pairs. Additional keys may be present depending on the type of data.
 
 For example, let's consider the following scenario:
 
