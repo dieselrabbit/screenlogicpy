@@ -3,7 +3,8 @@ import datetime
 
 import struct
 
-from ..const import CODE, DATA
+from ..const.data import DEVICE, GROUP, VALUE
+from ..const.msg import CODE
 from .protocol import ScreenLogicProtocol
 from .request import async_make_request
 from .utility import getSome, getTime, encodeMessageTime
@@ -20,13 +21,14 @@ async def async_request_date_time(
 
 
 def decode_date_time(buffer: bytes, data: dict):
-    config = data.setdefault(DATA.KEY_CONFIG, {})
+    controller: dict = data.setdefault(DEVICE.CONTROLLER, {})
+    date_time: dict = controller.setdefault(GROUP.DATE_TIME, {})
 
     dt, offset = getTime(buffer, 0)
-    config["controller_time"] = dt.timestamp()
+    date_time[VALUE.TIMESTAMP] = dt.timestamp()
 
     auto_dst, offset = getSome("I", buffer, offset)
-    config["controller_time_auto_dst"] = {
+    date_time[VALUE.AUTO_DST] = {
         "name": "Automatic Daylight Saving Time",
         "value": auto_dst,
     }

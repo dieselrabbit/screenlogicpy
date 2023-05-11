@@ -149,7 +149,7 @@ def getArray(buff, offset):
     return items, aStart + paddedLen
 
 
-def getTime(buff: bytes, offset: int) -> Tuple[datetime, int]:
+def getTime(buff: bytes, offset: int) -> tuple[datetime, int]:
     fmt = "<8H"
     year, month, _, day, hour, minute, second, millisecond = struct.unpack_from(
         fmt, buff, offset

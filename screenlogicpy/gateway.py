@@ -227,9 +227,13 @@ class ScreenLogicGateway:
         ):
             self._last[DATA_REQUEST.SCG] = last_raw
 
-    # def get_data(self) -> dict:
-    #    """Return the data."""
-    #    return self._data
+    async def async_get_datetime(self):
+        """Request the current date and time from the controller."""
+        _LOGGER.debug("Requesting date/time")
+        if last_raw := await self._async_connected_request(
+            async_request_date_time, self._data, reconnect_delay=1
+        ):
+            self._last[DATA_REQUEST.DATE_TIME] = last_raw
 
     def get_data(self, *keypath, strict: bool = False):
         """
@@ -290,14 +294,6 @@ class ScreenLogicGateway:
             if strict:
                 raise KeyError(f"Value for {keypath} not found")
             return None
-
-    async def async_get_datetime(self):
-        """Request the current date and time from the controller."""
-        _LOGGER.debug("Requesting date/time")
-        if last_raw := await self._async_connected_request(
-            async_request_date_time, self._data, reconnect_delay=1
-        ):
-            self._last["datetime"] = last_raw
 
     def get_debug(self) -> dict:
         """Return the debug last-received data."""
@@ -466,15 +462,22 @@ class ScreenLogicGateway:
         if date_time is None and auto_dst is None:
             raise ValueError("No date/time values to set")
 
-        def current(k):
-            return self._current_data_value(DATA.KEY_CONFIG, k)
-
         date_time = (
-            datetime.fromtimestamp(current("controller_time"))
+            datetime.fromtimestamp(
+                self.get_data(
+                    DEVICE.CONTROLLER, GROUP.DATE_TIME, VALUE.TIMESTAMP, strict=True
+                )
+            )
             if date_time is None
             else date_time
         )
-        auto_dst = current("controller_time_auto_dst") if auto_dst is None else auto_dst
+        auto_dst = (
+            self.get_data(
+                DEVICE.CONTROLLER, GROUP.DATE_TIME, VALUE.AUTO_DST, strict=True
+            )
+            if auto_dst is None
+            else auto_dst
+        )
 
         return await self._async_connected_request(
             async_request_set_date_time, date_time, auto_dst
