@@ -40,9 +40,8 @@ def decode_pump_status(buff: bytes, data: dict, pump_index: int) -> None:
 
     pump_indexed[UNKNOWN(offset)], offset = getSome("I", buff, offset)
 
-    curG, offset = getSome("I", buff, offset)
-    if curG != 255:  # GPM reads 255 when unsupported.
-        pump_indexed[VALUE.GPM_NOW] = {}
+    curG, offset = getSome("I", buff, offset)  # GPM may read 255 when unsupported.
+    pump_indexed[VALUE.GPM_NOW] = {}
 
     pump_indexed[UNKNOWN(offset)], offset = getSome("I", buff, offset)
 
@@ -66,27 +65,24 @@ def decode_pump_status(buff: bytes, data: dict, pump_index: int) -> None:
     name = name.strip().strip(",") + " Pump"
     pump_indexed_state[ATTR.NAME] = name
 
-    if VALUE.WATTS_NOW in pump_indexed:
-        pump_indexed[VALUE.WATTS_NOW] = {
-            ATTR.NAME: f"{name} Watts Now",
-            ATTR.VALUE: curW,
-            ATTR.UNIT: UNIT.WATT,
-            ATTR.DEVICE_TYPE: DEVICE_TYPE.POWER,
-            ATTR.STATE_TYPE: STATE_TYPE.MEASUREMENT,
-        }
+    pump_indexed[VALUE.WATTS_NOW] = {
+        ATTR.NAME: f"{name} Watts Now",
+        ATTR.VALUE: curW,
+        ATTR.UNIT: UNIT.WATT,
+        ATTR.DEVICE_TYPE: DEVICE_TYPE.POWER,
+        ATTR.STATE_TYPE: STATE_TYPE.MEASUREMENT,
+    }
 
-    if VALUE.RPM_NOW in pump_indexed:
-        pump_indexed[VALUE.RPM_NOW] = {
-            ATTR.NAME: f"{name} RPM Now",
-            ATTR.VALUE: curR,
-            ATTR.UNIT: UNIT.REVOLUTIONS_PER_MINUTE,
-            ATTR.STATE_TYPE: STATE_TYPE.MEASUREMENT,
-        }
+    pump_indexed[VALUE.RPM_NOW] = {
+        ATTR.NAME: f"{name} RPM Now",
+        ATTR.VALUE: curR,
+        ATTR.UNIT: UNIT.REVOLUTIONS_PER_MINUTE,
+        ATTR.STATE_TYPE: STATE_TYPE.MEASUREMENT,
+    }
 
-    if VALUE.GPM_NOW in pump_indexed:
-        pump_indexed[VALUE.GPM_NOW] = {
-            ATTR.NAME: f"{name} GPM Now",
-            ATTR.VALUE: curG,
-            ATTR.UNIT: UNIT.GALLONS_PER_MINUTE,
-            ATTR.STATE_TYPE: STATE_TYPE.MEASUREMENT,
-        }
+    pump_indexed[VALUE.GPM_NOW] = {
+        ATTR.NAME: f"{name} GPM Now",
+        ATTR.VALUE: curG,
+        ATTR.UNIT: UNIT.GALLONS_PER_MINUTE,
+        ATTR.STATE_TYPE: STATE_TYPE.MEASUREMENT,
+    }
