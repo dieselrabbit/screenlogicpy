@@ -8,14 +8,9 @@ from screenlogicpy import ScreenLogicGateway
 from screenlogicpy.client import ClientManager
 from screenlogicpy.const.msg import CODE
 from .const_data import (
-    FAKE_CHEMISTRY_RESPONSE,
     FAKE_CONNECT_INFO,
-    FAKE_STATUS_RESPONSE,
 )
-from .expected_data import (
-    EXPECTED_CHEMISTRY_DATA,
-    EXPECTED_STATUS_DATA,
-)
+from .data_sets import TESTING_DATA_COLLECTION as TDC
 from .fake_gateway import expected_resp
 
 
@@ -83,6 +78,8 @@ async def test_sub_unsub(event_loop, MockProtocolAdapter):
 async def test_notify():
     code1 = CODE.STATUS_CHANGED
     code2 = CODE.CHEMISTRY_CHANGED
+    status_response = TDC.status
+    chem_response = TDC.chemistry
 
     cb1_hit = False
     cb2_hit = False
@@ -113,7 +110,7 @@ async def test_notify():
 
     status_data = {}
     await cm._async_common_callback(
-        FAKE_STATUS_RESPONSE, CODE.STATUS_CHANGED, status_data
+        status_response.raw, CODE.STATUS_CHANGED, status_data
     )
 
     assert cb1_hit
@@ -122,13 +119,13 @@ async def test_notify():
 
     chem_data = {}
     await cm._async_common_callback(
-        FAKE_CHEMISTRY_RESPONSE, CODE.CHEMISTRY_CHANGED, chem_data
+        chem_response.raw, CODE.CHEMISTRY_CHANGED, chem_data
     )
 
     assert cb3_hit
 
-    assert status_data == EXPECTED_STATUS_DATA
-    assert chem_data == EXPECTED_CHEMISTRY_DATA
+    assert status_data == status_response.decoded
+    assert chem_data == chem_response.decoded
 
 
 @pytest.mark.asyncio()

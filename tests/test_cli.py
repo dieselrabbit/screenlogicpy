@@ -1,19 +1,17 @@
 import json
+import pytest
 from unittest.mock import patch
 
-import pytest
 from screenlogicpy.cli import cli
 from .const_data import (
+    EXPECTED_DASHBOARD,
+    EXPECTED_VERBOSE_PREAMBLE,
     FAKE_GATEWAY_ADDRESS,
     FAKE_GATEWAY_NAME,
     FAKE_GATEWAY_PORT,
     FAKE_CONNECT_INFO,
 )
-from .expected_data import (
-    EXPECTED_COMPLETE_DATA,
-    EXPECTED_DASHBOARD,
-    EXPECTED_VERBOSE_PREAMBLE,
-)
+from .data_sets import TESTING_DATA_COLLECTION as TDC
 
 
 async def run_cli_test(
@@ -141,7 +139,11 @@ async def test_get_heat_state(MockProtocolAdapter, capsys, args, ret, expected):
 @pytest.mark.parametrize(
     "args, ret, expected",
     [
-        ("get json", 0, json.dumps(EXPECTED_COMPLETE_DATA, indent=2)),
+        (
+            "get json",
+            0,
+            json.dumps(TDC.decoded_complete, indent=2),
+        ),
     ],
 )
 async def test_get_json(MockProtocolAdapter, capsys, args, ret, expected):

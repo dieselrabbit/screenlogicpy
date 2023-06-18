@@ -3,24 +3,26 @@ import pytest
 import struct
 from unittest.mock import patch
 
-# from deepdiff import DeepDiff
+from screenlogicpy import ScreenLogicGateway
+from screenlogicpy.const.common import ScreenLogicRequestError
+from screenlogicpy.const.data import ATTR, DEVICE, GROUP, VALUE
+from screenlogicpy.const.msg import CODE
 
-
-from tests.const_data import (
+from .const_data import (
     FAKE_CONNECT_INFO,
     FAKE_GATEWAY_ADDRESS,
     FAKE_GATEWAY_MAC,
     FAKE_GATEWAY_NAME,
     FAKE_GATEWAY_PORT,
-    FAKE_GATEWAY_VERSION,
-    FAKE_STATUS_RESPONSE,
 )
-from tests.expected_data import EXPECTED_COMPLETE_DATA
-from tests.fake_gateway import error_resp, expected_resp
+from .data_sets import TESTING_DATA_COLLECTION as TDC
+from .fake_gateway import error_resp, expected_resp
 
-from screenlogicpy import ScreenLogicGateway
-from screenlogicpy.const.common import ScreenLogicRequestError
-from screenlogicpy.const.msg import CODE
+TEST_GATEWAY_VERSION = TDC.decoded_complete[DEVICE.ADAPTER][VALUE.FIRMWARE][ATTR.VALUE]
+TEST_CONTROLLER_MODEL = TDC.decoded_complete[DEVICE.CONTROLLER][VALUE.MODEL][ATTR.VALUE]
+TEST_EQUIPMENT_FLAGS = TDC.decoded_complete[DEVICE.CONTROLLER][GROUP.EQUIPMENT][
+    VALUE.FLAGS
+]
 
 
 @pytest.mark.asyncio
@@ -29,15 +31,17 @@ async def test_gateway(MockConnectedGateway):
     assert gateway.ip == FAKE_GATEWAY_ADDRESS
     assert gateway.port == FAKE_GATEWAY_PORT
     assert gateway.name == FAKE_GATEWAY_NAME
-    assert gateway.version == FAKE_GATEWAY_VERSION
     assert gateway.mac == FAKE_GATEWAY_MAC
+    assert gateway.version == TEST_GATEWAY_VERSION
+    assert gateway.controller_model == TEST_CONTROLLER_MODEL
+    assert gateway.equipment_flags == TEST_EQUIPMENT_FLAGS
     data = gateway.get_data()
     await gateway.async_disconnect()
     assert data
 
     # diff = DeepDiff(data, EXPECTED_COMPLETE_DATA)
     # print(diff)
-    assert data == EXPECTED_COMPLETE_DATA
+    assert data == TDC.decoded_complete
 
 
 @pytest.mark.asyncio
@@ -55,8 +59,10 @@ async def test_gateway_late_connect(MockProtocolAdapter):
         assert gateway.ip == FAKE_GATEWAY_ADDRESS
         assert gateway.port == FAKE_GATEWAY_PORT
         assert gateway.name == FAKE_GATEWAY_NAME
-        assert gateway.version == FAKE_GATEWAY_VERSION
         assert gateway.mac == FAKE_GATEWAY_MAC
+        assert gateway.version == TEST_GATEWAY_VERSION
+        assert gateway.controller_model == TEST_CONTROLLER_MODEL
+        assert gateway.equipment_flags == TEST_EQUIPMENT_FLAGS
         assert gateway.is_connected
         await gateway.async_disconnect()
 
@@ -89,7 +95,12 @@ async def test_gateway_late_connect(MockProtocolAdapter):
         ),
         (
             ("adapter",),
-            {"firmware": {"name": "Protocol Adapter Firmware", "value": "fake 0.0.3"}},
+            {
+                "firmware": {
+                    "name": "Protocol Adapter Firmware",
+                    "value": "POOL: 5.2 Build 736.0 Rel",
+                }
+            },
         ),
         (
             ("intellichem", "alarm", "does_not_exist"),
@@ -368,7 +379,7 @@ async def test_async_send_message_retry(
     event_loop: asyncio.AbstractEventLoop, MockConnectedGateway: ScreenLogicGateway
 ):
     result = event_loop.create_future()
-    result.set_result(expected_resp(CODE.POOLSTATUS_QUERY, FAKE_STATUS_RESPONSE))
+    result.set_result(expected_resp(CODE.POOLSTATUS_QUERY, TDC.status.raw))
     with patch(
         "screenlogicpy.requests.gateway.ScreenLogicProtocol.await_send_message",
         side_effect=(event_loop.create_future(), event_loop.create_future(), result),
@@ -378,7 +389,7 @@ async def test_async_send_message_retry(
         response = await gateway.async_send_message(
             CODE.POOLSTATUS_QUERY, struct.pack("<I", 0)
         )
-        assert response == FAKE_STATUS_RESPONSE
+        assert response == TDC.status.raw
         assert mockRequest.call_count == 3
         assert mockRequest.call_args.args[0] == CODE.POOLSTATUS_QUERY
         assert mockRequest.call_args.args[1] == struct.pack("<I", 0)
