@@ -154,20 +154,27 @@ class ClientManager:
         return remove_listener
 
     async def _async_ping(self):
-        """Check connection before requesting a ping."""
+        """
+        Request a ping.
+
+        This is an unmanaged request. Failure here will only be logged.
+        """
         _LOGGER.debug("Requesting ping")
-        if await self._async_managed_request(async_request_ping):
-            _LOGGER.debug("Ping successful.")
+        try:
+            if await async_request_ping(self._protocol, max_retries=0):
+                _LOGGER.debug("Ping successful.")
+        except ScreenLogicRequestError as re:
+            _LOGGER.warning(f"Failed to receive response to ping: {re.msg}")
 
     async def _async_add_client(self):
-        """Check connection before sending add client request."""
+        """Send a managed add client request."""
         _LOGGER.debug("Requesting add client")
         return await self._async_managed_request(
             async_request_add_client, self._client_id
         )
 
     async def _async_remove_client(self):
-        """Check connection before sending remove client request."""
+        """Send a unmanaged remove client request."""
         _LOGGER.debug("Requesting remove client")
         try:
             return await async_request_remove_client(
