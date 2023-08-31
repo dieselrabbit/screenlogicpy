@@ -16,6 +16,11 @@ async def async_make_request(
     max_retries: int = COM_MAX_RETRIES,
 ) -> bytes:
     for attempt in range(0, max_retries + 1):
+        if not protocol.is_connected:
+            raise ScreenLogicRequestError(
+                "Unable to make request. No active connection"
+            )
+
         request = protocol.await_send_message(requestCode, requestData)
         try:
             async with asyncio_timeout(COM_TIMEOUT):
