@@ -1,12 +1,13 @@
 import asyncio
 import pytest
 import struct
-from unittest.mock import patch
+from unittest.mock import call, patch
 
 from screenlogicpy import ScreenLogicGateway
 from screenlogicpy.const.common import ScreenLogicRequestError
 from screenlogicpy.const.data import ATTR, DEVICE, GROUP, VALUE
 from screenlogicpy.const.msg import CODE
+from screenlogicpy.requests.request import async_make_request
 
 from .const_data import (
     FAKE_CONNECT_INFO,
@@ -15,6 +16,9 @@ from .const_data import (
     FAKE_GATEWAY_NAME,
     FAKE_GATEWAY_PORT,
 )
+from screenlogicpy.requests.utility import encodeMessageString
+
+from .const_data import ASYNC_SL_RESPONSES
 from .data_sets import TESTING_DATA_COLLECTION as TDC
 from .fake_gateway import error_resp, expected_resp
 
@@ -393,3 +397,85 @@ async def test_async_send_message_retry(
         assert mockRequest.call_count == 3
         assert mockRequest.call_args.args[0] == CODE.POOLSTATUS_QUERY
         assert mockRequest.call_args.args[1] == struct.pack("<I", 0)
+
+
+@pytest.mark.asyncio
+async def test_async_send_message_connection_lost(
+    event_loop: asyncio.AbstractEventLoop, MockConnectedGateway: ScreenLogicGateway
+):
+    def req_fut(result=None):
+        nonlocal event_loop
+        fut = event_loop.create_future()
+        if result:
+            fut.set_result(result)
+        return fut
+
+    with patch(
+        "screenlogicpy.requests.gateway.ScreenLogicProtocol.await_send_message",
+        side_effect=(
+            event_loop.create_future(),
+            event_loop.create_future(),
+            req_fut(
+                expected_resp(
+                    CODE.CHALLENGE_QUERY, encodeMessageString(FAKE_GATEWAY_MAC)
+                )
+            ),
+            req_fut(expected_resp(CODE.LOCALLOGIN_QUERY)),
+            req_fut(expected_resp(CODE.VERSION_QUERY, TDC.version.raw)),
+            req_fut(expected_resp(CODE.CTRLCONFIG_QUERY, TDC.config.raw)),
+            req_fut(expected_resp(CODE.POOLSTATUS_QUERY, TDC.status.raw)),
+        ),
+    ) as mockRequest, patch("screenlogicpy.const.msg.COM_RETRY_WAIT", 1):
+        gateway = MockConnectedGateway
+        gateway.set_max_retries(1)
+        response = await gateway.async_send_message(
+            CODE.POOLSTATUS_QUERY, struct.pack("<I", 0)
+        )
+        print(mockRequest.call_args_list)
+        assert response == TDC.status.raw
+        assert mockRequest.call_count == 7
+        assert mockRequest.call_args.args[0] == CODE.POOLSTATUS_QUERY
+        assert mockRequest.call_args.args[1] == struct.pack("<I", 0)
+
+
+@pytest.mark.asyncio
+async def test_gateway_connection_closed(
+    event_loop: asyncio.AbstractEventLoop, MockDisconnectingProtocolAdapter
+):
+    async with MockDisconnectingProtocolAdapter as server:
+        with patch("screenlogicpy.const.msg.COM_RETRY_WAIT", 1):
+            # mock_instance._async_connected_request.side_effect = lambda *args, **kwargs: S
+            gateway = ScreenLogicGateway()
+            await gateway.async_connect(**FAKE_CONNECT_INFO)
+            assert gateway.is_connected
+            await gateway.async_update()
+            # gw_inst = mock_gateway.return_value
+
+            with patch(
+                "screenlogicpy.requests.status.async_make_request",
+                wraps=async_make_request,
+            ) as mock_async_make_request:
+
+                enable_disconnect_on_next_call = await gateway.async_send_message(
+                    1111, struct.pack("<I", 0)
+                )
+                assert enable_disconnect_on_next_call == b""
+
+                await gateway.async_get_status()
+
+                print(mock_async_make_request.mock_calls)
+
+                assert mock_async_make_request.call_count == 2
+                assert (
+                    mock_async_make_request.call_args_list[0][0]
+                    != mock_async_make_request.call_args_list[1][0]
+                )
+                last_call = call(
+                    gateway._protocol,
+                    CODE.POOLSTATUS_QUERY,
+                    b"\x00\x00\x00\x00",
+                    1,
+                )
+                assert mock_async_make_request.call_args_list[0] != last_call
+                assert mock_async_make_request.call_args_list[1] == last_call
+        server.close()

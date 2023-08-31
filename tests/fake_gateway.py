@@ -78,6 +78,12 @@ class FakeScreenLogicTCPProtocol(asyncio.Protocol):
 
     def process_message(self, message: tuple[int, int, bytes]) -> bytes:
         time.sleep(0.1)
+        if self._connection_stage == CONNECTION_STAGE.LOGIN:
+            return self.process_connected_messages(message)
+        else:
+            return self.process_logon_messages(message)
+
+    def process_logon_messages(self, message: tuple[int, int, bytes]) -> bytes:
         messageID, messageCode, _ = message
         if (
             messageCode == CODE.CHALLENGE_QUERY
@@ -89,14 +95,17 @@ class FakeScreenLogicTCPProtocol(asyncio.Protocol):
                 CODE.CHALLENGE_QUERY + 1,
                 encodeMessageString(FAKE_GATEWAY_MAC),
             )
-
-        if (
+        elif (
             messageCode == CODE.LOCALLOGIN_QUERY
             and self._connection_stage == CONNECTION_STAGE.CHALLENGE
         ):
             self._connection_stage = CONNECTION_STAGE.LOGIN
             return makeMessage(messageID, CODE.LOCALLOGIN_QUERY + 1, b"")
+        else:
+            self.transport.close()
 
+    def process_connected_messages(self, message: tuple[int, int, bytes]) -> bytes:
+        messageID, messageCode, _ = message
         if (
             self._connection_stage == CONNECTION_STAGE.LOGIN
             and messageCode in ASYNC_SL_RESPONSES
@@ -104,6 +113,8 @@ class FakeScreenLogicTCPProtocol(asyncio.Protocol):
             return makeMessage(
                 messageID, messageCode + 1, ASYNC_SL_RESPONSES[messageCode]
             )
+        else:
+            self.transport.close()
 
     def fake_async_message(
         self, message_id: int, message_code: int, message_data: bytes = b""
@@ -117,16 +128,33 @@ class FailingFakeScreenLogicTCPProtocol(FakeScreenLogicTCPProtocol):
         messageID, messageCode, _ = message
         call_min = messageID if messageID < call_max else call_max
         fail = random.randint(call_min, call_max)
-        if fail > 68:
-            if fail > 72:
-                if messageCode == CODE.LOCALLOGIN_QUERY:
-                    return makeMessage(messageID, CODE.ERROR_LOGIN_REJECTED)
+        if fail > 60:
+            if fail > 70:
+                if fail >= 75:
+                    self.transport.close()
                 else:
-                    return makeMessage(messageID, CODE.ERROR_BAD_PARAMETER)
+                    if messageCode == CODE.LOCALLOGIN_QUERY:
+                        return makeMessage(messageID, CODE.ERROR_LOGIN_REJECTED)
+                    else:
+                        return makeMessage(messageID, CODE.ERROR_BAD_PARAMETER)
             else:
                 return None
         else:
             return super().process_message(message)
+
+
+class DisconnectingFakeScreenLogicTCPProtocol(FakeScreenLogicTCPProtocol):
+    should_close = False
+
+    def process_connected_messages(self, message: tuple[int, int, bytes]) -> bytes:
+        if self.should_close:
+            self.should_close = False
+            self.transport.close()
+        messageID, messageCode, _ = message
+        if messageCode == 1111:
+            self.should_close = True
+            return makeMessage(messageID, 1112)
+        return super().process_connected_messages(message)
 
 
 class FakeScreenLogicUDPProtocol(asyncio.DatagramProtocol):

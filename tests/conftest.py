@@ -6,19 +6,26 @@ from .const_data import (
     FAKE_GATEWAY_PORT,
     FAKE_CONNECT_INFO,
 )
-from .fake_gateway import FailingFakeScreenLogicTCPProtocol, FakeScreenLogicTCPProtocol
+from .fake_gateway import (
+    DisconnectingFakeScreenLogicTCPProtocol,
+    FailingFakeScreenLogicTCPProtocol,
+    FakeScreenLogicTCPProtocol,
+)
 from screenlogicpy import ScreenLogicGateway
 
 
 @pytest_asyncio.fixture()
 async def MockProtocolAdapter(event_loop: asyncio.AbstractEventLoop):
     server = await event_loop.create_server(
-        lambda: FakeScreenLogicTCPProtocol(), FAKE_GATEWAY_ADDRESS, FAKE_GATEWAY_PORT
+        lambda: FakeScreenLogicTCPProtocol(),
+        FAKE_GATEWAY_ADDRESS,
+        FAKE_GATEWAY_PORT,
+        reuse_address=True,
     )
 
     async with server:
-        await server.start_serving()
         yield server
+        print("Closing Server")
         server.close()
 
 
@@ -33,6 +40,21 @@ async def FailingMockProtocolAdapter(event_loop: asyncio.AbstractEventLoop):
     async with server:
         await server.start_serving()
         yield server
+        server.close()
+
+
+@pytest_asyncio.fixture()
+async def MockDisconnectingProtocolAdapter(event_loop: asyncio.AbstractEventLoop):
+    server = await event_loop.create_server(
+        lambda: DisconnectingFakeScreenLogicTCPProtocol(),
+        FAKE_GATEWAY_ADDRESS,
+        FAKE_GATEWAY_PORT,
+        reuse_address=True,
+    )
+
+    async with server:
+        yield server
+        print("Closing Server")
         server.close()
 
 
