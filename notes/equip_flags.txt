@@ -7,7 +7,7 @@ A5                                       1 1100  IntelliTouch i5+3S
 config	1111 1111 1111 1111 1000 0000 0011 1000  EasyTouch2 8
 
 solar	                                   0001
-solar as heat pump                         0010
+solar is heat pump                         0010
 chlorinator                                0100
 intellibright                              1000
 intelliflo 0                          0001 0000
