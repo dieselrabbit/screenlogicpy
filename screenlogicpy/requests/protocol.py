@@ -142,6 +142,11 @@ class ScreenLogicProtocol(asyncio.Protocol):
         """Called when connection is closed/lost."""
         self._connected = False
         _LOGGER.debug("Connection closed")
+        if exc:
+            _LOGGER.debug(exc)
+        if self._stop_keepalive:
+            self._stop_keepalive()
+            self._stop_keepalive = None
         self._closed.set_result(True)
         if self._connection_lost_callback is not None:
             self._connection_lost_callback()
