@@ -1,84 +1,88 @@
 import struct
 
-from ..const import CODE, DATA, DEVICE_TYPE, STATE_TYPE, UNIT
+from ..const.common import DEVICE_TYPE, STATE_TYPE, UNIT
+from ..const.data import ATTR, DEVICE, VALUE, UNKNOWN
+from ..const.msg import CODE
 from .protocol import ScreenLogicProtocol
 from .request import async_make_request
 from .utility import getSome
 
 
 async def async_request_pump_status(
-    protocol: ScreenLogicProtocol, data: dict, pumpID: int, max_retries: int
+    protocol: ScreenLogicProtocol, data: dict, pump_index: int, max_retries: int
 ) -> bytes:
     if result := await async_make_request(
-        protocol, CODE.PUMPSTATUS_QUERY, struct.pack("<II", 0, pumpID), max_retries
+        protocol, CODE.PUMPSTATUS_QUERY, struct.pack("<II", 0, pump_index), max_retries
     ):
-        decode_pump_status(result, data, pumpID)
+        decode_pump_status(result, data, pump_index)
         return result
 
 
-def decode_pump_status(buff: bytes, data: dict, pumpID: int) -> None:
-    pumps: dict = data.setdefault(DATA.KEY_PUMPS, {})
+def decode_pump_status(buff: bytes, data: dict, pump_index: int) -> None:
+    pump: dict = data.setdefault(DEVICE.PUMP, {})
 
-    pump = pumps.setdefault(pumpID, {})
+    pump_indexed: dict = pump.setdefault(pump_index, {})
 
-    pump["name"] = ""
-    pump["pumpType"], offset = getSome("I", buff, 0)
-    pump["state"], offset = getSome("I", buff, offset)
+    pump_indexed[VALUE.TYPE], offset = getSome("I", buff, 0)
+    pump_state, offset = getSome("I", buff, offset)
+    pump_indexed_state: dict = pump_indexed.setdefault(
+        VALUE.STATE, {ATTR.NAME: "", ATTR.VALUE: 0}
+    )
+    # Filter wild values from pump state
+    if not pump_state & 0x80000000:
+        pump_indexed_state[ATTR.VALUE] = pump_state
 
     curW, offset = getSome("I", buff, offset)
-    pump["currentWatts"] = {}  # Need to find value when unsupported.
+    pump_indexed[VALUE.WATTS_NOW] = {}  # Need to find value when unsupported.
 
     curR, offset = getSome("I", buff, offset)
-    pump["currentRPM"] = {}  # Need to find value when unsupported.
+    pump_indexed[VALUE.RPM_NOW] = {}  # Need to find value when unsupported.
 
-    pump[f"unknown_at_offset_{offset:02}"], offset = getSome("I", buff, offset)
+    pump_indexed[UNKNOWN(offset)], offset = getSome("I", buff, offset)
 
-    curG, offset = getSome("I", buff, offset)
-    if curG != 255:  # GPM reads 255 when unsupported.
-        pump["currentGPM"] = {}
+    curG, offset = getSome("I", buff, offset)  # GPM may read 255 when unsupported.
+    pump_indexed[VALUE.GPM_NOW] = {}
 
-    pump[f"unknown_at_offset_{offset:02}"], offset = getSome("I", buff, offset)
+    pump_indexed[UNKNOWN(offset)], offset = getSome("I", buff, offset)
 
-    pump["presets"] = {}
+    pump_indexed_preset: dict = pump_indexed.setdefault(VALUE.PRESET, {})
     name = "Default"
     for i in range(8):
-        pump["presets"][i] = {}
-        pump["presets"][i]["cid"], offset = getSome("I", buff, offset)
-        if DATA.KEY_CIRCUITS in data:
-            for num, circuit in data[DATA.KEY_CIRCUITS].items():
+        pump_indexed_preset_indexed: dict = pump_indexed_preset.setdefault(i, {})
+        pump_indexed_preset_indexed[ATTR.DEVICE_ID], offset = getSome("I", buff, offset)
+        if DEVICE.CIRCUIT in data:
+            for circuit in data[DEVICE.CIRCUIT].values():
                 if (
-                    pump["presets"][i]["cid"] == circuit["device_id"]
+                    pump_indexed_preset_indexed[ATTR.DEVICE_ID]
+                    == circuit[ATTR.DEVICE_ID]
                     and name == "Default"
                 ):
-                    name = circuit["name"]
+                    name = circuit[ATTR.NAME]
                     break
-        pump["presets"][i]["setPoint"], offset = getSome("I", buff, offset)
-        pump["presets"][i]["isRPM"], offset = getSome("I", buff, offset)
+        pump_indexed_preset_indexed[ATTR.SETPOINT], offset = getSome("I", buff, offset)
+        pump_indexed_preset_indexed[ATTR.IS_RPM], offset = getSome("I", buff, offset)
 
     name = name.strip().strip(",") + " Pump"
-    pump["name"] = name
+    pump_indexed_state[ATTR.NAME] = name
 
-    if "currentWatts" in pump:
-        pump["currentWatts"] = {
-            "name": pump["name"] + " Current Watts",
-            "value": curW,
-            "unit": UNIT.WATT,
-            "device_type": DEVICE_TYPE.POWER,
-            "state_type": STATE_TYPE.MEASUREMENT,
-        }
+    pump_indexed[VALUE.WATTS_NOW] = {
+        ATTR.NAME: f"{name} Watts Now",
+        ATTR.VALUE: curW,
+        ATTR.UNIT: UNIT.WATT,
+        ATTR.DEVICE_TYPE: DEVICE_TYPE.POWER,
+        ATTR.STATE_TYPE: STATE_TYPE.MEASUREMENT,
+    }
 
-    if "currentRPM" in pump:
-        pump["currentRPM"] = {
-            "name": pump["name"] + " Current RPM",
-            "value": curR,
-            "unit": UNIT.REVOLUTIONS_PER_MINUTE,
-            "state_type": STATE_TYPE.MEASUREMENT,
-        }
+    pump_indexed[VALUE.RPM_NOW] = {
+        ATTR.NAME: f"{name} RPM Now",
+        ATTR.VALUE: curR,
+        ATTR.UNIT: UNIT.REVOLUTIONS_PER_MINUTE,
+        ATTR.STATE_TYPE: STATE_TYPE.MEASUREMENT,
+    }
 
-    if "currentGPM" in pump:
-        pump["currentGPM"] = {
-            "name": pump["name"] + " Current GPM",
-            "value": curG,
-            "unit": UNIT.GALLONS_PER_MINUTE,
-            "state_type": STATE_TYPE.MEASUREMENT,
-        }
+    pump_indexed[VALUE.GPM_NOW] = {
+        ATTR.NAME: f"{name} GPM Now",
+        ATTR.VALUE: curG,
+        ATTR.UNIT: UNIT.GALLONS_PER_MINUTE,
+        ATTR.STATE_TYPE: STATE_TYPE.MEASUREMENT,
+    }

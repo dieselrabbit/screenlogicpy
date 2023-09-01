@@ -1,8 +1,11 @@
 import struct
 import sys
-from typing import Any, List, Tuple
+from typing import Any
 
-from ..const import DATA, MESSAGE, UNIT, ScreenLogicError
+from ..const import ScreenLogicError
+from ..const.common import UNIT
+from ..const.msg import HEADER_FORMAT, HEADER_LENGTH
+from ..const.data import ATTR, DEVICE, GROUP, VALUE
 
 if sys.version_info[:2] < (3, 11):
     from async_timeout import timeout as asyncio_timeout  # noqa F401
@@ -13,7 +16,7 @@ else:
 def makeMessage(msgID: int, msgCode: int, messageData: bytes = b""):
     """Returns packed bytes formatted as a ready-to-send ScreenLogic message."""
     return struct.pack(
-        f"{MESSAGE.HEADER_FORMAT}{str(len(messageData))}s",
+        f"{HEADER_FORMAT}{str(len(messageData))}s",
         msgID,
         msgCode,
         len(messageData),
@@ -21,11 +24,11 @@ def makeMessage(msgID: int, msgCode: int, messageData: bytes = b""):
     )
 
 
-def takeMessage(data: bytes) -> Tuple[int, int, bytes]:
+def takeMessage(data: bytes) -> tuple[int, int, bytes]:
     """Return (messageID, messageCode, message) from raw ScreenLogic message bytes."""
-    messageBytes = len(data) - MESSAGE.HEADER_LENGTH
+    messageBytes = len(data) - HEADER_LENGTH
     msgID, msgCode, msgLen, msgData = struct.unpack(
-        f"{MESSAGE.HEADER_FORMAT}{messageBytes}s", data
+        f"{HEADER_FORMAT}{messageBytes}s", data
     )
     if msgLen != messageBytes:
         raise ScreenLogicError(
@@ -34,7 +37,7 @@ def takeMessage(data: bytes) -> Tuple[int, int, bytes]:
     return msgID, msgCode, msgData  # return raw data
 
 
-def takeMessages(data: bytes) -> List[Tuple[int, int, bytes]]:
+def takeMessages(data: bytes) -> list[tuple[int, int, bytes]]:
     messages = []
     pos = 0
     try:
@@ -67,7 +70,7 @@ def decodeMessageString(data) -> str:
     )
 
 
-def getSome(format, buff, offset) -> Tuple[Any, int]:
+def getSome(format, buff, offset) -> tuple[Any, int]:
     fmt = format if format.startswith(">") else f"<{format}"
     newoffset = offset + struct.calcsize(fmt)
     return struct.unpack_from(fmt, buff, offset)[0], newoffset
@@ -93,7 +96,7 @@ def getValueAt(buff, offset, want, **kwargs):
     return data, newoffset
 
 
-def getString(buff, offset) -> Tuple[str, int]:
+def getString(buff, offset) -> tuple[str, int]:
     fmtLen = "<I"
     offsetLen = offset + struct.calcsize(fmtLen)
     sLen = struct.unpack_from(fmtLen, buff, offset)[0]
@@ -121,8 +124,9 @@ def getArray(buff, offset):
 def getTemperatureUnit(data: dict):
     return (
         UNIT.CELSIUS
-        if DATA.KEY_CONFIG in data
-        and "is_celsius" in data[DATA.KEY_CONFIG]
-        and data[DATA.KEY_CONFIG]["is_celsius"]["value"]
+        if data.get(DEVICE.CONTROLLER, {})
+        .get(GROUP.CONFIGURATION, {})
+        .get(VALUE.IS_CELSIUS, {})
+        .get(ATTR.VALUE)
         else UNIT.FAHRENHEIT
     )

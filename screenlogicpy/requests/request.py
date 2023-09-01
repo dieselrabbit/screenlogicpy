@@ -1,7 +1,8 @@
 import asyncio
 import logging
 
-from ..const import CODE, MESSAGE, ScreenLogicRequestError
+from ..const import ScreenLogicRequestError
+from ..const.msg import CODE, COM_MAX_RETRIES, COM_RETRY_WAIT, COM_TIMEOUT
 from .protocol import ScreenLogicProtocol
 from .utility import asyncio_timeout
 
@@ -12,12 +13,17 @@ async def async_make_request(
     protocol: ScreenLogicProtocol,
     requestCode: int,
     requestData: bytes = b"",
-    max_retries: int = MESSAGE.COM_MAX_RETRIES,
+    max_retries: int = COM_MAX_RETRIES,
 ) -> bytes:
     for attempt in range(0, max_retries + 1):
+        if not protocol.is_connected:
+            raise ScreenLogicRequestError(
+                "Unable to make request. No active connection"
+            )
+
         request = protocol.await_send_message(requestCode, requestData)
         try:
-            async with asyncio_timeout(MESSAGE.COM_TIMEOUT):
+            async with asyncio_timeout(COM_TIMEOUT):
                 await request
         except asyncio.TimeoutError:
             error_message = (
@@ -46,7 +52,7 @@ async def async_make_request(
                 f"{error_message} after {max_retries + 1} attempts"
             )
 
-        retry_delay = MESSAGE.COM_RETRY_WAIT * (attempt + 1)
+        retry_delay = COM_RETRY_WAIT * (attempt + 1)
 
         _LOGGER.debug(
             error_message + ". Will retry %i more time(s) in %i seconds",

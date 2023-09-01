@@ -1,6 +1,7 @@
 import struct
 
-from ..const import CODE, DATA
+from ..const.msg import CODE
+from ..const.data import ATTR, DEVICE, GROUP
 from .protocol import ScreenLogicProtocol
 from .request import async_make_request
 from .utility import getSome, getString
@@ -21,18 +22,14 @@ async def async_request_pool_lights_command(
 
 
 def decode_color_update(buff: bytes, data: dict):
-    config = data.setdefault(DATA.KEY_CONFIG, {})
+    controller: dict = data.setdefault(DEVICE.CONTROLLER, {})
 
-    color_state = config.setdefault("color_state", {})
+    color_state: dict = controller.setdefault(GROUP.COLOR_LIGHTS, {})
 
-    mode, offset = getSome("I", buff, 0)  # 0
-    color_state["mode"] = mode
+    color_state[ATTR.COLOR_MODE], offset = getSome("I", buff, 0)  # 0
 
-    progress, offset = getSome("I", buff, offset)  # 4
-    color_state["progress"] = progress
+    color_state[ATTR.PROGRESS], offset = getSome("I", buff, offset)  # 4
 
-    limit, offset = getSome("I", buff, offset)  # 8
-    color_state["limit"] = limit
+    color_state[ATTR.LIMIT], offset = getSome("I", buff, offset)  # 8
 
-    text, offset = getString(buff, offset)  # 12
-    color_state["text"] = text
+    color_state[ATTR.TEXT], offset = getString(buff, offset)  # 12

@@ -4,16 +4,17 @@ import logging
 from typing import Awaitable, Callable
 
 from .client import ClientManager
-from .const import (
-    BODY_TYPE,
-    CIRCUIT_FUNCTION,
-    DATA,
-    MESSAGE,
+from .const.common import (
+    DATA_REQUEST,
     RANGE,
-    SCG,
     ScreenLogicError,
     ScreenLogicRequestError,
 )
+from .const.msg import COM_MAX_RETRIES
+from .device_const.chemistry import RANGE_PH_SETPOINT, RANGE_ORP_SETPOINT
+from .device_const.system import BODY_TYPE, EQUIPMENT_FLAG
+from .device_const.scg import LIMIT_FOR_BODY
+from .const.data import ATTR, DEVICE, GROUP, VALUE
 from .requests import (
     async_connect_to_gateway,
     async_request_gateway_version,
@@ -31,10 +32,7 @@ from .requests import (
     async_make_request,
 )
 from .requests.protocol import ScreenLogicProtocol
-from .validation import (
-    DataValidation,
-    DataValidationKey as dv_key,
-)
+from .requests.utility import getTemperatureUnit
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -56,12 +54,10 @@ class ScreenLogicGateway:
         self._is_client = False
         self._data = {}
         self._last = {}
-        self.dv = DataValidation()
-        client_id = client_id if self.dv.is_valid(dv_key.CLIENT_ID, client_id) else None
-        self._client_manager = ClientManager(self._async_connected_request, client_id)
         self.set_max_retries(
             max_retries
         ) if max_retries is not None else self.set_max_retries()
+        self._client_manager = ClientManager(self._async_connected_request, client_id)
 
     @property
     def ip(self) -> str:
@@ -81,7 +77,21 @@ class ScreenLogicGateway:
 
     @property
     def version(self) -> str:
-        return self._version
+        return self.get_value(DEVICE.ADAPTER, VALUE.FIRMWARE)
+
+    @property
+    def controller_model(self) -> str:
+        return self.get_value(DEVICE.CONTROLLER, VALUE.MODEL)
+
+    @property
+    def equipment_flags(self) -> EQUIPMENT_FLAG:
+        return EQUIPMENT_FLAG(
+            self.get_data(DEVICE.CONTROLLER, GROUP.EQUIPMENT, VALUE.FLAGS)
+        )
+
+    @property
+    def temperature_unit(self) -> str:
+        return getTemperatureUnit(self._data)
 
     @property
     def is_connected(self) -> bool:
@@ -133,16 +143,15 @@ class ScreenLogicGateway:
         )
         if connectPkg:
             self._transport, self._protocol, self._mac = connectPkg
-            self._version = await async_request_gateway_version(
-                self._protocol, self._max_retries
+            await async_request_gateway_version(
+                self._protocol, self._data, self._max_retries
             )
-            if self._version:
+            if self.version:
                 _LOGGER.debug("Login successful")
                 await self.async_get_config()
                 await self._client_manager.attach(
                     self._protocol, self.get_data(), self._max_retries
                 )
-                self._add_local_limits()
                 return True
         _LOGGER.debug("Login failed")
         return False
@@ -178,7 +187,7 @@ class ScreenLogicGateway:
         if last_raw := await self._async_connected_request(
             async_request_pool_config, self._data, reconnect_delay=1
         ):
-            self._last[DATA.KEY_CONFIG] = last_raw
+            self._last[DATA_REQUEST.CONFIG] = last_raw
 
     async def async_get_status(self):
         """Request pool state data."""
@@ -186,14 +195,14 @@ class ScreenLogicGateway:
         if last_raw := await self._async_connected_request(
             async_request_pool_status, self._data, reconnect_delay=1
         ):
-            self._last["status"] = last_raw
+            self._last[DATA_REQUEST.STATUS] = last_raw
 
     async def async_get_pumps(self):
         """Request all pump state data."""
-        for pumpID in self._data[DATA.KEY_PUMPS]:
-            if self._data[DATA.KEY_PUMPS][pumpID]["data"] != 0:
+        for pumpID in self._data[DEVICE.PUMP]:
+            if self._data[DEVICE.PUMP][pumpID][VALUE.DATA] != 0:
                 _LOGGER.debug("Requesting pump %i data", pumpID)
-                last_pumps = self._last.setdefault(DATA.KEY_PUMPS, {})
+                last_pumps = self._last.setdefault(DATA_REQUEST.PUMPS, {})
                 if last_raw := await self._async_connected_request(
                     async_request_pump_status, self._data, pumpID, reconnect_delay=1
                 ):
@@ -205,7 +214,7 @@ class ScreenLogicGateway:
         if last_raw := await self._async_connected_request(
             async_request_chemistry, self._data, reconnect_delay=1
         ):
-            self._last[DATA.KEY_CHEMISTRY] = last_raw
+            self._last[DATA_REQUEST.CHEMISTRY] = last_raw
 
     async def async_get_scg(self):
         """Request salt chlorine generator state data."""
@@ -213,24 +222,88 @@ class ScreenLogicGateway:
         if last_raw := await self._async_connected_request(
             async_request_scg_config, self._data, reconnect_delay=1
         ):
-            self._last[DATA.KEY_SCG] = last_raw
+            self._last[DATA_REQUEST.SCG] = last_raw
 
-    def get_data(self) -> dict:
-        """Return the data."""
-        return self._data
+    # def get_data(self) -> dict:
+    #    """Return the data."""
+    #    return self._data
+
+    def get_data(self, *keypath, strict: bool = False):
+        """
+        Return a data value from a key path.
+
+        Returns the value of the key at the end of the keypath. Returns None if any key along the path is not found, or
+        raises a KeyError if 'strict' == True.
+        Returns the entire data dict if no 'keypath' is specified.
+        """
+
+        if not keypath:
+            return self._data
+
+        next = self._data
+
+        def get_next(key):
+            if current is None:
+                return None
+            if isinstance(current, dict):
+                return current.get(key)
+            if isinstance(current, list) and key in range(len(current)):
+                return current[key]
+            return None
+
+        for key in keypath:
+            current = next
+            next = get_next(key)
+            if next is None:
+                if strict:
+                    raise KeyError(f"'{key}' not found in '{keypath}'")
+                break
+        return next
+
+    def get_value(self, *keypath, strict: bool = False):
+        """
+        Returns the 'value' key of the dict at the end of the key path.
+
+        Shortcut to 'get_data(*keypath, "value")'.
+        """
+        data = self.get_data(*keypath, strict=strict)
+        if isinstance(data, dict) and (val := data.get(ATTR.VALUE)) is not None:
+            return val
+        else:
+            if strict:
+                raise KeyError(f"Value for {keypath} not found")
+            return None
+
+    def get_name(self, *keypath, strict: bool = False):
+        """
+        Returns the 'name' key of the dict at the end of the key path.
+
+        Shortcut to 'get_data(*keypath, "name")'.
+        """
+        data = self.get_data(*keypath, strict=strict)
+        if isinstance(data, dict) and (val := data.get(ATTR.NAME)) is not None:
+            return val
+        else:
+            if strict:
+                raise KeyError(f"Value for {keypath} not found")
+            return None
 
     def get_debug(self) -> dict:
         """Return the debug last-received data."""
         return self._last
 
-    def set_max_retries(self, max_retries: int = MESSAGE.COM_MAX_RETRIES) -> None:
-        self.dv.validate(dv_key.MAX_RETRIES, max_retries)
-        self._max_retries = max_retries
+    def set_max_retries(self, max_retries: int = COM_MAX_RETRIES) -> None:
+        if 0 < max_retries < 6:
+            self._max_retries = max_retries
+        else:
+            raise ValueError(f"Invalid max_retries: {max_retries}")
 
     async def async_set_circuit(self, circuitID: int, circuitState: int):
         """Set the circuit state for the specified circuit."""
-        self.dv.validate(dv_key.CIRCUIT, circuitID)
-        self.dv.validate(dv_key.ON_OFF, circuitState)
+        if not self._is_valid_circuit(circuitID):
+            raise ValueError(f"Invalid circuitID: {circuitID}")
+        if not self._is_valid_circuit_state(circuitState):
+            raise ValueError(f"Invalid circuitState: {circuitState}")
 
         return await self._async_connected_request(
             async_request_pool_button_press, circuitID, circuitState
@@ -238,8 +311,10 @@ class ScreenLogicGateway:
 
     async def async_set_heat_temp(self, body: int, temp: int):
         """Set the target temperature for the specified body."""
-        self.dv.validate(dv_key.BODY, body)
-        self.dv.validate((dv_key.HEAT_TEMP, body), temp)
+        if not self._is_valid_body(body):
+            raise ValueError(f"Invalid body: {body}")
+        if not self._is_valid_heattemp(body, temp):
+            raise ValueError(f"Invalid temp ({temp}) for body ({body})")
 
         return await self._async_connected_request(
             async_request_set_heat_setpoint, body, temp
@@ -247,8 +322,10 @@ class ScreenLogicGateway:
 
     async def async_set_heat_mode(self, body: int, mode: int):
         """Set the heating mode for the specified body."""
-        self.dv.validate(dv_key.BODY, body)
-        self.dv.validate(dv_key.HEAT_MODE, mode)
+        if not self._is_valid_body(body):
+            raise ValueError(f"Invalid body: {body}")
+        if not self._is_valid_heatmode(mode):
+            raise ValueError(f"Invalid mode: {mode}")
 
         return await self._async_connected_request(
             async_request_set_heat_mode, body, mode
@@ -256,111 +333,51 @@ class ScreenLogicGateway:
 
     async def async_set_color_lights(self, light_command: int):
         """Set the light show mode for all capable lights."""
-        self.dv.validate(dv_key.COLOR_MODE, light_command)
+        if not self._is_valid_color_mode(light_command):
+            raise ValueError(f"Invalid light_command: {light_command}")
 
         return await self._async_connected_request(
             async_request_pool_lights_command, light_command
         )
 
-    async def async_set_scg_config(
-        self,
-        *,
-        pool_output: int = None,
-        spa_output: int = None,
-        super_chlor: int = None,
-        super_time: int = None,
-    ):
+    async def async_set_scg_config(self, pool_output: int, spa_output: int):
         """Set the salt-chlorine-generator output for both pool and spa."""
-        if pool_output is None and spa_output is None:
-            raise ScreenLogicValueRangeError("No SCG values to set")
-
-        def current(k):
-            return self._current_data_value(DATA.KEY_SCG, k)
-
-        pool_output = current("scg_level1") if pool_output is None else pool_output
-        spa_output = current("scg_level2") if spa_output is None else spa_output
-        # TODO: Need to find state values for these
-        super_chlor = 0 if super_chlor is None else super_chlor
-        super_time = 1 if super_time is None else super_time
-
-        self.dv.validate((dv_key.SCG_SETPOINT, BODY_TYPE.POOL), pool_output)
-        self.dv.validate((dv_key.SCG_SETPOINT, BODY_TYPE.SPA), spa_output)
-        self.dv.validate(dv_key.ON_OFF, super_chlor)
-        self.dv.validate(dv_key.SC_RUNTIME, super_time)
+        if not self._is_valid_scg_value(pool_output, BODY_TYPE.POOL):
+            raise ValueError(f"Invalid pool_output: {pool_output}")
+        if not self._is_valid_scg_value(spa_output, BODY_TYPE.SPA):
+            raise ValueError(f"Invalid spa_output: {spa_output}")
 
         return await self._async_connected_request(
-            async_request_set_scg_config,
-            pool_output,
-            spa_output,
-            super_chlor,
-            super_time,
+            async_request_set_scg_config, pool_output, spa_output
         )
 
     async def async_set_chem_data(
         self,
-        *,
-        ph_setpoint: float = None,
-        orp_setpoint: int = None,
-        calcium_harness: int = None,
-        total_alkalinity: int = None,
-        cya: int = None,
-        salt_tds_ppm: int = None,
+        ph_setpoint: float,
+        orp_setpoint: int,
+        calcium: int,
+        alkalinity: int,
+        cyanuric: int,
+        salt: int,
     ):
         """Set configurable chemistry values."""
-        if not (
-            ph_setpoint
-            or orp_setpoint
-            or calcium_harness
-            or total_alkalinity
-            or cya
-            or salt_tds_ppm
-        ):
-            raise ScreenLogicValueRangeError("No Chemistry values to set")
-
-        def current(k):
-            return self._current_data_value(DATA.KEY_CHEMISTRY, k)
-
-        ph_setpoint = current("ph_setpoint") if ph_setpoint is None else ph_setpoint
-        orp_setpoint = current("orp_setpoint") if orp_setpoint is None else orp_setpoint
-        calcium_harness = (
-            current("calcium_harness") if calcium_harness is None else calcium_harness
-        )
-        total_alkalinity = (
-            current("total_alkalinity")
-            if total_alkalinity is None
-            else total_alkalinity
-        )
-        cya = current("cya") if cya is None else cya
-        salt_tds_ppm = current("salt_tds_ppm") if salt_tds_ppm is None else salt_tds_ppm
-
-        if not (
-            ph_setpoint is not None
-            and orp_setpoint is not None
-            and calcium_harness is not None
-            and total_alkalinity is not None
-            and cya is not None
-            and salt_tds_ppm is not None
-        ):
-            raise ScreenLogicKeyError(
-                "Unable to reference existing omitted chemistry values."
-            )
-
-        self.dv.validate(dv_key.PH_SETPOINT, ph_setpoint)
-        ph_setpoint = int(ph_setpoint * 100)
-        self.dv.validate(dv_key.ORP_SETPOINT, orp_setpoint)
-        self.dv.validate(dv_key.CALCIUM_HARDNESS, calcium_harness)
-        self.dv.validate(dv_key.TOTAL_ALKALINITY, total_alkalinity)
-        self.dv.validate(dv_key.CYANURIC_ACID, cya)
-        self.dv.validate(dv_key.SALT_TDS, salt_tds_ppm)
+        if self._is_valid_ph_setpoint(ph_setpoint):
+            ph_setpoint = int(ph_setpoint * 100)
+        else:
+            raise ValueError(f"Invalid PH Set point: {ph_setpoint}")
+        if not self._is_valid_orp_setpoint(orp_setpoint):
+            raise ValueError(f"Invalid ORP Set point: {orp_setpoint}")
+        if calcium < 0 or alkalinity < 0 or cyanuric < 0 or salt < 0:
+            raise ValueError("Invalid Chemistry setting.")
 
         return await self._async_connected_request(
             async_request_set_chem_data,
             ph_setpoint,
             orp_setpoint,
-            calcium_harness,
-            total_alkalinity,
-            cya,
-            salt_tds_ppm,
+            calcium,
+            alkalinity,
+            cyanuric,
+            salt,
         )
 
     async def async_subscribe_client(
@@ -440,32 +457,46 @@ class ScreenLogicGateway:
         if self._custom_connection_closed_callback:
             self._custom_connection_closed_callback()
 
-    def _add_local_limits(self):
-        self.dv.update(dv_key.CIRCUIT, set(self._data[DATA.KEY_CIRCUITS].keys()))
-        self.dv.update(dv_key.BODY, set(self._data[DATA.KEY_BODIES].keys()))
-        (
-            self.dv.update(
-                (dv_key.HEAT_TEMP, body),
-                (
-                    body_data["min_set_point"]["value"],
-                    body_data["max_set_point"]["value"],
-                ),
-            )
-            for body, body_data in self._data[DATA.KEY_BODIES].items()
+    def _is_valid_circuit(self, circuit):
+        """Validate circuit number."""
+        return circuit in self._data[DEVICE.CIRCUIT]
+
+    def _is_valid_circuit_state(self, state):
+        """Validate circuit state number."""
+        return state == 0 or state == 1
+
+    def _is_valid_body(self, body):
+        """Validate body of water number."""
+        return body in self._data[DEVICE.BODY]
+
+    def _is_valid_heatmode(self, heatmode):
+        """Validate heat mode number."""
+        return 0 <= heatmode < 5
+
+    def _is_valid_heattemp(self, body, temp):
+        """Validate heat tem for body."""
+        min_temp = self.get_data(DEVICE.BODY, int(body), ATTR.MIN_SETPOINT)
+        max_temp = self.get_data(DEVICE.BODY, int(body), ATTR.MAX_SETPOINT)
+        return min_temp <= temp <= max_temp
+
+    def _is_valid_color_mode(self, mode):
+        """Validate color mode number."""
+        return 0 <= mode <= 21
+
+    def _is_valid_scg_value(self, scg_value, body_type):
+        """Validate chlorinator value for body."""
+        return 0 <= scg_value <= LIMIT_FOR_BODY[body_type]
+
+    def _is_valid_ph_setpoint(self, ph_setpoint: float):
+        """Validate pH setpoint."""
+        return (
+            RANGE_PH_SETPOINT[RANGE.MIN] <= ph_setpoint <= RANGE_PH_SETPOINT[RANGE.MAX]
         )
 
-    # Promote?
-    def _has_color_lights(self):
-        """Return if any configured lights support color modes."""
-        if circuits := self._data.get(DATA.KEY_CIRCUITS, None):
-            for circuit in circuits.values():
-                if circuit["function"] in CIRCUIT_FUNCTION.GROUP_LIGHTS_COLOR:
-                    return True
-        return False
-
-    def _current_data_value(self, sec_key: str, val_key: str):
-        """Return current data value."""
-        if section := self._data.get(sec_key):
-            if sensor := section.get(val_key):
-                return sensor.get("value")
-        return None
+    def _is_valid_orp_setpoint(self, orp_setpoint: int):
+        """Validate ORP setpoint."""
+        return (
+            RANGE_ORP_SETPOINT[RANGE.MIN]
+            <= orp_setpoint
+            <= RANGE_ORP_SETPOINT[RANGE.MAX]
+        )

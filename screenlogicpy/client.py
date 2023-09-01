@@ -2,13 +2,12 @@
 import asyncio
 import logging
 import random
-from typing import Awaitable, Callable
+from typing import Any, Awaitable, Callable
 
-from .const import (
+from .const.common import COM_KEEPALIVE, ScreenLogicRequestError
+from .const.msg import (
     CODE,
-    COM_KEEPALIVE,
-    MESSAGE,
-    ScreenLogicRequestError,
+    COM_MAX_RETRIES,
 )
 from .requests import (
     async_request_add_client,
@@ -28,7 +27,7 @@ class ClientManager:
 
     def __init__(
         self,
-        async_request_manager: Callable[[bytes, any], Awaitable[any]],
+        async_request_manager: Callable[[bytes, Any], Awaitable[Any]],
         client_id: int = None,
     ) -> None:
         self._async_managed_request = async_request_manager
@@ -40,7 +39,7 @@ class ClientManager:
         self._client_sub_unsub_lock = asyncio.Lock()
         self._protocol = None
         self._data = None
-        self._max_retries = MESSAGE.COM_MAX_RETRIES
+        self._max_retries = COM_MAX_RETRIES
 
     @property
     def is_client(self) -> bool:
@@ -63,7 +62,7 @@ class ClientManager:
         self,
         protocol: ScreenLogicProtocol,
         data: dict,
-        max_retries: int = MESSAGE.COM_MAX_RETRIES,
+        max_retries: int = COM_MAX_RETRIES,
     ):
         """
         Update protocol and data reference.
@@ -155,20 +154,27 @@ class ClientManager:
         return remove_listener
 
     async def _async_ping(self):
-        """Check connection before requesting a ping."""
+        """
+        Request a ping.
+
+        This is an unmanaged request. Failure here will only be logged.
+        """
         _LOGGER.debug("Requesting ping")
-        if await self._async_managed_request(async_request_ping):
-            _LOGGER.debug("Ping successful.")
+        try:
+            if await async_request_ping(self._protocol, max_retries=0):
+                _LOGGER.debug("Ping successful.")
+        except ScreenLogicRequestError as re:
+            _LOGGER.warning(f"Failed to receive response to ping: {re.msg}")
 
     async def _async_add_client(self):
-        """Check connection before sending add client request."""
+        """Send a managed add client request."""
         _LOGGER.debug("Requesting add client")
         return await self._async_managed_request(
             async_request_add_client, self._client_id
         )
 
     async def _async_remove_client(self):
-        """Check connection before sending remove client request."""
+        """Send a unmanaged remove client request."""
         _LOGGER.debug("Requesting remove client")
         try:
             return await async_request_remove_client(

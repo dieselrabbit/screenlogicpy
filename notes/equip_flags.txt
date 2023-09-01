@@ -7,21 +7,24 @@ A5                                       1 1100  IntelliTouch i5+3S
 config	1111 1111 1111 1111 1000 0000 0011 1000  EasyTouch2 8
 
 solar	                                   0001
-solar as heat pump                         0010
+solar is heat pump                         0010
 chlorinator                                0100
-UNKNOWN                                    1000
-UNKNOWN                               0001 0000
-spa remote                            0010 0000
-UNKNOWN                               0100 0000
-UNKNOWN                               1000 0000
-UNKNOWN                          0001 0000 0000
-UNKNOWN                          0010 0000 0000
-UNKNOWN                          0100 0000 0000
-(Night?) cooling                 1000 0000 0000
-UNKNOWN                     0001 0000 0000 0000
-ultra temp?                 0010 0000 0000 0000
-UNKNOWN                     0100 0000 0000 0000
+intellibright                              1000
+intelliflo 0                          0001 0000
+intelliflo 1                          0010 0000
+intelliflo 2                          0100 0000
+intelliflo 3                          1000 0000
+intelliflo 4                     0001 0000 0000
+intelliflo 5                     0010 0000 0000
+intelliflo 6                     0100 0000 0000
+intelliflo 7                     1000 0000 0000
+no special lights           0001 0000 0000 0000
+heat pump has cooling       0010 0000 0000 0000
+magic stream                0100 0000 0000 0000
 IntelliChem                 1000 0000 0000 0000
+hybrid ht (UltraTemp)  0001 0000 0000 0000 0000
+
+Later firmware may read above 0x8000
 
 Pump Data
 pump 0  0100 0110

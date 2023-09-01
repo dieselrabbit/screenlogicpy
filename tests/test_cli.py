@@ -1,17 +1,17 @@
 import json
+import pytest
 from unittest.mock import patch
 
-import pytest
 from screenlogicpy.cli import cli
 from .const_data import (
+    EXPECTED_DASHBOARD,
+    EXPECTED_VERBOSE_PREAMBLE,
     FAKE_GATEWAY_ADDRESS,
     FAKE_GATEWAY_NAME,
     FAKE_GATEWAY_PORT,
     FAKE_CONNECT_INFO,
-    EXPECTED_COMPLETE_DATA,
-    EXPECTED_DASHBOARD,
-    EXPECTED_VERBOSE_PREAMBLE,
 )
+from .data_sets import TESTING_DATA_COLLECTION as TDC
 
 
 async def run_cli_test(
@@ -139,7 +139,11 @@ async def test_get_heat_state(MockProtocolAdapter, capsys, args, ret, expected):
 @pytest.mark.parametrize(
     "args, ret, expected",
     [
-        ("get json", 0, json.dumps(EXPECTED_COMPLETE_DATA, indent=2)),
+        (
+            "get json",
+            0,
+            json.dumps(TDC.decoded_complete, indent=2),
+        ),
     ],
 )
 async def test_get_json(MockProtocolAdapter, capsys, args, ret, expected):
@@ -166,14 +170,15 @@ async def test_set_color_lights(MockProtocolAdapter, capsys, args, ret, expected
 @pytest.mark.parametrize(
     "args, ret, expected",
     [
-        ("set salt-generator --pool 100 --spa 0", 0, "50\n0"),
+        ("set salt-generator 100 20", 0, "50 0"),
         (
-            "-v set scg -p 20 -s 0",
+            "-v set scg 20 0",
             0,
-            EXPECTED_VERBOSE_PREAMBLE + "Pool SCG Level: 50\nSpa SCG Level: 0",
+            EXPECTED_VERBOSE_PREAMBLE
+            + "Pool Chlorinator Setpoint: 50 Spa Chlorinator Setpoint: 0",
         ),
-        ("set salt-generator --spa 0", 0, "0"),
-        ("set scg -p 50", 0, "50"),
+        ("set scg * *", 65, "No new Chlorinator values. Nothing to do."),
+        ("set scg f *", 66, "Invalid Chlorinator value"),
     ],
 )
 async def test_set_scg(MockProtocolAdapter, capsys, args, ret, expected):
@@ -184,14 +189,14 @@ async def test_set_scg(MockProtocolAdapter, capsys, args, ret, expected):
 @pytest.mark.parametrize(
     "args, ret, expected",
     [
-        ("set chem-setpoint --ph 7.5 --orp 720", 0, "7.5\n700"),
+        ("set chem-data 7.5 700", 0, "7.5 700"),
         (
-            "-v set csp -p 7.6 -o 700",
+            "-v set ch 7.6 650",
             0,
-            EXPECTED_VERBOSE_PREAMBLE + "pH Setpoint: 7.5\nORP Setpoint: 700",
+            EXPECTED_VERBOSE_PREAMBLE + "pH Setpoint: 7.5 ORP Setpoint: 700",
         ),
-        ("set csp --orp 700", 0, "700"),
-        ("set csp -p 7.5", 0, "7.5"),
+        ("set ch * *", 129, "No new setpoint values. Nothing to do."),
+        ("set ch f *", 130, "Invalid Chemistry Setpoint value"),
     ],
 )
 async def test_set_chemistry(MockProtocolAdapter, capsys, args, ret, expected):

@@ -1,10 +1,11 @@
 import asyncio
 import pytest
 
-from .const_data import FAKE_CONFIG_RESPONSE_LARGE
-from screenlogicpy.const import CODE as MSG_CODE, MESSAGE as CONST_MESSAGE
+from screenlogicpy.const.msg import CODE as MSG_CODE
 from screenlogicpy.requests.protocol import ScreenLogicProtocol
 from screenlogicpy.requests.utility import makeMessage
+
+from .data_sets import TEST_DATA_COLLECTIONS
 
 
 @pytest.mark.asyncio
@@ -35,7 +36,7 @@ async def test_async_data_received(event_loop):
 @pytest.mark.asyncio
 async def test_async_large_data_received(event_loop):
     CODE = MSG_CODE.CTRLCONFIG_QUERY + 1
-    MESSAGE = FAKE_CONFIG_RESPONSE_LARGE[CONST_MESSAGE.HEADER_LENGTH :]
+    MESSAGE = TEST_DATA_COLLECTIONS[2].config.raw
 
     data = {}
 

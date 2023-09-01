@@ -14,9 +14,9 @@ $ pip install screenlogicpy
 
 # Library usage
 
-* _New in v0.5.0: The screenlogicpy library has moved over to using asyncio for all network I/O. Relevant methods now require the `async`/`await` syntax._
-* _New in v0.8.0: Support for Python 3.8 and 3.9 is being phased out across future releases. This will be the last version to support Python 3.8._
-* _**New in v0.9.0**: Support for Python 3.8 has been removed._
+* _Changed in v0.5.0: The screenlogicpy library has moved over to using asyncio for all network I/O. Relevant methods now require the `async`/`await` syntax._
+* _New in v0.8.0: Support for Python 3.8 and 3.9 is being phased out across future releases. Version 0.8.x will be the last versions to support Python 3.8._
+* _**New in v0.9.0**: Support for Python 3.8 has been removed. Support for Python 3.9 is being phased out across future releases. Version 0.9.x will be the last versions to support Python 3.9._
 
 The `ScreenLogicGateway` class is the primary interface.
 
@@ -130,6 +130,52 @@ The `ScreenLogicGateway` class caches all data from the ScreenLogic protocol ada
 ```python
 data = gateway.get_data()
 ```
+
+`get_data()` now supports specifying a path directly to the data desired. A path can be any length. By default, if the data path is not found, `get_data()` will return `None`, similar to `dict.get()`. Alternatively `strict=True` keyword argument can be added to force the `ScreenLogicGateway` to raise a `KeyError` exception if the path is not found.
+
+The majority of data points normally available to the end-user via the official apps are presented as `dict` objects containing "name" and "value" keys/pairs. Additional keys may be present depending on the type of data.
+
+For example, let's consider the following scenario:
+
+```python
+gateway._data = {
+    "controller": {
+        "sensor": {
+            "air_temperature": {
+                "name": "Air Temperature",
+                "value": 57,
+                "unit": "°F",
+                "device_type": "temperature",
+                "state_type": "measurement",
+            },
+        }
+    }
+}
+data_path = ("controller", "sensor", "air_temperature")
+
+temperature_sensor = gateway.get_data(*data_path)
+```
+
+Here, `temperature_sensor` would be a `dict` of all key/value pairs under the "air_temperature" key.
+
+The `ScreenLogicGateway` also provides shortcut methods `get_name()` and `get_value()` to get the "name" or "value" values respectively from the specified data path.
+
+```python
+# sensor_value = 57
+sensor_value = gateway.get_value(*data_path)
+
+# sensor_name = "Air Temperature"
+sensor_name = gateway.get_name(*data_path)
+```
+
+To get other values directly, use `get_data()` with the full key path:
+
+```python
+# sensor_unit = "°F"
+sensor_unit = gateway.get_data("controller", "sensor", "air_temperature", "unit")
+```
+
+* _**New in v0.9.0**._
 
 ## Disconnecting
 
