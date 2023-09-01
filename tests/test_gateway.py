@@ -18,7 +18,6 @@ from .const_data import (
 )
 from screenlogicpy.requests.utility import encodeMessageString
 
-from .const_data import ASYNC_SL_RESPONSES
 from .data_sets import TESTING_DATA_COLLECTION as TDC
 from .fake_gateway import error_resp, expected_resp
 
