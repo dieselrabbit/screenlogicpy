@@ -1,7 +1,9 @@
+import argparse
+from datetime import datetime
+import json
 import logging
 import string
-import json
-import argparse
+
 from screenlogicpy import __version__
 from screenlogicpy.discovery import async_discover
 from screenlogicpy.gateway import ScreenLogicGateway
@@ -259,11 +261,33 @@ async def cli(cli_args):
         export_response_collection(response_collection, filename)
         return 0
 
-    # Begin Parser Setup
+    async def async_get_date_time(format=None):
+        await gateway.async_get_datetime()
+        timestamp = gateway.get_data(
+            DEVICE.CONTROLLER, GROUP.DATE_TIME, VALUE.TIMESTAMP, strict=True
+        )
+        print(datetime.fromtimestamp(timestamp).strftime(format))
+
+    async def async_set_date_time():
+        date_time = datetime.strptime(args.date_time)
+        if await gateway.async_set_date_time(date_time=date_time):
+            await gateway.async_get_datetime()
+            timestamp = gateway.get_data(
+                DEVICE.CONTROLLER, GROUP.DATE_TIME, VALUE.TIMESTAMP, strict=True
+            )
+            print(f"Controller time now: {datetime.fromtimestamp(timestamp)}")
+
+    async def async_get_auto_dst():
+        pass
+
+    async def async_set_auto_dst(enabled):
+        pass
+
     async def async_get_json():
         print(json.dumps(gateway.get_data(), indent=2))
         return 0
 
+    # Begin Parser Setup
     option_parser = argparse.ArgumentParser(
         prog="screenlogicpy", description="Interface for Pentair Screenlogic gateway"
     )
@@ -350,9 +374,19 @@ async def cli(cli_args):
     get_current_temp_parser.add_argument(**ARGUMENT_BODY)
     get_current_temp_parser.set_defaults(async_func=async_get_current_temp)
 
-    get_json_parser = get_subparsers.add_parser(
-        "json", aliases=["j"], help="Return the full data dict as JSON"
+    get_date_time_parser = get_subparsers.add_parser("date-time", aliases=["dt"])
+    get_date_time_parser.add_argument(
+        "-f",
+        "--format",
+        type=str,
+        help="Optional format string to format the datetime value",
     )
+    get_date_time_parser.set_defaults(async_func=async_get_date_time)
+
+    get_auto_dst_parser = get_subparsers.add_parser("auto-dst", aliases=["dst"])
+    get_auto_dst_parser.set_defaults(async_func=async_get_auto_dst)
+
+    get_json_parser = get_subparsers.add_parser("json", aliases=["j"])
     get_json_parser.set_defaults(async_func=async_get_json)
 
     # Set options
@@ -532,6 +566,22 @@ async def cli(cli_args):
         help="Salt or total dissolved solids (if not using a SCG) for LSI calculations in the IntelliChem system.",
     )
     set_chem_data_parser.set_defaults(async_func=async_set_chem_value)
+
+    set_date_time_parser = set_subparsers.add_parser("date-time", aliases=["dt"])
+    set_date_time_parser.add_argument(
+        "-dt",
+        "--date-time",
+        default=None,
+        type=str,
+        help="A parsable datetime string",
+    )
+    set_date_time_parser.add_argument(
+        "-dst",
+        "-auto-dst",
+        type=str,
+        help="Automatic adjustment of system time for Daylight Saving Time",
+    )
+    set_date_time_parser.set_defaults(async_func=async_set_date_time)
 
     args = option_parser.parse_args(cli_args)
 
