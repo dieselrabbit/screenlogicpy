@@ -6,14 +6,14 @@ from typing import Awaitable, Callable
 from .client import ClientManager
 from .const.common import (
     DATA_REQUEST,
-    RANGE,
+    ON_OFF,
     ScreenLogicError,
     ScreenLogicRequestError,
 )
 from .const.msg import COM_MAX_RETRIES
-from .device_const.chemistry import RANGE_PH_SETPOINT, RANGE_ORP_SETPOINT
-from .device_const.system import BODY_TYPE, EQUIPMENT_FLAG
-from .device_const.scg import LIMIT_FOR_BODY
+from .device_const.chemistry import CHEM_RANGE as cr
+from .device_const.system import EQUIPMENT_FLAG
+from .device_const.scg import SCG_RANGE as sr
 from .const.data import ATTR, DEVICE, GROUP, VALUE
 from .requests import (
     async_connect_to_gateway,
@@ -340,44 +340,113 @@ class ScreenLogicGateway:
             async_request_pool_lights_command, light_command
         )
 
-    async def async_set_scg_config(self, pool_output: int, spa_output: int):
-        """Set the salt-chlorine-generator output for both pool and spa."""
-        if not self._is_valid_scg_value(pool_output, BODY_TYPE.POOL):
-            raise ValueError(f"Invalid pool_output: {pool_output}")
-        if not self._is_valid_scg_value(spa_output, BODY_TYPE.SPA):
-            raise ValueError(f"Invalid spa_output: {spa_output}")
+    async def async_set_scg_config(
+        self,
+        *,
+        pool_setpoint: int | None = None,
+        spa_setpoint: int | None = None,
+        super_chlorinate: int | None = None,
+        super_chlor_timer: int | None = None,
+    ):
+        """Set the salt-chlorine-generator output.
+
+        Sets output values for both pool and spa, along with super chlorination timer.
+        """
+        SCG_CONFIG = (DEVICE.SCG, GROUP.CONFIGURATION)
+        if pool_setpoint is None:
+            pool_setpoint = self.get_value(
+                *SCG_CONFIG, VALUE.POOL_SETPOINT, strict=True
+            )
+
+        if spa_setpoint is None:
+            spa_setpoint = self.get_value(*SCG_CONFIG, VALUE.SPA_SETPOINT, strict=True)
+
+        if super_chlorinate is None:
+            super_chlorinate = (
+                0  # self.get_data(*SCG_CONFIG, VALUE.SUPER_CHLORINATE, strict=True)
+            )
+
+        if super_chlor_timer is None:
+            super_chlor_timer = self.get_value(
+                *SCG_CONFIG, VALUE.SUPER_CHLOR_TIMER, strict=True
+            )
+
+        try:
+            sr.POOL_SETPOINT.check(pool_setpoint)
+            sr.SPA_SETPOINT.check(spa_setpoint)
+            super_chlorinate = ON_OFF.parse(super_chlorinate).value
+            sr.SUPER_CHLOR_RT.check(super_chlor_timer)
+        except ValueError as ve:
+            raise ScreenLogicError(ve.args[0]) from ve
 
         return await self._async_connected_request(
-            async_request_set_scg_config, pool_output, spa_output
+            async_request_set_scg_config,
+            pool_setpoint,
+            spa_setpoint,
+            super_chlorinate,
+            super_chlor_timer,
         )
 
     async def async_set_chem_data(
         self,
-        ph_setpoint: float,
-        orp_setpoint: int,
-        calcium: int,
-        alkalinity: int,
-        cyanuric: int,
-        salt: int,
+        *,
+        ph_setpoint: float | None = None,
+        orp_setpoint: int | None = None,
+        calcium_hardness: int | None = None,
+        total_alkalinity: int | None = None,
+        cya: int | None = None,
+        salt_tds_ppm: int | None = None,
     ):
         """Set configurable chemistry values."""
-        if self._is_valid_ph_setpoint(ph_setpoint):
-            ph_setpoint = int(ph_setpoint * 100)
-        else:
-            raise ValueError(f"Invalid PH Set point: {ph_setpoint}")
-        if not self._is_valid_orp_setpoint(orp_setpoint):
-            raise ValueError(f"Invalid ORP Set point: {orp_setpoint}")
-        if calcium < 0 or alkalinity < 0 or cyanuric < 0 or salt < 0:
-            raise ValueError("Invalid Chemistry setting.")
+        INTELLICHEM_CONFIG = (DEVICE.INTELLICHEM, GROUP.CONFIGURATION)
+        if ph_setpoint is None:
+            ph_setpoint = self.get_value(
+                *INTELLICHEM_CONFIG, VALUE.PH_SETPOINT, strict=True
+            )
+
+        if orp_setpoint is None:
+            orp_setpoint = self.get_value(
+                *INTELLICHEM_CONFIG, VALUE.ORP_SETPOINT, strict=True
+            )
+
+        if calcium_hardness is None:
+            calcium_hardness = self.get_value(
+                *INTELLICHEM_CONFIG, VALUE.CALCIUM_HARDNESS, strict=True
+            )
+
+        if total_alkalinity is None:
+            total_alkalinity = self.get_value(
+                *INTELLICHEM_CONFIG, VALUE.TOTAL_ALKALINITY, strict=True
+            )
+
+        if cya is None:
+            cya = self.get_value(*INTELLICHEM_CONFIG, VALUE.CYA, strict=True)
+
+        if salt_tds_ppm is None:
+            salt_tds_ppm = self.get_value(
+                *INTELLICHEM_CONFIG, VALUE.SALT_TDS_PPM, strict=True
+            )
+
+        try:
+            cr.PH_SETPOINT.check(ph_setpoint)
+            cr.ORP_SETPOINT.check(orp_setpoint)
+            cr.CALCIUM_HARDNESS.check(calcium_hardness)
+            cr.TOTAL_ALKALINITY.check(total_alkalinity)
+            cr.CYANURIC_ACID.check(cya)
+            cr.SALT_TDS.check(salt_tds_ppm)
+        except ValueError as ve:
+            raise ScreenLogicError(ve.args[0]) from ve
+
+        ph_setpoint = int(ph_setpoint * 100)
 
         return await self._async_connected_request(
             async_request_set_chem_data,
             ph_setpoint,
             orp_setpoint,
-            calcium,
-            alkalinity,
-            cyanuric,
-            salt,
+            calcium_hardness,
+            total_alkalinity,
+            cya,
+            salt_tds_ppm,
         )
 
     async def async_subscribe_client(
@@ -482,21 +551,3 @@ class ScreenLogicGateway:
     def _is_valid_color_mode(self, mode):
         """Validate color mode number."""
         return 0 <= mode <= 21
-
-    def _is_valid_scg_value(self, scg_value, body_type):
-        """Validate chlorinator value for body."""
-        return 0 <= scg_value <= LIMIT_FOR_BODY[body_type]
-
-    def _is_valid_ph_setpoint(self, ph_setpoint: float):
-        """Validate pH setpoint."""
-        return (
-            RANGE_PH_SETPOINT[RANGE.MIN] <= ph_setpoint <= RANGE_PH_SETPOINT[RANGE.MAX]
-        )
-
-    def _is_valid_orp_setpoint(self, orp_setpoint: int):
-        """Validate ORP setpoint."""
-        return (
-            RANGE_ORP_SETPOINT[RANGE.MIN]
-            <= orp_setpoint
-            <= RANGE_ORP_SETPOINT[RANGE.MAX]
-        )
