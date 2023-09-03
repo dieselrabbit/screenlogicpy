@@ -1,4 +1,4 @@
-__version__ = "0.9.1"
+__version__ = "0.10.0"
 # flake8: noqa F401
 from screenlogicpy.gateway import ScreenLogicGateway
 from screenlogicpy.const.common import ScreenLogicError, ScreenLogicRequestError
