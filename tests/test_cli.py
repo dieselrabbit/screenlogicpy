@@ -170,34 +170,96 @@ async def test_set_color_lights(MockProtocolAdapter, capsys, args, ret, expected
 @pytest.mark.parametrize(
     "args, ret, expected",
     [
-        ("set salt-generator 100 20", 0, "50 0"),
+        ("set salt-generator --pool 50", 0, "50"),
+        ("set salt-generator --spa 0", 0, "0"),
+        ("set salt-generator -p 100 -s 0", 0, "50 0"),
         (
-            "-v set scg 20 0",
+            "-v set scg --pool 55 --spa 25",
             0,
             EXPECTED_VERBOSE_PREAMBLE
             + "Pool Chlorinator Setpoint: 50 Spa Chlorinator Setpoint: 0",
         ),
-        ("set scg * *", 65, "No new Chlorinator values. Nothing to do."),
-        ("set scg f *", 66, "Invalid Chlorinator value"),
+        ("set scg", 65, "No new chlorinator values. Nothing to do."),
+        ("set scg -p sixty", 66, SystemExit),
     ],
 )
-async def test_set_scg(MockProtocolAdapter, capsys, args, ret, expected):
-    await run_cli_test(MockProtocolAdapter, capsys, args, ret, expected)
+async def test_set_scg_setpoint(MockProtocolAdapter, capsys, args, ret, expected):
+    if type(expected) == type and issubclass(expected, BaseException):
+        with pytest.raises(expected):
+            await run_cli_test(MockProtocolAdapter, capsys, args, ret, expected)
+    else:
+        await run_cli_test(MockProtocolAdapter, capsys, args, ret, expected)
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "args, ret, expected",
     [
-        ("set chem-data 7.5 700", 0, "7.5 700"),
+        ("set super-chlorinate --state 0", 0, ""),
+        ("set super-chlorinate --time 12", 0, "0"),
+        ("set super-chlorinate -s 1 -t 72", 0, "0"),
         (
-            "-v set ch 7.6 650",
+            "-v set sc --state 0 --time 12",
+            0,
+            EXPECTED_VERBOSE_PREAMBLE + "Super Chlorination Timer: 0",
+        ),
+        ("set sc", 65, "No new chlorinator values. Nothing to do."),
+        ("set sc -t sixty", 66, SystemExit),
+    ],
+)
+async def test_set_scg_super(MockProtocolAdapter, capsys, args, ret, expected):
+    if type(expected) == type and issubclass(expected, BaseException):
+        with pytest.raises(expected):
+            await run_cli_test(MockProtocolAdapter, capsys, args, ret, expected)
+    else:
+        await run_cli_test(MockProtocolAdapter, capsys, args, ret, expected)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "args, ret, expected",
+    [
+        ("set chemistry-setpoint --ph 7.5", 0, "7.5"),
+        ("set chemistry-setpoint --orp 700", 0, "700"),
+        ("set chemistry-setpoint -p 7.5 -o 700", 0, "7.5 700"),
+        (
+            "-v set cs -p 7.6 -o 650",
             0,
             EXPECTED_VERBOSE_PREAMBLE + "pH Setpoint: 7.5 ORP Setpoint: 700",
         ),
-        ("set ch * *", 129, "No new setpoint values. Nothing to do."),
-        ("set ch f *", 130, "Invalid Chemistry Setpoint value"),
+        ("set cs", 129, "No new chemistry values. Nothing to do."),
+        ("set cs -o seven", 2, SystemExit),
+        ("set cs -o 900", 128, "900 not in range 400-800"),
     ],
 )
-async def test_set_chemistry(MockProtocolAdapter, capsys, args, ret, expected):
-    await run_cli_test(MockProtocolAdapter, capsys, args, ret, expected)
+async def test_set_chemistry_setpoint(MockProtocolAdapter, capsys, args, ret, expected):
+    if type(expected) == type and issubclass(expected, BaseException):
+        with pytest.raises(expected):
+            await run_cli_test(MockProtocolAdapter, capsys, args, ret, expected)
+    else:
+        await run_cli_test(MockProtocolAdapter, capsys, args, ret, expected)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "args, ret, expected",
+    [
+        ("set chemistry-value --calcium-hardness 350", 0, "740"),
+        ("set chemistry-value --cyanuric-acid 55", 0, "36"),
+        ("set chemistry-value -ta 80 -tds 1000", 0, "70 1000"),
+        (
+            "-v set cv -ch 505 -cya 50",
+            0,
+            EXPECTED_VERBOSE_PREAMBLE + "Calcium Hardness: 740 Cyanuric Acid: 36",
+        ),
+        ("set cv", 129, "No new chemistry values. Nothing to do."),
+        ("set cv -cya seven", 2, SystemExit),
+        ("set cv -ta 900", 128, "900 not in range 25-800"),
+    ],
+)
+async def test_set_chemistry_value(MockProtocolAdapter, capsys, args, ret, expected):
+    if type(expected) == type and issubclass(expected, BaseException):
+        with pytest.raises(expected):
+            await run_cli_test(MockProtocolAdapter, capsys, args, ret, expected)
+    else:
+        await run_cli_test(MockProtocolAdapter, capsys, args, ret, expected)
