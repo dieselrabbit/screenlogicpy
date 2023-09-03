@@ -136,7 +136,7 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
     }
 
     cal, offset = getSome(">H", buff, offset)  # 28
-    intellichem_config[VALUE.CALCIUM_HARNESS] = {
+    intellichem_config[VALUE.CALCIUM_HARDNESS] = {
         ATTR.NAME: "Calcium Hardness",
         ATTR.VALUE: cal,
         ATTR.UNIT: UNIT.PARTS_PER_MILLION,
