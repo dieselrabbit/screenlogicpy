@@ -16,7 +16,8 @@ $ pip install screenlogicpy
 
 * _Changed in v0.5.0: The screenlogicpy library has moved over to using asyncio for all network I/O. Relevant methods now require the `async`/`await` syntax._
 * _New in v0.8.0: Support for Python 3.8 and 3.9 is being phased out across future releases. Version 0.8.x will be the last versions to support Python 3.8._
-* _**New in v0.9.0**: Support for Python 3.8 has been removed. Support for Python 3.9 is being phased out across future releases. Version 0.9.x will be the last versions to support Python 3.9._
+* _New in v0.9.0: Support for Python 3.8 has been removed. Support for Python 3.9 is being phased out across future releases. Version 0.9.x will be the last versions to support Python 3.9._
+* _**New in v0.10.0**: Support for Python 3.9 has been removed._
 
 The `ScreenLogicGateway` class is the primary interface.
 
@@ -643,17 +644,17 @@ Sets various chemistry values used in LSI calculations within the IntelliChem sy
 
 ## Supported Subscribable Messages
 
-`screenlogicpy` includes functionality to automatically decode these messages and update it's data accordingly. Other message codes can be subscribed to, but the consuming application will need to implement any processing of the incoming message.
+`screenlogicpy` includes functionality to automatically decode these messages and update its data accordingly. Other message codes can be subscribed to, but the consuming application will need to implement any processing of the incoming message.
 
 ```python
 from screenlogicpy.const import CODE
 ```
 
-|Message Code|Imported CONST|Description|
-|------------|--------------|-----------|
-|`12500`|`CODE.STATUS_CHANGED`|Sent when basic status changes. Air/water temp, heater state, circuit state, basic chemistry (if available).|
-|`12504`|`CODE.COLOR_UPDATE`|Sent repeatedly during a color lights color mode transition.|
-|`12505`|`CODE.CHEMISTRY_CHANGED`|Sent when a change occurs to the state of an attached IntelliChem controller.|
+| Message Code | Imported CONST          | Description                                                                                                 |
+|--------------|-------------------------|-------------------------------------------------------------------------------------------------------------|
+| `12500`      | `CODE.STATUS_CHANGED`   | Sent when basic status changes. Air/water temp, heater state, circuit state, basic chemistry (if available).|
+| `12504`      | `CODE.COLOR_UPDATE`     | Sent repeatedly during a color lights color mode transition.                                                |
+| `12505`      | `CODE.CHEMISTRY_CHANGED`| Sent when a change occurs to the state of an attached IntelliChem controller.                               |
 
 ---
 
