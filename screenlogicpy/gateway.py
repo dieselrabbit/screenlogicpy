@@ -353,31 +353,33 @@ class ScreenLogicGateway:
         Sets output values for both pool and spa, along with super chlorination timer.
         """
         SCG_CONFIG = (DEVICE.SCG, GROUP.CONFIGURATION)
-        if pool_setpoint is None:
-            pool_setpoint = self.get_value(
-                *SCG_CONFIG, VALUE.POOL_SETPOINT, strict=True
-            )
-
-        if spa_setpoint is None:
-            spa_setpoint = self.get_value(*SCG_CONFIG, VALUE.SPA_SETPOINT, strict=True)
-
-        if super_chlorinate is None:
-            super_chlorinate = (
-                0  # self.get_data(*SCG_CONFIG, VALUE.SUPER_CHLORINATE, strict=True)
-            )
-
-        if super_chlor_timer is None:
-            super_chlor_timer = self.get_value(
-                *SCG_CONFIG, VALUE.SUPER_CHLOR_TIMER, strict=True
-            )
-
         try:
+            if pool_setpoint is None:
+                pool_setpoint = self.get_value(
+                    *SCG_CONFIG, VALUE.POOL_SETPOINT, strict=True
+                )
+
+            if spa_setpoint is None:
+                spa_setpoint = self.get_value(
+                    *SCG_CONFIG, VALUE.SPA_SETPOINT, strict=True
+                )
+
+            if super_chlorinate is None:
+                super_chlorinate = (
+                    0  # self.get_data(*SCG_CONFIG, VALUE.SUPER_CHLORINATE, strict=True)
+                )
+
+            if super_chlor_timer is None:
+                super_chlor_timer = self.get_value(
+                    *SCG_CONFIG, VALUE.SUPER_CHLOR_TIMER, strict=True
+                )
+
             sr.POOL_SETPOINT.check(pool_setpoint)
             sr.SPA_SETPOINT.check(spa_setpoint)
             super_chlorinate = ON_OFF.parse(super_chlorinate).value
             sr.SUPER_CHLOR_RT.check(super_chlor_timer)
-        except ValueError as ve:
-            raise ScreenLogicError(ve.args[0]) from ve
+        except (KeyError, ValueError) as ex:
+            raise ScreenLogicError(ex.args[0]) from ex
 
         return await self._async_connected_request(
             async_request_set_scg_config,
@@ -399,43 +401,44 @@ class ScreenLogicGateway:
     ):
         """Set configurable chemistry values."""
         INTELLICHEM_CONFIG = (DEVICE.INTELLICHEM, GROUP.CONFIGURATION)
-        if ph_setpoint is None:
-            ph_setpoint = self.get_value(
-                *INTELLICHEM_CONFIG, VALUE.PH_SETPOINT, strict=True
-            )
-
-        if orp_setpoint is None:
-            orp_setpoint = self.get_value(
-                *INTELLICHEM_CONFIG, VALUE.ORP_SETPOINT, strict=True
-            )
-
-        if calcium_hardness is None:
-            calcium_hardness = self.get_value(
-                *INTELLICHEM_CONFIG, VALUE.CALCIUM_HARDNESS, strict=True
-            )
-
-        if total_alkalinity is None:
-            total_alkalinity = self.get_value(
-                *INTELLICHEM_CONFIG, VALUE.TOTAL_ALKALINITY, strict=True
-            )
-
-        if cya is None:
-            cya = self.get_value(*INTELLICHEM_CONFIG, VALUE.CYA, strict=True)
-
-        if salt_tds_ppm is None:
-            salt_tds_ppm = self.get_value(
-                *INTELLICHEM_CONFIG, VALUE.SALT_TDS_PPM, strict=True
-            )
 
         try:
+            if ph_setpoint is None:
+                ph_setpoint = self.get_value(
+                    *INTELLICHEM_CONFIG, VALUE.PH_SETPOINT, strict=True
+                )
+
+            if orp_setpoint is None:
+                orp_setpoint = self.get_value(
+                    *INTELLICHEM_CONFIG, VALUE.ORP_SETPOINT, strict=True
+                )
+
+            if calcium_hardness is None:
+                calcium_hardness = self.get_value(
+                    *INTELLICHEM_CONFIG, VALUE.CALCIUM_HARDNESS, strict=True
+                )
+
+            if total_alkalinity is None:
+                total_alkalinity = self.get_value(
+                    *INTELLICHEM_CONFIG, VALUE.TOTAL_ALKALINITY, strict=True
+                )
+
+            if cya is None:
+                cya = self.get_value(*INTELLICHEM_CONFIG, VALUE.CYA, strict=True)
+
+            if salt_tds_ppm is None:
+                salt_tds_ppm = self.get_value(
+                    *INTELLICHEM_CONFIG, VALUE.SALT_TDS_PPM, strict=True
+                )
+
             cr.PH_SETPOINT.check(ph_setpoint)
             cr.ORP_SETPOINT.check(orp_setpoint)
             cr.CALCIUM_HARDNESS.check(calcium_hardness)
             cr.TOTAL_ALKALINITY.check(total_alkalinity)
             cr.CYANURIC_ACID.check(cya)
             cr.SALT_TDS.check(salt_tds_ppm)
-        except ValueError as ve:
-            raise ScreenLogicError(ve.args[0]) from ve
+        except (KeyError, ValueError) as ex:
+            raise ScreenLogicError(ex.args[0]) from ex
 
         ph_setpoint = int(ph_setpoint * 100)
 
