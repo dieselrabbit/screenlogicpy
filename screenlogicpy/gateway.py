@@ -143,7 +143,7 @@ class ScreenLogicGateway:
         )
         if connectPkg:
             self._transport, self._protocol, self._mac = connectPkg
-            await async_request_gateway_version(
+            self._last[DATA_REQUEST.VERSION] = await async_request_gateway_version(
                 self._protocol, self._data, self._max_retries
             )
             if self.version:

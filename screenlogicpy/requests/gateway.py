@@ -12,6 +12,7 @@ async def async_request_gateway_version(
         protocol, CODE.VERSION_QUERY, max_retries=max_retries
     ):
         decode_version(result, data)
+        return result
 
 
 def decode_version(buff: bytes, data: dict):
