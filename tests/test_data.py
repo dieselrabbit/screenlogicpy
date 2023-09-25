@@ -28,3 +28,9 @@ def test_validate_complete(collection: ScreenLogicResponseCollection):
         decode_chemistry(collection.chemistry.raw, data)
     if collection.scg:
         decode_scg_config(collection.scg.raw, data)
+
+def test_tuple_conversion():
+    int_tuple: tuple = (1, 2, 3)
+    string: str = repr(int_tuple)
+    evaled = eval(string)
+    assert evaled == int_tuple

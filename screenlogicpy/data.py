@@ -43,8 +43,8 @@ class ScreenLogicResponseCollection:
 T_KEY = "__type"
 
 
-def bytes_json_encoder(o: Any) -> Any:
-    if isinstance(o, bytes):
+def other_json_encoder(o: Any) -> Any:
+    if isinstance(o, bytes) or isinstance(o, tuple):
         return {T_KEY: repr(type(o)), "repr": repr(o)}
     return o
 
@@ -67,7 +67,7 @@ def response_set_json_decoder(o: dict) -> Any:
     return int_json_key_decoder(o)
 
 
-def bytes_json_decoder(o: dict) -> Any:
+def other_json_decoder(o: dict) -> Any:
     if T_KEY in o:
         # typeT = eval(o[tkey])
         return eval(o["repr"])
@@ -79,7 +79,7 @@ def write_sl_data_json(filename: str, data: dict) -> None:
         json.dump(
             data,
             fp,
-            default=bytes_json_encoder,
+            default=other_json_encoder,
             ensure_ascii=False,
             indent=2,
         )
@@ -93,7 +93,7 @@ def export_response_collection(
 
 def read_sl_data_json(filename: str) -> dict:
     with open(filename, "r") as fp:
-        return json.load(fp, object_hook=bytes_json_decoder)
+        return json.load(fp, object_hook=other_json_decoder)
 
 
 def import_response_collection(filename: str) -> ScreenLogicResponseCollection:
