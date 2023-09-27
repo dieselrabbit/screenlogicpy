@@ -2,6 +2,7 @@ import logging
 import string
 import json
 import argparse
+from screenlogicpy import __version__
 from screenlogicpy.discovery import async_discover
 from screenlogicpy.gateway import ScreenLogicGateway
 from screenlogicpy.const.common import (
@@ -13,11 +14,18 @@ from screenlogicpy.const.common import (
     ScreenLogicError,
     ScreenLogicWarning,
 )
+from screenlogicpy.data import build_response_collection, export_response_collection
 from screenlogicpy.device_const.chemistry import CHEM_RANGE
+from screenlogicpy.device_const.circuit import INTERFACE
 from screenlogicpy.device_const.heat import HEAT_MODE
 from screenlogicpy.device_const.system import BODY_TYPE, COLOR_MODE
 from screenlogicpy.device_const.scg import SCG_RANGE
 from screenlogicpy.const.data import ATTR, DEVICE, GROUP, VALUE
+
+
+def file_format(name: str):
+    table = str.maketrans(" ", "-", string.punctuation)
+    return name.translate(table).lower()
 
 
 def cliFormat(name: str):
@@ -276,6 +284,18 @@ async def cli(cli_args):
             return 0
         return 128
 
+    async def async_export_data_collection():
+        sl_ver = file_format(__version__)
+        pa_ver = file_format(gateway.version)
+        model = file_format(gateway.controller_model)
+        equip = gateway.equipment_flags.value
+        filename = f"slpy{sl_ver}_{pa_ver}_{model}_{equip}.json"
+        response_collection = build_response_collection(
+            gateway.get_debug(), gateway.get_data()
+        )
+        export_response_collection(response_collection, filename)
+        return 0
+
     # Begin Parser Setup
     async def async_get_json():
         print(json.dumps(gateway.get_data(), indent=2))
@@ -308,6 +328,9 @@ async def cli(cli_args):
     discover_parser = subparsers.add_parser(  # noqa F841
         "discover", help="Attempt to discover all available ScreenLogic gateways"
     )
+
+    # pylint: disable=unused-variable
+    export_parser = subparsers.add_parser("export")  # noqa F841
 
     # Get options
     get_parser = subparsers.add_parser("get", help="Gets the specified value or state")
@@ -606,6 +629,10 @@ async def cli(cli_args):
         if DEVICE.CONTROLLER not in gateway.get_data():
             return 1
 
+        if args.action == "export":
+            result = await async_export_data_collection()
+            return result
+
         def print_gateway():
             verb = "Discovered" if discovered else "Using"
             print(
@@ -619,13 +646,14 @@ async def cli(cli_args):
             print("{}  {}  {}".format("ID".rjust(3), "STATE", "NAME"))
             print("--------------------------")
             for id, circuit in gateway.get_data(DEVICE.CIRCUIT).items():
-                print(
-                    "{}  {}  {}".format(
-                        id,
-                        ON_OFF(circuit[ATTR.VALUE]).title.rjust(5),
-                        circuit[ATTR.NAME],
+                if circuit[ATTR.INTERFACE] != INTERFACE.DONT_SHOW:
+                    print(
+                        "{}  {}  {}".format(
+                            id,
+                            ON_OFF(circuit[ATTR.VALUE]).title.rjust(5),
+                            circuit[ATTR.NAME],
+                        )
                     )
-                )
 
         def print_heat():
             for body in gateway.get_data(DEVICE.BODY).values():
