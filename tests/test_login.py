@@ -13,10 +13,6 @@ from tests.const_data import (
     FAKE_GATEWAY_MAC,
     FAKE_GATEWAY_PORT,
 )
-from tests.fake_gateway import (
-    error_resp,
-    expected_resp,
-)
 
 
 @pytest.mark.asyncio
@@ -56,9 +52,7 @@ async def test_async_login_timeout(
             "screenlogicpy.requests.login.ScreenLogicProtocol.await_send_message",
             side_effect=(
                 req_fut(
-                    expected_resp(
-                        CODE.CHALLENGE_QUERY, encodeMessageString(FAKE_GATEWAY_MAC)
-                    )
+                    (0, CODE.CHALLENGE_QUERY + 1, encodeMessageString(FAKE_GATEWAY_MAC))
                 ),
                 req_fut(),
                 req_fut(),
@@ -88,12 +82,10 @@ async def test_async_login_rejected(
             "screenlogicpy.requests.login.ScreenLogicProtocol.await_send_message",
             side_effect=(
                 req_fut(
-                    expected_resp(
-                        CODE.CHALLENGE_QUERY, encodeMessageString(FAKE_GATEWAY_MAC)
-                    )
+                    (0, CODE.CHALLENGE_QUERY + 1, encodeMessageString(FAKE_GATEWAY_MAC))
                 ),
-                req_fut(error_resp(CODE.LOCALLOGIN_QUERY)),
-                req_fut(error_resp(CODE.LOCALLOGIN_QUERY)),
+                req_fut((0, CODE.ERROR_LOGIN_REJECTED, b"")),
+                req_fut((0, CODE.ERROR_LOGIN_REJECTED, b"")),
             ),
         ) as mockRequest, patch("screenlogicpy.const.msg.COM_RETRY_WAIT", 1):
             gateway = ScreenLogicGateway()

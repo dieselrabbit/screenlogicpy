@@ -20,16 +20,6 @@ from .const_data import (
 )
 from .adapter import FakeUDPProtocolAdapter
 
-DISCOVERY_RESPONSE = struct.pack(
-    f"<I4BH2B{len(FAKE_GATEWAY_NAME)}s",
-    FAKE_GATEWAY_CHK,
-    *[int(part) for part in FAKE_GATEWAY_ADDRESS.split(".")],
-    FAKE_GATEWAY_PORT,
-    FAKE_GATEWAY_TYPE,
-    FAKE_GATEWAY_SUB_TYPE,
-    bytes(FAKE_GATEWAY_NAME, "UTF-8"),
-)
-
 
 @pytest.mark.asyncio
 async def test_async_discovery(FakeDiscoveryAdapter: FakeUDPProtocolAdapter):

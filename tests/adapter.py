@@ -29,7 +29,7 @@ class FakeProtocolAdapterTCPProtocol(asyncio.Protocol):
             CODE.CTRLCONFIG_QUERY: self.responses.config.raw,
             CODE.POOLSTATUS_QUERY: self.responses.status.raw,
             CODE.STATUS_CHANGED: self.responses.status.raw,
-            CODE.PUMPSTATUS_QUERY: self.responses.pumps,
+            CODE.PUMPSTATUS_QUERY: lambda pump_num: self.responses.pumps[pump_num].raw,
             CODE.CHEMISTRY_QUERY: self.responses.chemistry.raw,
             CODE.CHEMISTRY_CHANGED: self.responses.chemistry.raw,
             CODE.SCGCONFIG_QUERY: self.responses.scg.raw,
@@ -79,8 +79,8 @@ class FakeProtocolAdapterTCPProtocol(asyncio.Protocol):
         msgID, msgCode, msgData = message
         if msgCode in self.response_map:
             if msgCode == CODE.PUMPSTATUS_QUERY:
-                pump = struct.unpack("<I", msgData)
-                return makeMessage(msgID, msgCode + 1, self.response_map[msgCode][pump])
+                pump = struct.unpack_from("<I", msgData, 4)[0]
+                return makeMessage(msgID, msgCode + 1, self.response_map[msgCode](pump))
             else:
                 return makeMessage(msgID, msgCode + 1, self.response_map[msgCode])
         else:

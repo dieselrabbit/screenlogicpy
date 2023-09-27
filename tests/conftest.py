@@ -3,6 +3,7 @@ from collections.abc import Callable
 import os
 import pytest_asyncio
 import socket
+import struct
 from unittest.mock import DEFAULT, MagicMock, patch
 
 from screenlogicpy import ScreenLogicGateway
@@ -13,14 +14,17 @@ from screenlogicpy.requests.protocol import ScreenLogicProtocol
 from .adapter import FakeProtocolAdapterTCPProtocol, FakeUDPProtocolAdapter
 from .const_data import (
     FAKE_GATEWAY_ADDRESS,
+    FAKE_GATEWAY_CHK,
     FAKE_GATEWAY_PORT,
     FAKE_CONNECT_INFO,
     FAKE_GATEWAY_MAC,
     FAKE_GATEWAY_NAME,
+    FAKE_GATEWAY_SUB_TYPE,
+    FAKE_GATEWAY_TYPE,
 )
 
 
-DEFAULT_RESPONSE = "pool-52-build-7360-rel_easytouch2-8_98360.json"
+DEFAULT_RESPONSE = "slpy091_pool-52-build-7360-rel_easytouch2-8_98360.json"
 
 
 def load_response_collection(filenames: list[str] | None = None):
@@ -38,7 +42,7 @@ async def response_collection():
 
 
 @pytest_asyncio.fixture()
-async def FakeProtocolAdapter(
+async def MockProtocolAdapter(
     event_loop: asyncio.AbstractEventLoop,
     response_collection: ScreenLogicResponseCollection,
 ):
@@ -52,6 +56,19 @@ async def FakeProtocolAdapter(
     async with server:
         yield server
         server.close()
+
+
+@pytest_asyncio.fixture
+async def discovery_response() -> bytes:
+    return struct.pack(
+        f"<I4BH2B{len(FAKE_GATEWAY_NAME)}s",
+        FAKE_GATEWAY_CHK,
+        *[int(part) for part in FAKE_GATEWAY_ADDRESS.split(".")],
+        FAKE_GATEWAY_PORT,
+        FAKE_GATEWAY_TYPE,
+        FAKE_GATEWAY_SUB_TYPE,
+        bytes(FAKE_GATEWAY_NAME, "UTF-8"),
+    )
 
 
 @pytest_asyncio.fixture()
