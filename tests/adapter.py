@@ -27,7 +27,7 @@ class CONNECTION_STATE(IntEnum):
     LOGIN = 3
 
 
-class FakeProtocolAdapterTCPProtocol(asyncio.Protocol):
+class FakeTCPProtocolAdapter(asyncio.Protocol):
     def __init__(self, responses: ScreenLogicResponseCollection) -> None:
         self.responses = responses
         self._cs = CONNECTION_STATE.NO_CONNECTION

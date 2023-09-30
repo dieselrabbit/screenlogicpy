@@ -22,9 +22,9 @@ from .adapter import FakeUDPProtocolAdapter
 
 
 @pytest.mark.asyncio
-async def test_async_discovery(FakeDiscoveryAdapter: FakeUDPProtocolAdapter):
+async def test_async_discovery(MockDiscoveryAdapter: FakeUDPProtocolAdapter):
 
-    server = FakeDiscoveryAdapter
+    server = MockDiscoveryAdapter
     hosts = await async_discover()
 
     server.transport.close()

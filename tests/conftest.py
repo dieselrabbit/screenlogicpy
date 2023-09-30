@@ -11,7 +11,7 @@ from screenlogicpy.data import ScreenLogicResponseCollection, import_response_co
 from screenlogicpy.discovery import DISCOVERY_PORT
 from screenlogicpy.requests.protocol import ScreenLogicProtocol
 
-from .adapter import FakeProtocolAdapterTCPProtocol, FakeUDPProtocolAdapter
+from .adapter import FakeTCPProtocolAdapter, FakeUDPProtocolAdapter
 from .const_data import (
     FAKE_GATEWAY_ADDRESS,
     FAKE_GATEWAY_CHK,
@@ -47,7 +47,7 @@ async def MockProtocolAdapter(
     response_collection: ScreenLogicResponseCollection,
 ):
     server = await event_loop.create_server(
-        lambda: FakeProtocolAdapterTCPProtocol(response_collection),
+        lambda: FakeTCPProtocolAdapter(response_collection),
         FAKE_GATEWAY_ADDRESS,
         FAKE_GATEWAY_PORT,
         reuse_address=True,
@@ -72,7 +72,7 @@ async def discovery_response() -> bytes:
 
 
 @pytest_asyncio.fixture()
-async def FakeDiscoveryAdapter(
+async def MockDiscoveryAdapter(
     event_loop: asyncio.AbstractEventLoop, discovery_response: bytes
 ):
     _udp_sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
