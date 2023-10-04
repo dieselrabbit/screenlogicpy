@@ -40,93 +40,6 @@ class ScreenLogicResponseCollection:
     color: list[ScreenLogicResponseSet] = None
 
 
-T_KEY = "__type"
-
-
-def bytes_json_encoder(o: Any) -> Any:
-    if isinstance(o, bytes) or isinstance(o, tuple):
-        return {T_KEY: repr(type(o)), "repr": repr(o)}
-    return o
-
-
-def screenlogic_object_decoder(o: dict) -> Any:
-    if T_KEY in o:
-        return eval(o["repr"])
-
-    if "decoded" in o and "raw" in o:
-        return ScreenLogicResponseSet(**o)
-
-    if isinstance(o, dict):
-        strkeys = []
-        for key in o.keys():
-            if isinstance(key, str):
-                if key.isdigit():
-                    strkeys.append(key)
-        for strkey in strkeys:
-            o[int(strkey)] = o.pop(strkey)
-    return o
-
-
-def int_json_key_decoder(o: dict) -> Any:
-    if isinstance(o, dict):
-        strkeys = []
-        for key in o.keys():
-            if isinstance(key, str):
-                if key.isdigit():
-                    strkeys.append(key)
-        for strkey in strkeys:
-            o[int(strkey)] = o.pop(strkey)
-    return o
-
-
-# Patch for color RGB tuples
-def value_list_decoder(o: dict) -> Any:
-    if "value" in o:
-        value = o["value"]
-        if isinstance(value, list) and len(value) == 3:
-            o["value"] = tuple(value)
-    return int_json_key_decoder(o)
-
-
-def response_set_json_decoder(o: dict) -> Any:
-    if "decoded" in o and "raw" in o:
-        return ScreenLogicResponseSet(**o)
-    return value_list_decoder(o)
-
-
-def bytes_json_decoder(o: dict) -> Any:
-    if T_KEY in o:
-        # typeT = eval(o[tkey])
-        return eval(o["repr"])
-    return response_set_json_decoder(o)
-
-
-def write_sl_data_json(filename: str, data: dict) -> None:
-    with open(filename, "w", encoding="utf-8") as fp:
-        json.dump(
-            data,
-            fp,
-            default=bytes_json_encoder,
-            ensure_ascii=False,
-            indent=2,
-        )
-
-
-def export_response_collection(
-    response_collection: ScreenLogicResponseCollection, filename: str
-) -> None:
-    write_sl_data_json(filename, asdict(response_collection))
-
-
-def read_sl_data_json(filename: str) -> dict:
-    with open(filename, "r", encoding="utf-8") as fp:
-        return json.load(fp, object_hook=bytes_json_decoder)
-
-
-def import_response_collection(filename: str) -> ScreenLogicResponseCollection:
-    return ScreenLogicResponseCollection(**read_sl_data_json(filename))
-
-
 def build_response_collection(raw: dict, data: dict) -> ScreenLogicResponseCollection:
     SLResponseColArgs = {}
 
@@ -145,3 +58,71 @@ def build_response_collection(raw: dict, data: dict) -> ScreenLogicResponseColle
                 SLResponseColArgs[req] = ScreenLogicResponseSet(raw_resp, dec_resp)
 
     return ScreenLogicResponseCollection(data, **SLResponseColArgs)
+
+
+T_KEY = "__type"
+
+
+def int_key_json_decoder(o: dict) -> Any:
+    if isinstance(o, dict):
+        strkeys = []
+        for key in o.keys():
+            if isinstance(key, str):
+                if key.isdigit():
+                    strkeys.append(key)
+        for strkey in strkeys:
+            o[int(strkey)] = o.pop(strkey)
+    return o
+
+
+# Patch for color RGB tuples
+def value_list_json_decoder(o: dict) -> Any:
+    if "value" in o:
+        value = o["value"]
+        if isinstance(value, list) and len(value) == 3:
+            o["value"] = tuple(value)
+    return int_key_json_decoder(o)
+
+
+def response_set_json_decoder(o: dict) -> Any:
+    if "decoded" in o and "raw" in o:
+        return ScreenLogicResponseSet(**o)
+    return value_list_json_decoder(o)
+
+
+def bytes_json_decoder(o: dict) -> Any:
+    if T_KEY in o:
+        return eval(o["repr"])
+    return response_set_json_decoder(o)
+
+
+def read_sl_data_json(filename: str) -> dict:
+    with open(filename, "r", encoding="utf-8") as fp:
+        return json.load(fp, object_hook=bytes_json_decoder)
+
+
+def bytes_json_encoder(o: Any) -> Any:
+    if isinstance(o, bytes):
+        return {T_KEY: repr(type(o)), "repr": repr(o)}
+    return o
+
+
+def write_sl_data_json(filename: str, data: dict) -> None:
+    with open(filename, "w", encoding="utf-8") as fp:
+        json.dump(
+            data,
+            fp,
+            default=bytes_json_encoder,
+            ensure_ascii=False,
+            indent=2,
+        )
+
+
+def import_response_collection(filename: str) -> ScreenLogicResponseCollection:
+    return ScreenLogicResponseCollection(**read_sl_data_json(filename))
+
+
+def export_response_collection(
+    response_collection: ScreenLogicResponseCollection, filename: str
+) -> None:
+    write_sl_data_json(filename, asdict(response_collection))
