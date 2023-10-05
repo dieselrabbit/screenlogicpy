@@ -55,12 +55,11 @@ class SLIntEnum(IntEnum):
             return None if default is None else cls(default)
 
     @classmethod
-    def parsable(cls) -> tuple:
+    def parsable_values(cls) -> tuple:
         """Return a tuple of all parsable values."""
         out = []
         for member in cls:
-            out.append(str(member.value))
-            out.append(member.name.lower())
+            out.extend([str(member.value), member.name.lower()])
         return tuple(out)
 
     def _title(self) -> str:

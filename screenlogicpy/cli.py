@@ -349,7 +349,7 @@ async def cli(cli_args):
     get_circuit_parser.add_argument(**ARGUMENT_CIRCUIT_NUM)
     get_circuit_parser.set_defaults(async_func=async_get_circuit)
 
-    body_options = BODY_TYPE.parsable()
+    body_options = BODY_TYPE.parsable_values()
     ARGUMENT_BODY = {
         "dest": "body",
         "metavar": "BODY",
@@ -399,7 +399,7 @@ async def cli(cli_args):
     set_subparsers = set_parser.add_subparsers(dest="set_option")
     set_subparsers.required = True
 
-    on_off_options = ON_OFF.parsable()
+    on_off_options = ON_OFF.parsable_values()
     set_circuit_parser = set_subparsers.add_parser(
         "circuit",
         aliases=["c"],
@@ -414,7 +414,7 @@ async def cli(cli_args):
         help=f"State to set. One of {on_off_options}",
     )
 
-    cl_options = COLOR_MODE.parsable()
+    cl_options = COLOR_MODE.parsable_values()
     set_circuit_parser.set_defaults(async_func=async_set_circuit)
     set_color_light_parser = set_subparsers.add_parser(
         "color-lights",
@@ -436,7 +436,7 @@ async def cli(cli_args):
         help="Set the specified heat mode for the specified body",
     )
     set_heat_mode_parser.add_argument(**ARGUMENT_BODY)
-    hm_options = HEAT_MODE.parsable()
+    hm_options = HEAT_MODE.parsable_values()
     set_heat_mode_parser.add_argument(
         "mode",
         metavar="MODE",
