@@ -1,6 +1,6 @@
 import struct
 
-from ..const.common import STATE_TYPE, UNIT
+from ..const.common import STATE_TYPE, UNIT, ON_OFF
 from ..const.msg import CODE, COM_MAX_RETRIES
 from ..const.data import ATTR, DEVICE, GROUP, VALUE
 from ..device_const.scg import LIMIT_FOR_BODY, MAX_SC_RUNTIME
@@ -30,7 +30,7 @@ def decode_scg_config(buff: bytes, data: dict) -> None:
     state, offset = getSome("I", buff, offset)  # 4
     scg_sensor[VALUE.STATE] = {
         ATTR.NAME: "Chlorinator",
-        ATTR.VALUE: state,
+        ATTR.VALUE: ON_OFF.from_bool(state & 0x01),
     }
 
     scg_config: dict = scg.setdefault(GROUP.CONFIGURATION, {})
