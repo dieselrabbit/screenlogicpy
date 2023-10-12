@@ -42,7 +42,7 @@ def decode_scg_config(buff: bytes, data: dict) -> None:
         ATTR.UNIT: UNIT.PERCENT,
         ATTR.MIN_SETPOINT: 0,
         ATTR.MAX_SETPOINT: LIMIT_FOR_BODY[BODY_TYPE.POOL],
-        ATTR.STEP: 5,
+        ATTR.STEP: 1,
         ATTR.BODY_TYPE: BODY_TYPE.POOL.value,
     }
 
@@ -53,7 +53,7 @@ def decode_scg_config(buff: bytes, data: dict) -> None:
         ATTR.UNIT: UNIT.PERCENT,
         ATTR.MIN_SETPOINT: 0,
         ATTR.MAX_SETPOINT: LIMIT_FOR_BODY[BODY_TYPE.SPA],
-        ATTR.STEP: 5,
+        ATTR.STEP: 1,
         ATTR.BODY_TYPE: BODY_TYPE.SPA.value,
     }
 
