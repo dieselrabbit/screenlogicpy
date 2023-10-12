@@ -761,7 +761,7 @@ TEST_DATA_COLLECTIONS: list[ScreenLogicResponseCollection] = [
                         "unit": "%",
                         "min_setpoint": 0,
                         "max_setpoint": 100,
-                        "step": 5,
+                        "step": 1,
                         "body_type": 0,
                     },
                     "spa_setpoint": {
@@ -770,7 +770,7 @@ TEST_DATA_COLLECTIONS: list[ScreenLogicResponseCollection] = [
                         "unit": "%",
                         "min_setpoint": 0,
                         "max_setpoint": 100,
-                        "step": 5,
+                        "step": 1,
                         "body_type": 1,
                     },
                     "super_chlor_timer": {
@@ -1781,7 +1781,7 @@ TEST_DATA_COLLECTIONS: list[ScreenLogicResponseCollection] = [
                             "unit": "%",
                             "min_setpoint": 0,
                             "max_setpoint": 100,
-                            "step": 5,
+                            "step": 1,
                             "body_type": 0,
                         },
                         "spa_setpoint": {
@@ -1790,7 +1790,7 @@ TEST_DATA_COLLECTIONS: list[ScreenLogicResponseCollection] = [
                             "unit": "%",
                             "min_setpoint": 0,
                             "max_setpoint": 100,
-                            "step": 5,
+                            "step": 1,
                             "body_type": 1,
                         },
                         "super_chlor_timer": {
@@ -3799,7 +3799,7 @@ TEST_DATA_COLLECTIONS: list[ScreenLogicResponseCollection] = [
                             "unit": "%",
                             "min_setpoint": 0,
                             "max_setpoint": 100,
-                            "step": 5,
+                            "step": 1,
                             "body_type": 0,
                         },
                         "spa_setpoint": {
@@ -3808,7 +3808,7 @@ TEST_DATA_COLLECTIONS: list[ScreenLogicResponseCollection] = [
                             "unit": "%",
                             "min_setpoint": 0,
                             "max_setpoint": 100,
-                            "step": 5,
+                            "step": 1,
                             "body_type": 1,
                         },
                         "super_chlor_timer": {
@@ -4309,7 +4309,7 @@ TEST_DATA_COLLECTIONS: list[ScreenLogicResponseCollection] = [
                             "unit": "%",
                             "min_setpoint": 0,
                             "max_setpoint": 100,
-                            "step": 5,
+                            "step": 1,
                             "body_type": 0,
                         },
                         "spa_setpoint": {
@@ -4318,7 +4318,7 @@ TEST_DATA_COLLECTIONS: list[ScreenLogicResponseCollection] = [
                             "unit": "%",
                             "min_setpoint": 0,
                             "max_setpoint": 100,
-                            "step": 5,
+                            "step": 1,
                             "body_type": 1,
                         },
                         "super_chlor_timer": {
