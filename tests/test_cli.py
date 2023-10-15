@@ -241,15 +241,19 @@ class TestCLI:
     @pytest.mark.parametrize(
         "arguments, return_code, expected_output",
         [
-            ("set salt-generator 100 20", 0, "51 0"),
+            ("set salt-generator --pool 100 --spa 20", 0, "51 0"),
             (
-                "-v set scg 20 0",
+                "-v set scg -p 20 -s 0",
                 0,
                 EXPECTED_VERBOSE_PREAMBLE
                 + "Pool Chlorinator Setpoint: 51 Spa Chlorinator Setpoint: 0",
             ),
-            ("set scg * *", 65, "No new Chlorinator values. Nothing to do."),
-            ("set scg f *", 66, "Invalid Chlorinator value"),
+            ("set scg -p 50", 0, "51"),
+            ("set scg -s 20", 0, "0"),
+            ("set scg", 65, "No new chlorinator values. Nothing to do."),
+            ("set super-chlorinate --state 1 --time 24", 0, "0"),
+            ("set sc -s 0", 0, ""),
+            ("set sc -t 12", 0, "0"),
         ],
     )
     async def test_set_scg(
@@ -266,14 +270,20 @@ class TestCLI:
     @pytest.mark.parametrize(
         "arguments, return_code, expected_output",
         [
-            ("set chem-data 7.5 700", 0, "7.6 720"),
+            ("set chemistry-setpoint --ph 7.5 --orp 700", 0, "7.6 720"),
             (
-                "-v set ch 7.6 650",
+                "-v set cs -p 7.6 -o 650",
                 0,
                 EXPECTED_VERBOSE_PREAMBLE + "pH Setpoint: 7.6 ORP Setpoint: 720",
             ),
-            ("set ch * *", 129, "No new setpoint values. Nothing to do."),
-            ("set ch f *", 130, "Invalid Chemistry Setpoint value"),
+            ("set cs -p 7.2", 0, "7.6"),
+            ("set cs -o 650", 0, "720"),
+            ("set cs", 129, "No new chemistry values. Nothing to do."),
+            (
+                "set chemistry-value --calcium-hardness 351 --total-alkalinity 80 --cyanuric-acid 45 --total-dissolved-solids 1000",
+                0,
+                "800 45 45 1000",
+            ),
         ],
     )
     async def test_set_chemistry(

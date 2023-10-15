@@ -32,67 +32,35 @@
         "color": [
           {
             "name": "White",
-            "value": [
-              255,
-              255,
-              255
-            ]
+            "value": [255, 255, 255]
           },
           {
             "name": "Light Green",
-            "value": [
-              160,
-              255,
-              160
-            ]
+            "value": [160, 255, 160]
           },
           {
             "name": "Green",
-            "value": [
-              0,
-              255,
-              80
-            ]
+            "value": [0, 255, 80]
           },
           {
             "name": "Cyan",
-            "value": [
-              0,
-              255,
-              200
-            ]
+            "value": [0, 255, 200]
           },
           {
             "name": "Blue",
-            "value": [
-              100,
-              140,
-              255
-            ]
+            "value": [100, 140, 255]
           },
           {
             "name": "Lavender",
-            "value": [
-              230,
-              130,
-              255
-            ]
+            "value": [230, 130, 255]
           },
           {
             "name": "Magenta",
-            "value": [
-              255,
-              0,
-              128
-            ]
+            "value": [255, 0, 128]
           },
           {
             "name": "Light Magenta",
-            "value": [
-              255,
-              180,
-              210
-            ]
+            "value": [255, 180, 210]
           }
         ],
         "interface_tab_flags": 127,
@@ -121,12 +89,7 @@
           "name": "Controller State",
           "value": 1,
           "device_type": "enum",
-          "enum_options": [
-            "Unknown",
-            "Ready",
-            "Sync",
-            "Service"
-          ]
+          "enum_options": ["Unknown", "Ready", "Sync", "Service"]
         },
         "freeze_mode": {
           "name": "Freeze Mode",
@@ -604,12 +567,7 @@
           "name": "Pool Heat",
           "value": 0,
           "device_type": "enum",
-          "enum_options": [
-            "Off",
-            "Solar",
-            "Heater",
-            "Both"
-          ]
+          "enum_options": ["Off", "Solar", "Heater", "Both"]
         },
         "heat_setpoint": {
           "name": "Pool Heat Set Point",
@@ -652,12 +610,7 @@
           "name": "Spa Heat",
           "value": 0,
           "device_type": "enum",
-          "enum_options": [
-            "Off",
-            "Solar",
-            "Heater",
-            "Both"
-          ]
+          "enum_options": ["Off", "Solar", "Heater", "Both"]
         },
         "heat_setpoint": {
           "name": "Spa Heat Set Point",
@@ -729,32 +682,44 @@
         "ph_setpoint": {
           "name": "pH Setpoint",
           "value": 7.6,
-          "unit": "pH"
+          "unit": "pH",
+          "max_setpoint": 7.6,
+          "min_setpoint": 7.2
         },
         "orp_setpoint": {
           "name": "ORP Setpoint",
           "value": 720,
-          "unit": "mV"
+          "unit": "mV",
+          "max_setpoint": 800,
+          "min_setpoint": 400
         },
-        "calcium_harness": {
+        "calcium_hardness": {
           "name": "Calcium Hardness",
           "value": 800,
-          "unit": "ppm"
+          "unit": "ppm",
+          "max_setpoint": 800,
+          "min_setpoint": 25
         },
         "cya": {
           "name": "Cyanuric Acid",
           "value": 45,
-          "unit": "ppm"
+          "unit": "ppm",
+          "max_setpoint": 201,
+          "min_setpoint": 0
         },
         "total_alkalinity": {
           "name": "Total Alkalinity",
           "value": 45,
-          "unit": "ppm"
+          "unit": "ppm",
+          "max_setpoint": 800,
+          "min_setpoint": 25
         },
         "salt_tds_ppm": {
           "name": "Salt/TDS",
           "value": 1000,
-          "unit": "ppm"
+          "unit": "ppm",
+          "max_setpoint": 6500,
+          "min_setpoint": 500
         },
         "probe_is_celsius": 0,
         "flags": 32
@@ -793,21 +758,13 @@
           "name": "pH Dosing State",
           "value": 1,
           "device_type": "enum",
-          "enum_options": [
-            "Dosing",
-            "Mixing",
-            "Monitoring"
-          ]
+          "enum_options": ["Dosing", "Mixing", "Monitoring"]
         },
         "orp_dosing_state": {
           "name": "ORP Dosing State",
           "value": 2,
           "device_type": "enum",
-          "enum_options": [
-            "Dosing",
-            "Mixing",
-            "Monitoring"
-          ]
+          "enum_options": ["Dosing", "Mixing", "Monitoring"]
         }
       },
       "alarm": {
@@ -926,7 +883,7 @@
           "name": "Super Chlorination Timer",
           "value": 0,
           "unit": "hr",
-          "min_setpoint": 1,
+          "min_setpoint": 0,
           "max_setpoint": 72,
           "step": 1
         }
@@ -980,67 +937,35 @@
           "color": [
             {
               "name": "White",
-              "value": [
-                255,
-                255,
-                255
-              ]
+              "value": [255, 255, 255]
             },
             {
               "name": "Light Green",
-              "value": [
-                160,
-                255,
-                160
-              ]
+              "value": [160, 255, 160]
             },
             {
               "name": "Green",
-              "value": [
-                0,
-                255,
-                80
-              ]
+              "value": [0, 255, 80]
             },
             {
               "name": "Cyan",
-              "value": [
-                0,
-                255,
-                200
-              ]
+              "value": [0, 255, 200]
             },
             {
               "name": "Blue",
-              "value": [
-                100,
-                140,
-                255
-              ]
+              "value": [100, 140, 255]
             },
             {
               "name": "Lavender",
-              "value": [
-                230,
-                130,
-                255
-              ]
+              "value": [230, 130, 255]
             },
             {
               "name": "Magenta",
-              "value": [
-                255,
-                0,
-                128
-              ]
+              "value": [255, 0, 128]
             },
             {
               "name": "Light Magenta",
-              "value": [
-                255,
-                180,
-                210
-              ]
+              "value": [255, 180, 210]
             }
           ],
           "interface_tab_flags": 127,
@@ -1312,12 +1237,7 @@
             "name": "Controller State",
             "value": 1,
             "device_type": "enum",
-            "enum_options": [
-              "Unknown",
-              "Ready",
-              "Sync",
-              "Service"
-            ]
+            "enum_options": ["Unknown", "Ready", "Sync", "Service"]
           },
           "freeze_mode": {
             "name": "Freeze Mode",
@@ -1404,12 +1324,7 @@
             "name": "Pool Heat",
             "value": 0,
             "device_type": "enum",
-            "enum_options": [
-              "Off",
-              "Solar",
-              "Heater",
-              "Both"
-            ]
+            "enum_options": ["Off", "Solar", "Heater", "Both"]
           },
           "heat_setpoint": {
             "name": "Pool Heat Set Point",
@@ -1450,12 +1365,7 @@
             "name": "Spa Heat",
             "value": 0,
             "device_type": "enum",
-            "enum_options": [
-              "Off",
-              "Solar",
-              "Heater",
-              "Both"
-            ]
+            "enum_options": ["Off", "Solar", "Heater", "Both"]
           },
           "heat_setpoint": {
             "name": "Spa Heat Set Point",
@@ -1831,32 +1741,44 @@
           "ph_setpoint": {
             "name": "pH Setpoint",
             "value": 7.6,
-            "unit": "pH"
+            "unit": "pH",
+            "max_setpoint": 7.6,
+            "min_setpoint": 7.2
           },
           "orp_setpoint": {
             "name": "ORP Setpoint",
             "value": 720,
-            "unit": "mV"
+            "unit": "mV",
+            "max_setpoint": 800,
+            "min_setpoint": 400
           },
-          "calcium_harness": {
+          "calcium_hardness": {
             "name": "Calcium Hardness",
             "value": 800,
-            "unit": "ppm"
+            "unit": "ppm",
+            "max_setpoint": 800,
+            "min_setpoint": 25
           },
           "cya": {
             "name": "Cyanuric Acid",
             "value": 45,
-            "unit": "ppm"
+            "unit": "ppm",
+            "max_setpoint": 201,
+            "min_setpoint": 0
           },
           "total_alkalinity": {
             "name": "Total Alkalinity",
             "value": 45,
-            "unit": "ppm"
+            "unit": "ppm",
+            "max_setpoint": 800,
+            "min_setpoint": 25
           },
           "salt_tds_ppm": {
             "name": "Salt/TDS",
             "value": 1000,
-            "unit": "ppm"
+            "unit": "ppm",
+            "max_setpoint": 6500,
+            "min_setpoint": 500
           },
           "probe_is_celsius": 0,
           "flags": 32
@@ -1895,21 +1817,13 @@
             "name": "pH Dosing State",
             "value": 1,
             "device_type": "enum",
-            "enum_options": [
-              "Dosing",
-              "Mixing",
-              "Monitoring"
-            ]
+            "enum_options": ["Dosing", "Mixing", "Monitoring"]
           },
           "orp_dosing_state": {
             "name": "ORP Dosing State",
             "value": 2,
             "device_type": "enum",
-            "enum_options": [
-              "Dosing",
-              "Mixing",
-              "Monitoring"
-            ]
+            "enum_options": ["Dosing", "Mixing", "Monitoring"]
           }
         },
         "alarm": {
@@ -2036,7 +1950,7 @@
             "name": "Super Chlorination Timer",
             "value": 0,
             "unit": "hr",
-            "min_setpoint": 1,
+            "min_setpoint": 0,
             "max_setpoint": 72,
             "step": 1
           }

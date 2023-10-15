@@ -386,7 +386,7 @@ async def test_gateway_async_set_scg_config(MockConnectedGateway: ScreenLogicGat
         return_value=b"",
     ) as mockRequest:
 
-        assert await gateway.async_set_scg_config(50, 0)
+        assert await gateway.async_set_scg_config(pool_setpoint=50, spa_setpoint=0)
 
         mockRequest.assert_awaited_once_with(
             gateway._protocol,
@@ -406,7 +406,14 @@ async def test_gateway_async_set_chem_data(MockConnectedGateway: ScreenLogicGate
         return_value=b"",
     ) as mockRequest:
 
-        assert await gateway.async_set_chem_data(7.5, 700, 300, 80, 45, 1000)
+        assert await gateway.async_set_chem_data(
+            ph_setpoint=7.5,
+            orp_setpoint=700,
+            calcium_hardness=300,
+            total_alkalinity=80,
+            cya=45,
+            salt_tds_ppm=1000,
+        )
 
         mockRequest.assert_awaited_once_with(
             gateway._protocol,
