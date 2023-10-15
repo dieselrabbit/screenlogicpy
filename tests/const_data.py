@@ -51,13 +51,13 @@ ASYNC_SL_RESPONSES = {
 EXPECTED_DASHBOARD = """Discovered 'Fake: 00-00-00' at 127.0.0.1:6448
 EasyTouch2 8
 **************************
-Pool temperature is last 56°F
-Pool Heat Set Point: 86°F
+Pool temperature is last 69°F
+Pool Heat Set Point: 83°F
 Pool Heat: Off
 Pool Heat Mode: Off
 --------------------------
-Spa temperature is last 97°F
-Spa Heat Set Point: 97°F
+Spa temperature is last 84°F
+Spa Heat Set Point: 95°F
 Spa Heat: Off
 Spa Heat Mode: Heater
 --------------------------
@@ -66,22 +66,14 @@ Spa Heat Mode: Heater
 --------------------------
 500    Off  Spa
 501    Off  Waterfall
-502     On  Pool Light
-503     On  Spa Light
-504     On  Cleaner
-505    Off  Pool Low
-506     On  Yard Light
-507    Off  Aux 6
+502    Off  Pool Light
+503    Off  Spa Light
+504    Off  Cleaner
+505     On  Pool Low
+506    Off  Yard Light
+507     On  Cameras
 508    Off  Pool High
-510    Off  Feature 1
-511    Off  Feature 2
-512    Off  Feature 3
-513    Off  Feature 4
-514    Off  Feature 5
-515    Off  Feature 6
-516    Off  Feature 7
-517    Off  Feature 8
-519    Off  AuxEx
+510    Off  Spillway
 **************************"""
 
 EXPECTED_VERBOSE_PREAMBLE = """Discovered 'Fake: 00-00-00' at 127.0.0.1:6448

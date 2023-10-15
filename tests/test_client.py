@@ -11,7 +11,6 @@ from .const_data import (
     FAKE_CONNECT_INFO,
 )
 from .data_sets import TESTING_DATA_COLLECTION as TDC
-from .fake_gateway import expected_resp
 
 
 @pytest.mark.asyncio()
@@ -33,7 +32,7 @@ async def test_sub_unsub(event_loop, MockProtocolAdapter):
         sub_code = 12522
 
         result: asyncio.Future = event_loop.create_future()
-        result.set_result(expected_resp(sub_code))
+        result.set_result((0, sub_code + 1, b""))
         with patch(
             "screenlogicpy.requests.client.ScreenLogicProtocol.await_send_message",
             return_value=result,
@@ -58,7 +57,7 @@ async def test_sub_unsub(event_loop, MockProtocolAdapter):
         unsub_code = 12524
 
         result2: asyncio.Future = event_loop.create_future()
-        result2.set_result(expected_resp(unsub_code))
+        result2.set_result((0, unsub_code + 1, b""))
         with patch(
             "screenlogicpy.requests.client.ScreenLogicProtocol.await_send_message",
             return_value=result2,
@@ -176,28 +175,23 @@ async def test_attach_existing(MockProtocolAdapter):
 
 
 @pytest.mark.asyncio
-async def test_keepalive(
-    event_loop: asyncio.BaseEventLoop, MockConnectedGateway: ScreenLogicGateway
-):
-    gateway = MockConnectedGateway
+async def test_keepalive(event_loop: asyncio.BaseEventLoop, MockProtocolAdapter):
+    async with MockProtocolAdapter:
+        gateway = ScreenLogicGateway()
 
-    result = event_loop.create_future()
-    result.set_result(expected_resp(CODE.PING_QUERY))
+        def callback():
+            pass
 
-    def callback():
-        pass
-
-    with patch("screenlogicpy.client.COM_KEEPALIVE", new=2):
-        unsub = await gateway.async_subscribe_client(callback, CODE.STATUS_CHANGED)
-        with patch(
-            "screenlogicpy.requests.client.ScreenLogicProtocol.await_send_message",
-            return_value=result,
+        with patch("screenlogicpy.client.COM_KEEPALIVE", new=1), patch(
+            "screenlogicpy.requests.ping.async_make_request",
+            return_value=b"",
         ) as mockPingRequest:
-            await asyncio.sleep(3)
-            assert mockPingRequest.call_count == 1
-            assert mockPingRequest.call_args.args[0] == CODE.PING_QUERY
-            assert mockPingRequest.call_args.args[1] == b""
-
-        unsub()
-    await gateway.async_get_pumps()
-    await gateway.async_disconnect()
+            await gateway.async_connect(**FAKE_CONNECT_INFO)
+            unsub = await gateway.async_subscribe_client(callback, CODE.STATUS_CHANGED)
+            await gateway.async_get_pumps()
+            await asyncio.sleep(2)
+            mockPingRequest.assert_awaited_once_with(
+                gateway._protocol, 16, max_retries=0
+            )
+            unsub()
+        await gateway.async_disconnect()
