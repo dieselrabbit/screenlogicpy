@@ -275,41 +275,29 @@ success = await gateway.async_set_color_lights(light_command)
 
 ## Setting chlorinator output levels
 
-Chlorinator output levels can be set with `async_set_scg_config()`.  `async_set_scg_config` takes two `int` arguments, `pool_output` and `spa_output`.
+Chlorinator output levels can be set with `async_set_scg_config()`.  The method takes only key-word arguments to set specific values: `pool_output` and `spa_output`.
 
 ```python
-success = await gateway.async_set_scg_config(pool_output, spa_output)  
+success = await gateway.async_set_scg_config(pool_output=pool_pct, spa_output=spa_pct)  
 ```
 
 * _New in v0.5.0._
+* _**Changed in v0.9.0**: All values are settable individually and only as key-word args._
 
 ## Setting IntelliChem Chemistry values
 
-Chemistry values used in the IntelliChem system can be set with `async_set_chem_data()`. `async_set_chem_data` takes six arguments, `ph_setpoint`, `orp_setpoint`, `calcium`, `alkalinity`, `cyanuric`, and `salt`.  `ph_setpoint` is a `float` and the rest are `int`.
+Chemistry values used in the IntelliChem system can be set with `async_set_chem_data()`. This method takes only key-word arguments to set specific values: `ph_setpoint`, `orp_setpoint`, `calcium_harness`, `total_alkalinity`, `cya`, and `salt_tds_ppm`.
+
+`ph_setpoint` is a `float` and the rest are `int`.
 
 ```python
-success = await gateway.async_set_chem_data(ph_setpoint, orp_setpoint, calcium, alkalinity, cyanuric, salt)
+success = await gateway.async_set_chem_data(ph_setpoint=ph, orp_setpoint=orp, calcium_harness=ch, total_alkalinity=ta, cya=cya, salt_tds_ppm=salt)
 ```
 
-Currently all values are required, even if you only want to change one of them. For this reason, it is recommended that the calling code gathers all the current values first, then updates whichever value(s) are desired before calling `async_set_chem_data()`.
-
-```python
-chem_data = gateway.get_data()[DATA.KEY_CHEMISTRY]
-ph = chem_data["ph_setpoint"]["value"]
-orp = chem_data["orp_setpoint"]["value"]
-ch = chem_data["calcium_harness"]["value"]
-ta = chem_data["total_alkalinity"]["value"]
-ca = chem_data["cya"]["value"]
-sa = chem_data["salt_tds_ppm"]["value"]
-
-ph = ...  # Code to update any of the values
-
-success = await gateway.async_set_chem_data(ph, orp, ch, ta, ca, sa)
-```
-
-**Note:** Only `ph_setpoint` and `orp_setpoint` are settable through the command line.
+All values are accessible only as key-word arguments.
 
 * _New in v0.6.0._
+* _**Changed in v0.9.0**: All values are settable individually and only as key-word args._
 
 ## Handling unsolicited messages
 
@@ -526,7 +514,7 @@ screenlogicpy set circuit [circuit number] [circuit state]
 ```
 
 Sets the specified circuit to the specified circuit state.  
-**Note:** `[circuit state]` can be an `int` or `string` representing the desired [circuit state](#circuit-state).
+**Note:** `[circuit state]` can be an `int` or `string` representing the desired [state](#state).
 
 #### set `heat-mode, hm`
 
@@ -560,28 +548,48 @@ Sets a color mode for all color-capable lights configured on the pool controller
 #### set `salt-generator, scg`
 
 ```shell
-screenlogicpy set salt-generator [pool_pct] [spa_pct]
+screenlogicpy set salt-generator [--pool OUTPUT] [--spa OUTPUT]
 ```
 
-Sets the chlorinator output levels for the pool and spa. Pentair treats spa output level as a percentage of the pool's output level.  
-**Note:** `[pool_pct]` can be an `int` between `0`-`100`, or `*` to keep the current value. `[spa_pct]` can be an `int` between `0`-`100`, or `*` to keep the current value.
+Sets the chlorinator output levels for the pool and/or spa. Takes one or both of two optional arguments: (`-p`, `--pool`) and (`-s`, `--spa`).  `OUTPUT` is an `int` between `0`-`100` for both settings.  
+**Note:**  Pentair treats the spa output level as a percentage of the pool's output level. For example, if the pool output level is set to 80, and the spa output level is set to 50, the actual spa output would be 40%.
 
 * _New in v0.5.0._
+* _**Changed in v0.9.0**: Values are now settable individually via optional arguments._
 
-#### set `chem-data, ch`
+#### set `super-chlorinate, sup`
 
-```shell
-screenlogicpy set chem-data [ph_setpoint] [orp_setpoint]
+```shel
+screenlogicpy set super-chlorinate [--state STATE] [--time HOURS]
 ```
 
-Sets the pH and/or ORP set points for the IntelliChem system.  
-**Note:** `[ph_setpoint]` can be a `float` between `7.2`-`7.6`, or `*` to keep the current value. `[orp_setpoint]` can be an `int` between `400`-`800`, or `*` to keep the current value.
+Starts or stops super chlorination and/or sets the runtime in hours. Takes one or both optional arguments: (`-s`, `--state`) and (`-t`, `--time`). STATE can be an `int` or `string` representing the desired [state](#state).  HOURS is an `int` the range of `0`-`72`.
+
+#### set `chem-setpoint, csp`
+
+```shell
+screenlogicpy set chem-setpoint [--ph PH_SETPOINT] [--orp ORP_SETPOINT]
+```
+
+Sets the pH and/or ORP set points for the IntelliChem system. Takes one or both optional arguments:  (`-p`, `--ph`) and (`-o`, `--orp`). `PH_SETPOINT` can be a `float` between `7.2`-`7.6`. `ORP_SETPOINT` can be an `int` between `400`-`800`.
+**Note:** 
+
+* _**New in v0.9.0**: pH and ORP settings are now here._
+
+#### set `chem-data, cd`
+
+```shell
+screenlogicpy set chem-data [--ch CALCIUM_HARDNESS] [--ta TOTAL_ALKALINITY] [--cya CYANURIC_ACID] [--salt SALT_or_TDS]
+```
+
+Sets various chemistry values used in LSI calculations within the IntelliChem system. Takes one or more optional arguments: (`-c`, `--ch`), (`-t`, `--ta`), (`-y`, `--cya`), and (`-s`, `--salt`).
 
 * _New in v0.6.0._
+* _**Changed in v0.9.0**: `chem-data` now sets values pertaining to LSI calculation in the IntelliChem system. pH and ORP settings have moved to the `chem-setpoint` sub-command._
 
 # Reference
 
-## Circuit State
+## State
 
 | `int` | `string` | Name |
 | ----- | -------- | ---- |

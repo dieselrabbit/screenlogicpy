@@ -52,7 +52,7 @@ class GROUP:
 class VALUE:
     ACTIVE_ALERT = "active_alert"
     AIR_TEMPERATURE = "air_temperature"
-    CALCIUM_HARNESS = "calcium_harness"
+    CALCIUM_HARDNESS = "calcium_hardness"
     CIRCUIT_COUNT = "circuit_count"
     CLEANER_DELAY = "cleaner_delay"
     COLOR_COUNT = "color_count"
@@ -122,6 +122,7 @@ class VALUE:
     SPA_SETPOINT = "spa_setpoint"
     STATE = "state"
     SUPER_CHLOR_TIMER = "super_chlor_timer"
+    SUPER_CHLORINATE = "super_chlorinate"
     TOTAL_ALKALINITY = "total_alkalinity"
     TYPE = "type"
     WATTS_NOW = "watts_now"
