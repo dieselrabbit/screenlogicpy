@@ -28,29 +28,6 @@ def file_format(name: str):
     return name.translate(table).lower()
 
 
-def cliFormat(name: str):
-    table = str.maketrans(" ", "_", string.punctuation)
-    return name.translate(table).lower()
-
-
-def cliFormatDict(mapping: dict):
-    return {
-        cliFormat(key)
-        if isinstance(key, str)
-        else key: cliFormat(value)
-        if isinstance(value, str)
-        else value
-        for key, value in mapping.items()
-    }
-
-
-def optionsFromDict(mapping: dict):
-    options = []
-    for key, value in cliFormatDict(mapping).items():
-        options.extend((str(key), str(value)))
-    return options
-
-
 # Entry function
 async def cli(cli_args):
     """Handle command line args"""
