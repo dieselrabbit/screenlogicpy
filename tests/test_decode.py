@@ -33,6 +33,10 @@ def test_decode_config(buffer, expected):
 
     assert data == expected
 
+    decode_pool_config(buffer, data)
+
+    assert data == expected
+
 
 @pytest.mark.parametrize(
     "buffer, expected",
