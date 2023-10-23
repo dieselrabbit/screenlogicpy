@@ -147,6 +147,9 @@ class ScreenLogicProtocol(asyncio.Protocol):
         if self._stop_keepalive:
             self._stop_keepalive()
             self._stop_keepalive = None
+
+        self._futures.all_done(True)
+
         self._closed.set_result(True)
         if self._connection_lost_callback is not None:
             self._connection_lost_callback()
@@ -159,10 +162,7 @@ class ScreenLogicProtocol(asyncio.Protocol):
         If force == true, immediately cancel all outstanding requests.
         """
         self._closing = True
-        try:
-            await self._futures.all_done(force)
-        except asyncio.CancelledError:
-            pass
+        await self._futures.all_done(force)
         if self.transport and not self.transport.is_closing():
             _LOGGER.debug("Closing transport")
             self.transport.close()
@@ -272,11 +272,15 @@ class ScreenLogicProtocol(asyncio.Protocol):
                 return True
             return False
 
-        def all_done(self, force: bool = False) -> asyncio.Future:
+        async def all_done(self, force: bool = False) -> None:
             """Return if outstanding still futures exist."""
-            outstanding_result: asyncio.Future = asyncio.gather(
+            outstanding_futures: asyncio.Future = asyncio.gather(
                 *[fut for fut in self._collection.values()]
             )
             if force:
-                outstanding_result.cancel()
-            return outstanding_result
+                outstanding_futures.cancel()
+                self._collection.clear()
+            try:
+                await outstanding_futures
+            except asyncio.CancelledError:
+                pass
