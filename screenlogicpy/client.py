@@ -197,7 +197,9 @@ class ClientManager:
                     if await self._async_add_client():
                         self._is_client = True
                         self._protocol.enable_keepalive(self._async_ping, COM_KEEPALIVE)
-                        _LOGGER.debug("Gateway subscribed")
+                        _LOGGER.debug(
+                            f"Gateway subscribed with client id: {self._client_id}"
+                        )
                         return True
                     return False
                 return True
@@ -215,6 +217,6 @@ class ClientManager:
                     self._is_client = False
                     self._protocol.disable_keepalive()
                     self._protocol.remove_all_async_message_callbacks()
-                    _LOGGER.debug("Gateway unsubscribing")
+                    _LOGGER.debug(f"Gateway unsubscribing client id: {self._client_id}")
                     return await self._async_remove_client()
                 return True
