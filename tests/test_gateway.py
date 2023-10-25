@@ -464,17 +464,8 @@ async def test_gateway_connection_closed(
 
                 print(mock_async_make_request.mock_calls)
 
-                assert mock_async_make_request.call_count == 2
-                assert (
-                    mock_async_make_request.call_args_list[0][0]
-                    != mock_async_make_request.call_args_list[1][0]
+                assert mock_async_make_request.call_count == 1
+                mock_async_make_request.assert_called_once_with(
+                    gateway._protocol, CODE.POOLSTATUS_QUERY, b"\x00\x00\x00\x00", 1
                 )
-                last_call = call(
-                    gateway._protocol,
-                    CODE.POOLSTATUS_QUERY,
-                    b"\x00\x00\x00\x00",
-                    1,
-                )
-                assert mock_async_make_request.call_args_list[0] != last_call
-                assert mock_async_make_request.call_args_list[1] == last_call
         server.close()

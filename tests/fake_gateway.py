@@ -102,7 +102,7 @@ class FakeScreenLogicTCPProtocol(asyncio.Protocol):
             self._connection_stage = CONNECTION_STAGE.LOGIN
             return makeMessage(messageID, CODE.LOCALLOGIN_QUERY + 1, b"")
         else:
-            self.transport.close()
+            self.transport.abort()
 
     def process_connected_messages(self, message: tuple[int, int, bytes]) -> bytes:
         messageID, messageCode, _ = message
@@ -114,7 +114,7 @@ class FakeScreenLogicTCPProtocol(asyncio.Protocol):
                 messageID, messageCode + 1, ASYNC_SL_RESPONSES[messageCode]
             )
         else:
-            self.transport.close()
+            self.transport.abort()
 
     def fake_async_message(
         self, message_id: int, message_code: int, message_data: bytes = b""
@@ -149,7 +149,7 @@ class DisconnectingFakeScreenLogicTCPProtocol(FakeScreenLogicTCPProtocol):
     def process_connected_messages(self, message: tuple[int, int, bytes]) -> bytes:
         if self.should_close:
             self.should_close = False
-            self.transport.close()
+            self.transport.abort()
         messageID, messageCode, _ = message
         if messageCode == 1111:
             self.should_close = True
