@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import struct
-import sys
 from typing import Callable
 
 from ..const import ScreenLogicError, ScreenLogicRequestError
