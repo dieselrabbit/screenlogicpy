@@ -148,7 +148,7 @@ class ScreenLogicProtocol(asyncio.Protocol):
             self._stop_keepalive()
             self._stop_keepalive = None
 
-        self._futures.all_done(True)
+        self._loop.create_task(self._futures.all_done(True))
 
         self._closed.set_result(True)
         if self._connection_lost_callback is not None:
@@ -278,6 +278,7 @@ class ScreenLogicProtocol(asyncio.Protocol):
                 *[fut for fut in self._collection.values()]
             )
             if force:
+                _LOGGER.debug(f"Canceling {len(self._collection)} outstanding requests")
                 outstanding_futures.cancel()
                 self._collection.clear()
             try:
