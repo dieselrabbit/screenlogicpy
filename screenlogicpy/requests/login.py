@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import struct
+import sys
 from typing import Callable
 
 from ..const import ScreenLogicError, ScreenLogicRequestError
@@ -63,9 +64,9 @@ async def async_create_connection(
                 gateway_port,
             )
     except (OSError, asyncio.TimeoutError) as ex:
-        _LOGGER.debug(ex)
+        _, ex_value, _ = sys.exc_info()
         raise ScreenLogicError(
-            f"Failed to connect to host at {gateway_ip}:{gateway_port}"
+            f"Failed to connect to host at {gateway_ip}:{gateway_port}: {ex_value}"
         ) from ex
 
 
