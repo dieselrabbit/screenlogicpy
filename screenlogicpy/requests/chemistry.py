@@ -1,14 +1,15 @@
 # import json
 import struct
 
-from ..const.msg import CODE
 from ..const.common import (
     DEVICE_TYPE,
     ON_OFF,
     STATE_TYPE,
     UNIT,
+    ScreenLogicResponseError,
 )
 from ..const.data import ATTR, DEVICE, GROUP, VALUE, UNKNOWN
+from ..const.msg import CODE
 from ..device_const.chemistry import (
     ALARM_FLAG,
     ALERT_FLAG,
@@ -315,8 +316,8 @@ async def async_request_set_chem_data(
     salt: int,
     max_retries: int,
 ):
-    return (
-        await async_make_request(
+    if (
+        response := await async_make_request(
             protocol,
             CODE.SETCHEMDATA_QUERY,
             struct.pack(
@@ -331,5 +332,7 @@ async def async_request_set_chem_data(
             ),
             max_retries,
         )
-        == b""
-    )
+    ) == b"":
+        raise ScreenLogicResponseError(
+            f"Set chem data failed. Unexpected response: {response}"
+        )
