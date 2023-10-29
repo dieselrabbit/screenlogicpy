@@ -39,6 +39,18 @@ class ScreenLogicRequestError(ScreenLogicException):
     pass
 
 
+class ScreenLogicConnectionError(ScreenLogicException):
+    pass
+
+
+class ScreenLogicResponseError(ScreenLogicException):
+    pass
+
+
+class ScreenLogicLoginError(ScreenLogicException):
+    pass
+
+
 class SLIntEnum(IntEnum):
     @classmethod
     def parse(cls, value: str, default=0) -> SLIntEnum:
