@@ -1,7 +1,12 @@
 import asyncio
 import logging
 
-from ..const import ScreenLogicRequestError
+from ..const.common import (
+    ScreenLogicConnectionError,
+    ScreenLogicLoginError,
+    ScreenLogicRequestError,
+    ScreenLogicResponseError,
+)
 from ..const.msg import CODE, COM_MAX_RETRIES, COM_RETRY_WAIT, COM_TIMEOUT
 from .protocol import ScreenLogicProtocol
 from .utility import asyncio_timeout
@@ -17,7 +22,7 @@ async def async_make_request(
 ) -> bytes:
     for attempt in range(0, max_retries + 1):
         if not protocol.is_connected:
-            raise ScreenLogicRequestError(
+            raise ScreenLogicConnectionError(
                 "Unable to make request. No active connection"
             )
 
@@ -26,7 +31,7 @@ async def async_make_request(
             async with asyncio_timeout(COM_TIMEOUT):
                 await request
         except asyncio.TimeoutError:
-            error_message = (
+            last_error = ScreenLogicConnectionError(
                 f"Timeout waiting for response to message code '{requestCode}'"
             )
         except asyncio.CancelledError:
@@ -39,23 +44,29 @@ async def async_make_request(
             if responseCode == requestCode + 1:
                 return responseData
             elif responseCode == CODE.ERROR_LOGIN_REJECTED:
-                error_message = f"Login Rejected for request code: {requestCode}, request: {requestData}"
+                raise ScreenLogicLoginError(
+                    f"Login Rejected for request code: {requestCode}, request: {requestData}"
+                )
             elif responseCode == CODE.ERROR_INVALID_REQUEST:
-                error_message = f"Invalid Request for request code: {requestCode}, request: {requestData}"
+                last_error = ScreenLogicRequestError(
+                    f"Invalid Request for request code: {requestCode}, request: {requestData}"
+                )
             elif responseCode == CODE.ERROR_BAD_PARAMETER:
-                error_message = f"Bad Parameter for request code: {requestCode}, request: {requestData}"
+                last_error = ScreenLogicRequestError(
+                    f"Bad Parameter for request code: {requestCode}, request: {requestData}"
+                )
             else:
-                error_message = f"Unexpected response code '{responseCode}' for request code: {requestCode}, request: {requestData}"
+                last_error = ScreenLogicResponseError(
+                    f"Unexpected response code '{responseCode}' for request code: {requestCode}, request: {requestData}"
+                )
 
         if attempt == max_retries:
-            raise ScreenLogicRequestError(
-                f"{error_message} after {max_retries + 1} attempts"
-            )
+            raise last_error
 
         retry_delay = COM_RETRY_WAIT * (attempt + 1)
 
         _LOGGER.debug(
-            error_message + ". Will retry %i more time(s) in %i seconds",
+            last_error.msg + ". Will retry %i more time(s) in %i seconds",
             max_retries - attempt,
             retry_delay,
         )
