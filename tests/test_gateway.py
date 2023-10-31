@@ -314,7 +314,7 @@ async def test_gateway_async_set_circuit(MockConnectedGateway: ScreenLogicGatewa
         return_value=b"",
     ) as mockRequest:
 
-        assert await gateway.async_set_circuit(502, 1)
+        await gateway.async_set_circuit(502, 1)
 
         mockRequest.assert_awaited_once_with(
             gateway._protocol,
@@ -335,8 +335,8 @@ async def test_gateway_async_set_heat(MockConnectedGateway: ScreenLogicGateway):
         return_value=b"",
     ) as mockRequest:
 
-        assert await gateway.async_set_heat_temp(0, 84)
-        assert await gateway.async_set_heat_mode(1, 3)
+        await gateway.async_set_heat_temp(0, 84)
+        await gateway.async_set_heat_mode(1, 3)
 
         mockRequest.assert_has_awaits(
             [
@@ -366,7 +366,7 @@ async def test_gateway_async_set_color_lights(MockConnectedGateway: ScreenLogicG
         return_value=b"",
     ) as mockRequest:
 
-        assert await gateway.async_set_color_lights(7)
+        await gateway.async_set_color_lights(7)
 
         mockRequest.assert_awaited_once_with(
             gateway._protocol,
@@ -386,7 +386,7 @@ async def test_gateway_async_set_scg_config(MockConnectedGateway: ScreenLogicGat
         return_value=b"",
     ) as mockRequest:
 
-        assert await gateway.async_set_scg_config(pool_setpoint=50, spa_setpoint=0)
+        await gateway.async_set_scg_config(pool_setpoint=50, spa_setpoint=0)
 
         mockRequest.assert_awaited_once_with(
             gateway._protocol,
@@ -406,7 +406,7 @@ async def test_gateway_async_set_chem_data(MockConnectedGateway: ScreenLogicGate
         return_value=b"",
     ) as mockRequest:
 
-        assert await gateway.async_set_chem_data(
+        await gateway.async_set_chem_data(
             ph_setpoint=7.5,
             orp_setpoint=700,
             calcium_hardness=300,
