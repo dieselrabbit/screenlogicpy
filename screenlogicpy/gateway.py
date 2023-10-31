@@ -8,7 +8,9 @@ from .const.common import (
     DATA_REQUEST,
     ON_OFF,
     ScreenLogicError,
+    ScreenLogicConnectionError,
     ScreenLogicRequestError,
+    ScreenLogicResponseError,
 )
 from .const.msg import COM_MAX_RETRIES
 from .device_const.chemistry import CHEM_RANGE as cr
@@ -164,14 +166,13 @@ class ScreenLogicGateway:
 
         await self._protocol.async_close(force)
 
-    async def async_update(self) -> bool:
+    async def async_update(self) -> None:
         """
         Update all ScreenLogic data.
-
-        Try to reconnect to the ScreenLogic protocol adapter if needed.
         """
-        if not await self.async_connect() or not self._data:
-            return False
+
+        if not self._data:
+            raise ScreenLogicError("Internal data missing")
 
         _LOGGER.debug("Beginning update of all data")
         await self.async_get_status()
@@ -179,7 +180,6 @@ class ScreenLogicGateway:
         await self.async_get_chemistry()
         await self.async_get_scg()
         _LOGGER.debug("Update complete")
-        return True
 
     async def async_get_config(self):
         """Request pool configuration data."""
@@ -305,7 +305,7 @@ class ScreenLogicGateway:
         if not self._is_valid_circuit_state(circuitState):
             raise ValueError(f"Invalid circuitState: {circuitState}")
 
-        return await self._async_connected_request(
+        await self._async_connected_request(
             async_request_pool_button_press, circuitID, circuitState
         )
 
@@ -316,9 +316,7 @@ class ScreenLogicGateway:
         if not self._is_valid_heattemp(body, temp):
             raise ValueError(f"Invalid temp ({temp}) for body ({body})")
 
-        return await self._async_connected_request(
-            async_request_set_heat_setpoint, body, temp
-        )
+        await self._async_connected_request(async_request_set_heat_setpoint, body, temp)
 
     async def async_set_heat_mode(self, body: int, mode: int):
         """Set the heating mode for the specified body."""
@@ -327,16 +325,14 @@ class ScreenLogicGateway:
         if not self._is_valid_heatmode(mode):
             raise ValueError(f"Invalid mode: {mode}")
 
-        return await self._async_connected_request(
-            async_request_set_heat_mode, body, mode
-        )
+        await self._async_connected_request(async_request_set_heat_mode, body, mode)
 
     async def async_set_color_lights(self, light_command: int):
         """Set the light show mode for all capable lights."""
         if not self._is_valid_color_mode(light_command):
             raise ValueError(f"Invalid light_command: {light_command}")
 
-        return await self._async_connected_request(
+        await self._async_connected_request(
             async_request_pool_lights_command, light_command
         )
 
@@ -381,7 +377,7 @@ class ScreenLogicGateway:
         except (KeyError, ValueError) as ex:
             raise ScreenLogicError(ex.args[0]) from ex
 
-        return await self._async_connected_request(
+        await self._async_connected_request(
             async_request_set_scg_config,
             pool_setpoint,
             spa_setpoint,
@@ -442,7 +438,7 @@ class ScreenLogicGateway:
 
         ph_setpoint = int(ph_setpoint * 100)
 
-        return await self._async_connected_request(
+        await self._async_connected_request(
             async_request_set_chem_data,
             ph_setpoint,
             orp_setpoint,
@@ -487,7 +483,9 @@ class ScreenLogicGateway:
         if self._protocol:
             self._protocol.remove_async_message_callback(message_code)
 
-    async def async_send_message(self, message_code: int, message: bytes = b""):
+    async def async_send_message(
+        self, message_code: int, message: bytes = b""
+    ) -> bytes:
         """Send a message to the ScreenLogic protocol adapter."""
         _LOGGER.debug(f"User requesting {message_code}")
         return await self._async_connected_request(
@@ -506,17 +504,20 @@ class ScreenLogicGateway:
             kwargs["max_retries"] = self._max_retries
 
         async def attempt_request():
-            if await self.async_connect():
-                return await async_method(self._protocol, *args, **kwargs)
-
-            raise ScreenLogicError(
-                f"Not connected and unable to connect to protocol adapter to complete request: {async_method.func_name}"
-            )
+            if not await self.async_connect():
+                raise ScreenLogicConnectionError(
+                    f"Not connected and unable to connect to protocol adapter to complete request: {async_method.func_name}"
+                )
+            return await async_method(self._protocol, *args, **kwargs)
 
         try:
             return await attempt_request()
-        except ScreenLogicRequestError as re:
-            _LOGGER.debug("%s. Attempting to reconnect", re.msg)
+        except (
+            ScreenLogicConnectionError,
+            ScreenLogicRequestError,
+            ScreenLogicResponseError,
+        ) as sle:
+            _LOGGER.debug("%s. Attempting to reconnect", sle.msg)
             await self.async_disconnect(True)
             await asyncio.sleep(reconnect_delay)
             try:
