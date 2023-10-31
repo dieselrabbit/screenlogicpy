@@ -332,7 +332,7 @@ async def async_request_set_chem_data(
             ),
             max_retries,
         )
-    ) == b"":
+    ) != b"":
         raise ScreenLogicResponseError(
             f"Set chem data failed. Unexpected response: {response}"
         )
