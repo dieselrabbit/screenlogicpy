@@ -4,7 +4,7 @@ import struct
 from unittest.mock import call, patch
 
 from screenlogicpy import ScreenLogicGateway
-from screenlogicpy.const.common import ScreenLogicRequestError
+from screenlogicpy.const.common import ScreenLogicConnectionError
 from screenlogicpy.const.data import ATTR, DEVICE, GROUP, VALUE
 from screenlogicpy.const.msg import CODE
 from screenlogicpy.requests.request import async_make_request
@@ -209,7 +209,7 @@ async def test_async_set_circuit(
         return_value=result,
     ) as mockRequest:
         gateway = MockConnectedGateway
-        assert await gateway.async_set_circuit(circuit_id, circuit_state)
+        await gateway.async_set_circuit(circuit_id, circuit_state)
         await gateway.async_disconnect()
         assert mockRequest.call_args.args[0] == button_code
         assert mockRequest.call_args.args[1] == struct.pack(
@@ -241,7 +241,7 @@ async def test_async_set_circuit_retry(
         ),
     ) as mockRequest, patch("screenlogicpy.const.msg.COM_RETRY_WAIT", 1):
         gateway = MockConnectedGateway
-        assert await gateway.async_set_circuit(circuit_id, circuit_state)
+        await gateway.async_set_circuit(circuit_id, circuit_state)
         await gateway.async_disconnect()
         assert mockRequest.call_count == 2
         assert mockRequest.call_args.args[0] == button_code
@@ -281,7 +281,7 @@ async def test_async_set_circuit_timeout(
         "screenlogicpy.const.msg.COM_RETRY_WAIT", 1
     ):
         gateway: ScreenLogicGateway = MockConnectedGateway
-        with pytest.raises(ScreenLogicRequestError) as e_info:
+        with pytest.raises(ScreenLogicConnectionError) as e_info:
             await gateway.async_set_circuit(circuit_id, circuit_state)
         await gateway.async_disconnect()
         assert "Timeout" in e_info.value.msg
@@ -307,7 +307,7 @@ async def test_async_set_heat_temp(
         return_value=result,
     ) as mockRequest:
         gateway = MockConnectedGateway
-        assert await gateway.async_set_heat_temp(body, temp)
+        await gateway.async_set_heat_temp(body, temp)
         await gateway.async_disconnect()
         assert mockRequest.call_args.args[0] == heat_temp_code
         assert mockRequest.call_args.args[1] == struct.pack("<III", 0, body, temp)
@@ -328,7 +328,7 @@ async def test_async_set_heat_mode(
         return_value=result,
     ) as mockRequest:
         gateway = MockConnectedGateway
-        assert await gateway.async_set_heat_mode(body, mode)
+        await gateway.async_set_heat_mode(body, mode)
         await gateway.async_disconnect()
         assert mockRequest.call_args.args[0] == heat_mode_code
         assert mockRequest.call_args.args[1] == struct.pack("<III", 0, body, mode)
@@ -348,7 +348,7 @@ async def test_async_set_color_lights(
         return_value=result,
     ) as mockRequest:
         gateway = MockConnectedGateway
-        assert await gateway.async_set_color_lights(mode)
+        await gateway.async_set_color_lights(mode)
         await gateway.async_disconnect()
         assert mockRequest.call_args.args[0] == color_lights_code
         assert mockRequest.call_args.args[1] == struct.pack("<II", 0, mode)
@@ -369,7 +369,7 @@ async def test_async_set_scg_config(
         return_value=result,
     ) as mockRequest:
         gateway = MockConnectedGateway
-        assert await gateway.async_set_scg_config(pool_output, spa_output)
+        await gateway.async_set_scg_config(pool_output, spa_output)
         await gateway.async_disconnect()
         assert mockRequest.call_args.args[0] == scg_code
         assert mockRequest.call_args.args[1] == struct.pack(
