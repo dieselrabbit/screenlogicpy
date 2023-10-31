@@ -11,8 +11,7 @@ from screenlogicpy.const.common import (
     SL_GATEWAY_NAME,
     SL_GATEWAY_PORT,
     SLIntEnum,
-    ScreenLogicError,
-    ScreenLogicWarning,
+    ScreenLogicException,
 )
 from screenlogicpy.device_const.chemistry import RANGE_ORP_SETPOINT, RANGE_PH_SETPOINT
 from screenlogicpy.device_const.heat import HEAT_MODE
@@ -82,10 +81,8 @@ async def cli(cli_args):
         if circuit_id not in gateway.get_data(DEVICE.CIRCUIT):
             print(f"Invalid circuit number: {args.circuit_num}")
             return 4
-        if await gateway.async_set_circuit(circuit_id, state):
-            await gateway.async_update()
-        else:
-            return 4
+        await gateway.async_set_circuit(circuit_id, state)
+        await gateway.async_update()
         print(
             vFormat(
                 gateway.get_data(DEVICE.CIRCUIT, circuit_id),
@@ -107,10 +104,8 @@ async def cli(cli_args):
     async def async_set_heat_mode():
         body = BODY_TYPE.parse(args.body).value
         mode = HEAT_MODE.parse(args.mode).value
-        if await gateway.async_set_heat_mode(body, mode):
-            await gateway.async_update()
-        else:
-            return 8
+        await gateway.async_set_heat_mode(body, mode)
+        await gateway.async_update()
         print(
             vFormat(
                 gateway.get_data(DEVICE.BODY, body, VALUE.HEAT_MODE),
@@ -131,10 +126,8 @@ async def cli(cli_args):
     async def async_set_heat_temp():
         body = BODY_TYPE.parse(args.body).value
         if args.temp != -1:
-            if await gateway.async_set_heat_temp(body, int(args.temp)):
-                await gateway.async_update()
-            else:
-                return 16
+            await gateway.async_set_heat_temp(body, int(args.temp))
+            await gateway.async_update()
         print(
             vFormat(
                 gateway.get_data(DEVICE.BODY, body, VALUE.HEAT_SETPOINT),
@@ -165,12 +158,9 @@ async def cli(cli_args):
         mode = COLOR_MODE.parse(args.mode).value
         if mode is None:
             mode = int(args.mode)
-        if await gateway.async_set_color_lights(mode):
-            print(
-                f"Set color mode to {COLOR_MODE(mode).title}" if args.verbose else mode
-            )
-            return 0
-        return 32
+        await gateway.async_set_color_lights(mode)
+        print(f"Set color mode to {COLOR_MODE(mode).title}" if args.verbose else mode)
+        return 0
 
     async def async_set_scg_config():
         if args.scg_pool == "*" and args.scg_spa == "*":
@@ -193,15 +183,14 @@ async def cli(cli_args):
             print("Invalid Chlorinator value")
             return 66
 
-        if await gateway.async_set_scg_config(scg_1, scg_2):
-            await gateway.async_update()
-            new_scg_config_data = gateway.get_data(DEVICE.SCG, GROUP.CONFIGURATION)
-            print(
-                vFormat(new_scg_config_data[VALUE.POOL_SETPOINT]),
-                vFormat(new_scg_config_data[VALUE.SPA_SETPOINT]),
-            )
-            return 0
-        return 64
+        await gateway.async_set_scg_config(scg_1, scg_2)
+        await gateway.async_update()
+        new_scg_config_data = gateway.get_data(DEVICE.SCG, GROUP.CONFIGURATION)
+        print(
+            vFormat(new_scg_config_data[VALUE.POOL_SETPOINT]),
+            vFormat(new_scg_config_data[VALUE.SPA_SETPOINT]),
+        )
+        return 0
 
     async def async_set_chem_data():
         if args.ph_setpoint == "*" and args.orp_setpoint == "*":
@@ -229,18 +218,15 @@ async def cli(cli_args):
         ca = chem_config_data[VALUE.CYA][ATTR.VALUE]
         sa = chem_config_data[VALUE.SALT_TDS_PPM][ATTR.VALUE]
 
-        if await gateway.async_set_chem_data(ph, orp, ch, ta, ca, sa):
-            await asyncio.sleep(3)
-            await gateway.async_update()
-            new_chem_config_data = gateway.get_data(
-                DEVICE.INTELLICHEM, GROUP.CONFIGURATION
-            )
-            print(
-                vFormat(new_chem_config_data[VALUE.PH_SETPOINT]),
-                vFormat(new_chem_config_data[VALUE.ORP_SETPOINT]),
-            )
-            return 0
-        return 128
+        await gateway.async_set_chem_data(ph, orp, ch, ta, ca, sa)
+        await asyncio.sleep(3)
+        await gateway.async_update()
+        new_chem_config_data = gateway.get_data(DEVICE.INTELLICHEM, GROUP.CONFIGURATION)
+        print(
+            vFormat(new_chem_config_data[VALUE.PH_SETPOINT]),
+            vFormat(new_chem_config_data[VALUE.ORP_SETPOINT]),
+        )
+        return 0
 
     # Begin Parser Setup
     async def async_get_json():
@@ -511,6 +497,6 @@ async def cli(cli_args):
         await gateway.async_disconnect()
         return result
 
-    except (ScreenLogicError, ScreenLogicWarning) as err:
+    except ScreenLogicException as err:
         print(err)
-        return 128
+        return -1
