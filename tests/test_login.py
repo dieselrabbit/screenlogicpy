@@ -2,7 +2,10 @@ import asyncio
 import pytest
 from unittest.mock import patch
 
-from screenlogicpy.const.common import ScreenLogicError
+from screenlogicpy.const.common import (
+    ScreenLogicConnectionError,
+    ScreenLogicLoginError,
+)
 from screenlogicpy.const.msg import CODE
 from screenlogicpy.gateway import ScreenLogicGateway
 from screenlogicpy.requests.login import async_connect_to_gateway, async_get_mac_address
@@ -65,7 +68,7 @@ async def test_async_login_timeout(
             ),
         ) as mockRequest, patch("screenlogicpy.const.msg.COM_RETRY_WAIT", 1):
             gateway = ScreenLogicGateway()
-            with pytest.raises(ScreenLogicError) as e_info:
+            with pytest.raises(ScreenLogicConnectionError) as e_info:
                 await gateway.async_connect(**FAKE_CONNECT_INFO)
             assert "Timeout" in e_info.value.msg
             assert mockRequest.call_count == 3
@@ -93,11 +96,10 @@ async def test_async_login_rejected(
                     )
                 ),
                 req_fut(error_resp(CODE.LOCALLOGIN_QUERY)),
-                req_fut(error_resp(CODE.LOCALLOGIN_QUERY)),
             ),
         ) as mockRequest, patch("screenlogicpy.const.msg.COM_RETRY_WAIT", 1):
             gateway = ScreenLogicGateway()
-            with pytest.raises(ScreenLogicError) as e_info:
+            with pytest.raises(ScreenLogicLoginError) as e_info:
                 await gateway.async_connect(**FAKE_CONNECT_INFO)
             assert "Rejected" in e_info.value.msg
-            assert mockRequest.call_count == 3
+            assert mockRequest.call_count == 2
