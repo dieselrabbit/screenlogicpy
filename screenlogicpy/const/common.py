@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
 from enum import IntEnum
 
 CLIENT_ID = 49151
@@ -17,8 +20,10 @@ SL_GATEWAY_NAME = "name"
 class ScreenLogicException(Exception):
     """Common class for all ScreenLogic exceptions."""
 
-    def __init__(self, message: str, *args: object) -> None:
-        self.msg = message
+    def __init__(self, *args: object) -> None:
+        self.msg = None
+        if len(args) > 0:
+            self.msg = args[0]
         super().__init__(*args)
 
 
@@ -36,7 +41,7 @@ class ScreenLogicRequestError(ScreenLogicException):
 
 class SLIntEnum(IntEnum):
     @classmethod
-    def parse(cls, value: str, default=0) -> "SLIntEnum":
+    def parse(cls, value: str, default=0) -> SLIntEnum:
         """Attempt to return and Enum from the provided string."""
         try:
             return (
@@ -50,12 +55,11 @@ class SLIntEnum(IntEnum):
             return None if default is None else cls(default)
 
     @classmethod
-    def parsable(cls) -> tuple:
+    def parsable_values(cls) -> tuple:
         """Return a tuple of all parsable values."""
         out = []
         for member in cls:
-            out.append(str(member.value))
-            out.append(member.name.lower())
+            out.extend([str(member.value), member.name.lower()])
         return tuple(out)
 
     def _title(self) -> str:
@@ -64,6 +68,27 @@ class SLIntEnum(IntEnum):
     @property
     def title(self) -> str:
         return self._title()
+
+
+@dataclass
+class SLValueRange:
+    minimum: int | float
+    maximum: int | float
+    unit: str | None = None
+
+    def check(self, value: int | float) -> None:
+        if not self.in_range(value):
+            raise ValueError(f"{value} not in range {self.minimum}-{self.maximum}")
+
+    def in_range(self, value: int | float) -> bool:
+        return self.minimum <= value <= self.maximum
+
+    def parse_check(self, string: str) -> int | float:
+        value = float(string) if isinstance(self.minimum, float) else int(string)
+        if self.minimum <= value <= self.maximum:
+            return value
+        else:
+            raise ValueError(f"{value} not in range {self.minimum}-{self.maximum}")
 
 
 class DATA_REQUEST:
@@ -133,5 +158,5 @@ class ON_OFF(SLIntEnum):
     ON = 1
 
     @classmethod
-    def from_bool(cls, expression: bool):
-        return cls.ON.value if expression else cls.OFF.value
+    def from_bool(cls, expression: bool) -> ON_OFF:
+        return cls.ON if expression else cls.OFF

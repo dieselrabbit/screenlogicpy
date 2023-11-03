@@ -1,12 +1,12 @@
-import asyncio
+import logging
 import string
 import json
 import argparse
+from screenlogicpy import __version__
 from screenlogicpy.discovery import async_discover
 from screenlogicpy.gateway import ScreenLogicGateway
 from screenlogicpy.const.common import (
     ON_OFF,
-    RANGE,
     SL_GATEWAY_IP,
     SL_GATEWAY_NAME,
     SL_GATEWAY_PORT,
@@ -14,38 +14,25 @@ from screenlogicpy.const.common import (
     ScreenLogicError,
     ScreenLogicWarning,
 )
-from screenlogicpy.device_const.chemistry import RANGE_ORP_SETPOINT, RANGE_PH_SETPOINT
+from screenlogicpy.data import build_response_collection, export_response_collection
+from screenlogicpy.device_const.chemistry import CHEM_RANGE
+from screenlogicpy.device_const.circuit import INTERFACE
 from screenlogicpy.device_const.heat import HEAT_MODE
 from screenlogicpy.device_const.system import BODY_TYPE, COLOR_MODE
+from screenlogicpy.device_const.scg import SCG_RANGE
 from screenlogicpy.const.data import ATTR, DEVICE, GROUP, VALUE
 
 
-def cliFormat(name: str):
-    table = str.maketrans(" ", "_", string.punctuation)
+def file_format(name: str):
+    table = str.maketrans(" ", "-", string.punctuation)
     return name.translate(table).lower()
-
-
-def cliFormatDict(mapping: dict):
-    return {
-        cliFormat(key)
-        if isinstance(key, str)
-        else key: cliFormat(value)
-        if isinstance(value, str)
-        else value
-        for key, value in mapping.items()
-    }
-
-
-def optionsFromDict(mapping: dict):
-    options = []
-    for key, value in cliFormatDict(mapping).items():
-        options.extend((str(key), str(value)))
-    return options
 
 
 # Entry function
 async def cli(cli_args):
     """Handle command line args"""
+
+    gateway = ScreenLogicGateway()
 
     def vFormat(slElement: dict, slClass=None):
         if args.verbose:
@@ -77,7 +64,7 @@ async def cli(cli_args):
         return 0
 
     async def async_set_circuit():
-        state = ON_OFF.parse(args.state).value
+        state = (ON_OFF.parse(args.state)).value
         circuit_id = int(args.circuit_num)
         if circuit_id not in gateway.get_data(DEVICE.CIRCUIT):
             print(f"Invalid circuit number: {args.circuit_num}")
@@ -172,75 +159,119 @@ async def cli(cli_args):
             return 0
         return 32
 
-    async def async_set_scg_config():
-        if args.scg_pool == "*" and args.scg_spa == "*":
-            print("No new Chlorinator values. Nothing to do.")
+    async def async_set_scg_setpoint():
+        return await async_set_scg_config(pool=args.pool, spa=args.spa)
+
+    async def async_set_scg_super():
+        return await async_set_scg_config(state=args.state, time=args.time)
+
+    async def async_set_scg_config(
+        *,
+        pool: int | None = None,
+        spa: int | None = None,
+        state: int | None = None,
+        time: int | None = None,
+    ):
+        if all(
+            (
+                pool is None,
+                spa is None,
+                state is None,
+                time is None,
+            )
+        ):
+            print("No new chlorinator values. Nothing to do.")
             return 65
 
-        scg_config_data = gateway.get_data(DEVICE.SCG, GROUP.CONFIGURATION)
-        try:
-            scg_1 = (
-                scg_config_data[VALUE.POOL_SETPOINT][ATTR.VALUE]
-                if args.scg_pool == "*"
-                else int(args.scg_pool)
-            )
-            scg_2 = (
-                scg_config_data[VALUE.SPA_SETPOINT][ATTR.VALUE]
-                if args.scg_spa == "*"
-                else int(args.scg_spa)
-            )
-        except ValueError:
-            print("Invalid Chlorinator value")
-            return 66
+        kwargs = {
+            VALUE.POOL_SETPOINT: pool,
+            VALUE.SPA_SETPOINT: spa,
+            VALUE.SUPER_CHLORINATE: state,
+            VALUE.SUPER_CHLOR_TIMER: time,
+        }
 
-        if await gateway.async_set_scg_config(scg_1, scg_2):
-            await gateway.async_update()
+        if await gateway.async_set_scg_config(**kwargs):
+            # await asyncio.sleep(3)
+            await gateway.async_get_scg()
             new_scg_config_data = gateway.get_data(DEVICE.SCG, GROUP.CONFIGURATION)
             print(
-                vFormat(new_scg_config_data[VALUE.POOL_SETPOINT]),
-                vFormat(new_scg_config_data[VALUE.SPA_SETPOINT]),
+                *[
+                    vFormat(new_scg_config_data[key])
+                    for key, value in kwargs.items()
+                    if key in new_scg_config_data and value is not None
+                ]
             )
             return 0
         return 64
 
-    async def async_set_chem_data():
-        if args.ph_setpoint == "*" and args.orp_setpoint == "*":
-            print("No new setpoint values. Nothing to do.")
+    async def async_set_chem_setpoint():
+        return await async_set_chem_data(ph=args.ph, orp=args.orp)
+
+    async def async_set_chem_value():
+        return await async_set_chem_data(
+            calcium_hardness=args.calcium_hardness,
+            total_alkalinity=args.total_alkalinity,
+            cyanuric_acid=args.cyanuric_acid,
+            total_dissolved_solids=args.total_dissolved_solids,
+        )
+
+    async def async_set_chem_data(
+        *,
+        ph: float | None = None,
+        orp: int | None = None,
+        calcium_hardness: int | None = None,
+        total_alkalinity: int | None = None,
+        cyanuric_acid: int | None = None,
+        total_dissolved_solids: int | None = None,
+    ):
+        if all(
+            (
+                ph is None,
+                orp is None,
+                calcium_hardness is None,
+                total_alkalinity is None,
+                cyanuric_acid is None,
+                total_dissolved_solids is None,
+            )
+        ):
+            print("No new chemistry values. Nothing to do.")
             return 129
 
-        chem_config_data = gateway.get_data(DEVICE.INTELLICHEM, GROUP.CONFIGURATION)
-        try:
-            ph = (
-                chem_config_data[VALUE.PH_SETPOINT][ATTR.VALUE]
-                if args.ph_setpoint == "*"
-                else float(args.ph_setpoint)
-            )
-            orp = (
-                chem_config_data[VALUE.ORP_SETPOINT][ATTR.VALUE]
-                if args.orp_setpoint == "*"
-                else int(args.orp_setpoint)
-            )
-        except ValueError:
-            print("Invalid Chemistry Setpoint value")
-            return 130
-
-        ch = chem_config_data[VALUE.CALCIUM_HARNESS][ATTR.VALUE]
-        ta = chem_config_data[VALUE.TOTAL_ALKALINITY][ATTR.VALUE]
-        ca = chem_config_data[VALUE.CYA][ATTR.VALUE]
-        sa = chem_config_data[VALUE.SALT_TDS_PPM][ATTR.VALUE]
-
-        if await gateway.async_set_chem_data(ph, orp, ch, ta, ca, sa):
-            await asyncio.sleep(3)
-            await gateway.async_update()
+        kwargs = {
+            VALUE.PH_SETPOINT: ph,
+            VALUE.ORP_SETPOINT: orp,
+            VALUE.CALCIUM_HARDNESS: calcium_hardness,
+            VALUE.TOTAL_ALKALINITY: total_alkalinity,
+            VALUE.CYA: cyanuric_acid,
+            VALUE.SALT_TDS_PPM: total_dissolved_solids,
+        }
+        if await gateway.async_set_chem_data(**kwargs):
+            # await asyncio.sleep(3)
+            await gateway.async_get_chemistry()
             new_chem_config_data = gateway.get_data(
                 DEVICE.INTELLICHEM, GROUP.CONFIGURATION
             )
             print(
-                vFormat(new_chem_config_data[VALUE.PH_SETPOINT]),
-                vFormat(new_chem_config_data[VALUE.ORP_SETPOINT]),
+                *[
+                    vFormat(new_chem_config_data[key])
+                    for key, value in kwargs.items()
+                    if key in new_chem_config_data and value is not None
+                ]
             )
             return 0
         return 128
+
+    async def async_export_data_collection():
+        sl_ver = file_format(__version__)
+        pa_ver = file_format(gateway.version)
+        model = file_format(gateway.controller_model)
+        equip = gateway.equipment_flags.value
+        filename = f"slpy{sl_ver}_{pa_ver}_{model}_{equip}.json"
+        response_collection = build_response_collection(
+            gateway.get_debug(), gateway.get_data()
+        )
+        export_response_collection(response_collection, filename)
+        return 0
 
     # Begin Parser Setup
     async def async_get_json():
@@ -248,12 +279,24 @@ async def cli(cli_args):
         return 0
 
     option_parser = argparse.ArgumentParser(
-        description="Interface for Pentair Screenlogic gateway"
+        prog="screenlogicpy", description="Interface for Pentair Screenlogic gateway"
     )
 
-    option_parser.add_argument("-v", "--verbose", action="store_true")
-    option_parser.add_argument("-i", "--ip")
-    option_parser.add_argument("-p", "--port", default=80)
+    option_parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        help="Enables verbose output. Additional 'v's increase logging up to '-vvv' for DEBUG logging",
+    )
+    option_parser.add_argument(
+        "-i",
+        "--ip",
+        help="Bypasses discovery and specifies the ip address of the protocol adapter",
+    )
+    option_parser.add_argument(
+        "-p", "--port", default=80, help="Specifies the port of the protocol adapter"
+    )
 
     subparsers = option_parser.add_subparsers(dest="action")
 
@@ -263,8 +306,11 @@ async def cli(cli_args):
         "discover", help="Attempt to discover all available ScreenLogic gateways"
     )
 
+    # pylint: disable=unused-variable
+    export_parser = subparsers.add_parser("export")  # noqa F841
+
     # Get options
-    get_parser = subparsers.add_parser("get", help="Gets the option specified")
+    get_parser = subparsers.add_parser("get", help="Gets the specified value or state")
     get_subparsers = get_parser.add_subparsers(dest="get_option")
     get_subparsers.required = True
 
@@ -274,11 +320,13 @@ async def cli(cli_args):
         "type": int,
         "help": "Circuit number",
     }
-    get_circuit_parser = get_subparsers.add_parser("circuit", aliases=["c"])
+    get_circuit_parser = get_subparsers.add_parser(
+        "circuit", aliases=["c"], help="Get the state of the specified circuit"
+    )
     get_circuit_parser.add_argument(**ARGUMENT_CIRCUIT_NUM)
     get_circuit_parser.set_defaults(async_func=async_get_circuit)
 
-    body_options = BODY_TYPE.parsable()
+    body_options = BODY_TYPE.parsable_values()
     ARGUMENT_BODY = {
         "dest": "body",
         "metavar": "BODY",
@@ -286,32 +334,54 @@ async def cli(cli_args):
         "choices": body_options,
         "help": f"Body of water. One of: {body_options}",
     }
-    get_heat_mode_parser = get_subparsers.add_parser("heat-mode", aliases=["hm"])
+    get_heat_mode_parser = get_subparsers.add_parser(
+        "heat-mode", aliases=["hm"], help="Get the heat mode for the specified body"
+    )
     get_heat_mode_parser.add_argument(**ARGUMENT_BODY)
     get_heat_mode_parser.set_defaults(async_func=async_get_heat_mode)
 
-    get_heat_temp_parser = get_subparsers.add_parser("heat-temp", aliases=["ht"])
+    get_heat_temp_parser = get_subparsers.add_parser(
+        "heat-temp",
+        aliases=["ht"],
+        help="Get the target temperature for the specified body",
+    )
     get_heat_temp_parser.add_argument(**ARGUMENT_BODY)
     get_heat_temp_parser.set_defaults(async_func=async_get_heat_temp)
 
-    get_heat_state_parser = get_subparsers.add_parser("heat-state", aliases=["hs"])
+    get_heat_state_parser = get_subparsers.add_parser(
+        "heat-state",
+        aliases=["hs"],
+        help="Get the current heating state for the specified body",
+    )
     get_heat_state_parser.add_argument(**ARGUMENT_BODY)
     get_heat_state_parser.set_defaults(async_func=async_get_heat_state)
 
-    get_current_temp_parser = get_subparsers.add_parser("current-temp", aliases=["t"])
+    get_current_temp_parser = get_subparsers.add_parser(
+        "current-temp",
+        aliases=["t"],
+        help="Get the current temperature for the specified body",
+    )
     get_current_temp_parser.add_argument(**ARGUMENT_BODY)
     get_current_temp_parser.set_defaults(async_func=async_get_current_temp)
 
-    get_json_parser = get_subparsers.add_parser("json", aliases=["j"])
+    get_json_parser = get_subparsers.add_parser(
+        "json", aliases=["j"], help="Return the full data dict as JSON"
+    )
     get_json_parser.set_defaults(async_func=async_get_json)
 
     # Set options
-    set_parser = subparsers.add_parser("set")
+    set_parser = subparsers.add_parser(
+        "set", help="Sets the specified option, state, or value"
+    )
     set_subparsers = set_parser.add_subparsers(dest="set_option")
     set_subparsers.required = True
 
-    on_off_options = ON_OFF.parsable()
-    set_circuit_parser = set_subparsers.add_parser("circuit", aliases=["c"])
+    on_off_options = ON_OFF.parsable_values()
+    set_circuit_parser = set_subparsers.add_parser(
+        "circuit",
+        aliases=["c"],
+        help="Set the specified circuit to the specified state",
+    )
     set_circuit_parser.add_argument(**ARGUMENT_CIRCUIT_NUM)
     set_circuit_parser.add_argument(
         "state",
@@ -321,9 +391,13 @@ async def cli(cli_args):
         help=f"State to set. One of {on_off_options}",
     )
 
-    cl_options = COLOR_MODE.parsable()
+    cl_options = COLOR_MODE.parsable_values()
     set_circuit_parser.set_defaults(async_func=async_set_circuit)
-    set_color_light_parser = set_subparsers.add_parser("color-lights", aliases=["cl"])
+    set_color_light_parser = set_subparsers.add_parser(
+        "color-lights",
+        aliases=["cl"],
+        help="Send the specified color lights or IntelliBrite command",
+    )
     set_color_light_parser.add_argument(
         "mode",
         metavar="MODE",
@@ -333,9 +407,13 @@ async def cli(cli_args):
     )
     set_color_light_parser.set_defaults(async_func=async_set_color_light)
 
-    set_heat_mode_parser = set_subparsers.add_parser("heat-mode", aliases=["hm"])
+    set_heat_mode_parser = set_subparsers.add_parser(
+        "heat-mode",
+        aliases=["hm"],
+        help="Set the specified heat mode for the specified body",
+    )
     set_heat_mode_parser.add_argument(**ARGUMENT_BODY)
-    hm_options = HEAT_MODE.parsable()
+    hm_options = HEAT_MODE.parsable_values()
     set_heat_mode_parser.add_argument(
         "mode",
         metavar="MODE",
@@ -346,52 +424,141 @@ async def cli(cli_args):
     )
     set_heat_mode_parser.set_defaults(async_func=async_set_heat_mode)
 
-    set_heat_temp_parser = set_subparsers.add_parser("heat-temp", aliases=["ht"])
+    set_heat_temp_parser = set_subparsers.add_parser(
+        "heat-temp",
+        aliases=["ht"],
+        help="Set the specified target temperature for the specified body",
+    )
     set_heat_temp_parser.add_argument(**ARGUMENT_BODY)
     set_heat_temp_parser.add_argument(
         "temp",
         type=int,
         metavar="TEMP",
-        default=None,
         help="Temperature to set in same unit of measurement as controller settings",
     )
     set_heat_temp_parser.set_defaults(async_func=async_set_heat_temp)
 
-    set_scg_config_parser = set_subparsers.add_parser("salt-generator", aliases=["scg"])
-    set_scg_config_parser.add_argument(
-        "scg_pool",
-        type=str,
-        metavar="POOL_PCT",
-        default=None,
-        help="Chlorinator output for when system is in POOL mode. 0-100, or * to keep current value.",
+    set_scg_setpoint_parser = set_subparsers.add_parser(
+        "salt-generator",
+        aliases=["scg"],
+        help="Set the SCG output level(s) for the pool and/or spa",
     )
-    set_scg_config_parser.add_argument(
-        "scg_spa",
-        type=str,
-        metavar="SPA_PCT",
+    set_scg_setpoint_parser.add_argument(
+        "-p",
+        "--pool",
+        type=int,
+        metavar="OUTPUT",
         default=None,
-        help="Chlorinator output for when system is in SPA mode. 0-20, or * to keep current value.",
+        help=f"Chlorinator output for when system is in POOL mode. {SCG_RANGE.POOL_SETPOINT.minimum}-{SCG_RANGE.POOL_SETPOINT.maximum}",
     )
-    set_scg_config_parser.set_defaults(async_func=async_set_scg_config)
+    set_scg_setpoint_parser.add_argument(
+        "-s",
+        "--spa",
+        type=int,
+        metavar="OUTPUT",
+        default=None,
+        help=f"Chlorinator output for when system is in SPA mode. {SCG_RANGE.SPA_SETPOINT.minimum}-{SCG_RANGE.SPA_SETPOINT.maximum}",
+    )
+    set_scg_setpoint_parser.set_defaults(async_func=async_set_scg_setpoint)
 
-    set_chem_data_parser = set_subparsers.add_parser("chem-data", aliases=["ch"])
-    set_chem_data_parser.add_argument(
-        "ph_setpoint",
+    set_scg_super_parser = set_subparsers.add_parser(
+        "super-chlorinate", aliases=["sc"], help="Configure super chlorination"
+    )
+    set_scg_super_parser.add_argument(
+        "-s",
+        "--state",
         type=str,
-        metavar="PH_SETPOINT",
+        choices=on_off_options,
         default=None,
-        help=f"PH set point for IntelliChem. {RANGE_PH_SETPOINT[RANGE.MIN]}-{RANGE_PH_SETPOINT[RANGE.MAX]}, or * to keep current value.",
+        help=f"State of super chlorination. One of {on_off_options}",
+    )
+
+    set_scg_super_parser.add_argument(
+        "-t",
+        "--time",
+        type=int,
+        metavar="HOURS",
+        default=None,
+        help=f"Time in hours to run super chlorination. {SCG_RANGE.SUPER_CHLOR_RT.minimum}-{SCG_RANGE.SUPER_CHLOR_RT.maximum}",
+    )
+    set_scg_super_parser.set_defaults(async_func=async_set_scg_super)
+
+    set_chem_setpoint_parser = set_subparsers.add_parser(
+        "chemistry-setpoint",
+        aliases=["cs"],
+        help="Set the specified pH and/or ORP setpoint(s) for the IntelliChem system",
+    )
+
+    set_chem_setpoint_parser.add_argument(
+        "-p",
+        "--ph",
+        type=float,
+        default=None,
+        help=(
+            "PH set point for IntelliChem. "
+            f"{CHEM_RANGE.PH_SETPOINT.minimum}-{CHEM_RANGE.PH_SETPOINT.maximum}"
+        ),
+    )
+
+    set_chem_setpoint_parser.add_argument(
+        "-o",
+        "--orp",
+        type=int,
+        default=None,
+        help=(
+            "ORP set point for IntelliChem. "
+            f"{CHEM_RANGE.ORP_SETPOINT.minimum}-{CHEM_RANGE.ORP_SETPOINT.maximum}"
+        ),
+    )
+    set_chem_setpoint_parser.set_defaults(async_func=async_set_chem_setpoint)
+
+    set_chem_data_parser = set_subparsers.add_parser(
+        "chemistry-value",
+        aliases=["cv"],
+        help="Set various chemistry values for LSI calculation in the IntelliChem system",
     )
     set_chem_data_parser.add_argument(
-        "orp_setpoint",
-        type=str,
-        metavar="ORP_SETPOINT",
+        "-ch",
+        "--calcium-hardness",
+        type=int,
         default=None,
-        help=f"ORP set point for IntelliChem. {RANGE_ORP_SETPOINT[RANGE.MIN]}-{RANGE_ORP_SETPOINT[RANGE.MAX]}, or * to keep current value.",
+        help="Calcium hardness for LSI calculations in the IntelliChem system.",
     )
-    set_chem_data_parser.set_defaults(async_func=async_set_chem_data)
+    set_chem_data_parser.add_argument(
+        "-ta",
+        "--total-alkalinity",
+        type=int,
+        default=None,
+        help="Total alkalinity for LSI calculations in the IntelliChem system.",
+    )
+    set_chem_data_parser.add_argument(
+        "-cya",
+        "--cyanuric-acid",
+        type=int,
+        default=None,
+        help="Cyanuric acid for LSI calculations in the IntelliChem system.",
+    )
+    set_chem_data_parser.add_argument(
+        "-tds",
+        "--total-dissolved-solids",
+        type=int,
+        default=None,
+        help="Salt or total dissolved solids (if not using a SCG) for LSI calculations in the IntelliChem system.",
+    )
+    set_chem_data_parser.set_defaults(async_func=async_set_chem_value)
 
     args = option_parser.parse_args(cli_args)
+
+    if args.verbose == 2:
+        logging.basicConfig(
+            level=logging.INFO,
+        )
+    elif args.verbose == 3:
+        logging.basicConfig(
+            format="%(asctime)s %(levelname)-8s %(message)s",
+            level=logging.DEBUG,
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
 
     try:
         host = {SL_GATEWAY_IP: args.ip, SL_GATEWAY_PORT: args.port}
@@ -432,14 +599,16 @@ async def cli(cli_args):
                 print("No ScreenLogic gateways found.")
                 return 1
 
-        gateway = ScreenLogicGateway()
-
         await gateway.async_connect(**host)
 
         await gateway.async_update()
 
         if DEVICE.CONTROLLER not in gateway.get_data():
             return 1
+
+        if args.action == "export":
+            result = await async_export_data_collection()
+            return result
 
         def print_gateway():
             verb = "Discovered" if discovered else "Using"
@@ -454,13 +623,14 @@ async def cli(cli_args):
             print("{}  {}  {}".format("ID".rjust(3), "STATE", "NAME"))
             print("--------------------------")
             for id, circuit in gateway.get_data(DEVICE.CIRCUIT).items():
-                print(
-                    "{}  {}  {}".format(
-                        id,
-                        ON_OFF(circuit[ATTR.VALUE]).title.rjust(5),
-                        circuit[ATTR.NAME],
+                if circuit[ATTR.INTERFACE] != INTERFACE.DONT_SHOW:
+                    print(
+                        "{}  {}  {}".format(
+                            id,
+                            ON_OFF(circuit[ATTR.VALUE]).title.rjust(5),
+                            circuit[ATTR.NAME],
+                        )
                     )
-                )
 
         def print_heat():
             for body in gateway.get_data(DEVICE.BODY).values():

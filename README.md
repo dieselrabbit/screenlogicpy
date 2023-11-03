@@ -298,6 +298,7 @@ success = await gateway.async_set_chem_data(ph_setpoint=ph, orp_setpoint=orp, ca
 * _New in v0.6.0._
 * _**Changed in v0.10.0:** `async_set_chem_data` now accepts keyword arguments only. This allows the caller to specify only the value(s) they want to update, retaining all other existing values._
 
+
 ## Handling unsolicited messages
 
 With the move to asyncio, `screenlogicpy` can now handle unsolicited messages from the ScreenLogic protocol adapter (messages that are not a direct response to a request from screenlogicpy).
@@ -513,7 +514,7 @@ screenlogicpy set circuit [circuit number] [circuit state]
 ```
 
 Sets the specified circuit to the specified circuit state.  
-**Note:** `[circuit state]` can be an `int` or `string` representing the desired [circuit state](#circuit-state).
+**Note:** `[circuit state]` can be an `int` or `string` representing the desired [state](#state).
 
 #### set `heat-mode, hm`
 
@@ -547,6 +548,7 @@ Sets a color mode for all color-capable lights configured on the pool controller
 #### set `salt-generator, scg`
 
 ```shell
+
 screenlogicpy set salt-generator [--pool POOL_PCT] [--spa SPA_PCT]
 ```
 
@@ -612,9 +614,10 @@ Specify the total dissolved solids value for Saturation Index calculation as an 
 
 * _**New in v0.10.0.**_
 
+
 # Reference
 
-## Circuit State
+## State
 
 | `int` | `string` | Name |
 | ----- | -------- | ---- |
