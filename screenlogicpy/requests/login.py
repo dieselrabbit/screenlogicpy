@@ -49,10 +49,16 @@ async def async_create_connection(
                 gateway_ip,
                 gateway_port,
             )
-    except (OSError, asyncio.TimeoutError) as ex:
+    except asyncio.TimeoutError as to_ex:
+        _LOGGER.debug("Timeout attempting to connect to host")
         raise ScreenLogicError(
             f"Failed to connect to host at {gateway_ip}:{gateway_port}"
-        ) from ex
+        ) from to_ex
+    except OSError as os_ex:
+        _LOGGER.debug(f"Error attempting to connect to host: {str(os_ex)}")
+        raise ScreenLogicError(
+            f"Failed to connect to host at {gateway_ip}:{gateway_port}"
+        ) from os_ex
 
 
 async def async_gateway_connect(

@@ -21,6 +21,10 @@ def test_decode_config(response_collection: ScreenLogicResponseCollection):
 
     assert data == response_collection.config.decoded
 
+    decode_pool_config(buffer, data)
+
+    assert data == expected
+
 
 def test_decode_status(response_collection: ScreenLogicResponseCollection):
     data = {}
