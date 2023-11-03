@@ -123,19 +123,20 @@ def decode_pool_config(buff: bytes, data: dict) -> dict:
     colorCount, offset = getSome("I", buff, offset)
     controller_config[VALUE.COLOR_COUNT] = colorCount
 
-    color: list = controller_config.setdefault(GROUP.COLOR, [])
+    colors = []
 
     for i in range(colorCount):
         colorName, offset = getString(buff, offset)
         rgbR, offset = getSome("I", buff, offset)
         rgbG, offset = getSome("I", buff, offset)
         rgbB, offset = getSome("I", buff, offset)
-        color.append(
+        colors.append(
             {
                 ATTR.NAME: colorName,
                 ATTR.VALUE: (rgbR, rgbG, rgbB),
             }
         )
+    controller_config[GROUP.COLOR] = colors
 
     pump_count = 8
 
