@@ -16,7 +16,8 @@ $ pip install screenlogicpy
 
 * _Changed in v0.5.0: The screenlogicpy library has moved over to using asyncio for all network I/O. Relevant methods now require the `async`/`await` syntax._
 * _New in v0.8.0: Support for Python 3.8 and 3.9 is being phased out across future releases. Version 0.8.x will be the last versions to support Python 3.8._
-* _**New in v0.9.0**: Support for Python 3.8 has been removed. Support for Python 3.9 is being phased out across future releases. Version 0.9.x will be the last versions to support Python 3.9._
+* _New in v0.9.0: Support for Python 3.8 has been removed. Support for Python 3.9 is being phased out across future releases. Version 0.9.x will be the last versions to support Python 3.9._
+* _**New in v0.10.0**: Support for Python 3.9 has been removed._
 
 The `ScreenLogicGateway` class is the primary interface.
 
@@ -275,29 +276,28 @@ success = await gateway.async_set_color_lights(light_command)
 
 ## Setting chlorinator output levels
 
-Chlorinator output levels can be set with `async_set_scg_config()`.  The method takes only key-word arguments to set specific values: `pool_output` and `spa_output`.
+### ScreenLogicGateway.**async_set_scg_config**(_pool_setpoint=None, spa_setpoint=None_ )
+
+Chlorinator output levels can be set with `async_set_scg_config()`.  `async_set_scg_config` takes up to two keyword arguments, `pool_setpoint` and `spa_setpoint`, both `int`.
 
 ```python
-success = await gateway.async_set_scg_config(pool_output=pool_pct, spa_output=spa_pct)  
+success = await gateway.async_set_scg_config(pool_setpoint=pool_output, spa_setpoint=spa_output)  
 ```
 
 * _New in v0.5.0._
-* _**Changed in v0.9.0**: All values are settable individually and only as key-word args._
+* _**Changed in v0.10.0.** `async_set_scg_config` now accepts keyword arguments only. This allows the caller to specify only the value(s) they want to update, retaining all other existing values._
 
 ## Setting IntelliChem Chemistry values
 
-Chemistry values used in the IntelliChem system can be set with `async_set_chem_data()`. This method takes only key-word arguments to set specific values: `ph_setpoint`, `orp_setpoint`, `calcium_harness`, `total_alkalinity`, `cya`, and `salt_tds_ppm`.
-
-`ph_setpoint` is a `float` and the rest are `int`.
+Chemistry values used in the IntelliChem system can be set with `async_set_chem_data()`. `async_set_chem_data` takes up to six keyword arguments, `ph_setpoint`, `orp_setpoint`, `calcium_hardness`, `total_alkalinity`, `cyanuric_acid`, and `salt_tds_ppm`. `ph_setpoint` is a `float` and the rest are `int`.
 
 ```python
-success = await gateway.async_set_chem_data(ph_setpoint=ph, orp_setpoint=orp, calcium_harness=ch, total_alkalinity=ta, cya=cya, salt_tds_ppm=salt)
+success = await gateway.async_set_chem_data(ph_setpoint=ph, orp_setpoint=orp, calcium_hardness=cal, total_alkalinity=alk, cyanuric_acid=cya, salt_tds_ppm=salt)
 ```
 
-All values are accessible only as key-word arguments.
-
 * _New in v0.6.0._
-* _**Changed in v0.9.0**: All values are settable individually and only as key-word args._
+* _**Changed in v0.10.0:** `async_set_chem_data` now accepts keyword arguments only. This allows the caller to specify only the value(s) they want to update, retaining all other existing values._
+
 
 ## Handling unsolicited messages
 
@@ -548,44 +548,72 @@ Sets a color mode for all color-capable lights configured on the pool controller
 #### set `salt-generator, scg`
 
 ```shell
-screenlogicpy set salt-generator [--pool OUTPUT] [--spa OUTPUT]
+
+screenlogicpy set salt-generator [--pool POOL_PCT] [--spa SPA_PCT]
 ```
 
-Sets the chlorinator output levels for the pool and/or spa. Takes one or both of two optional arguments: (`-p`, `--pool`) and (`-s`, `--spa`).  `OUTPUT` is an `int` between `0`-`100` for both settings.  
-**Note:**  Pentair treats the spa output level as a percentage of the pool's output level. For example, if the pool output level is set to 80, and the spa output level is set to 50, the actual spa output would be 40%.
+Sets the chlorinator output levels for the pool and/or spa via two optional arguments:
+
+##### set salt-generator `-p, --pool`
+
+Specify the output level for the pool as an `int` between `0`-`100`.
+
+##### set salt-generator `-s, --spa`
+
+Specify the output level for the spa as an `int` between `0`-`100`.
+
+**Note:** Pentair treats spa output level as a percentage of the pool's output level.
 
 * _New in v0.5.0._
-* _**Changed in v0.9.0**: Values are now settable individually via optional arguments._
+* _**Changed in v0.10.0:** Pool and spa arguments are now optional. Users may specify one or the other, or both._
 
-#### set `super-chlorinate, sup`
-
-```shel
-screenlogicpy set super-chlorinate [--state STATE] [--time HOURS]
-```
-
-Starts or stops super chlorination and/or sets the runtime in hours. Takes one or both optional arguments: (`-s`, `--state`) and (`-t`, `--time`). STATE can be an `int` or `string` representing the desired [state](#state).  HOURS is an `int` the range of `0`-`72`.
-
-#### set `chem-setpoint, csp`
+#### set `chemistry-setpoint, cs`
 
 ```shell
-screenlogicpy set chem-setpoint [--ph PH_SETPOINT] [--orp ORP_SETPOINT]
+screenlogicpy set chemistry-setpoint [--ph PH] [--orp ORP]
 ```
 
-Sets the pH and/or ORP set points for the IntelliChem system. Takes one or both optional arguments:  (`-p`, `--ph`) and (`-o`, `--orp`). `PH_SETPOINT` can be a `float` between `7.2`-`7.6`. `ORP_SETPOINT` can be an `int` between `400`-`800`.
-**Note:** 
+Sets the pH and/or ORP set points for the IntelliChem system via two optional arguments:
 
-* _**New in v0.9.0**: pH and ORP settings are now here._
+##### set chemistry-setpoint `-p, --ph`
 
-#### set `chem-data, cd`
+Specify the target pH value for Intellichem to maintain as a `float` between `7.2`-`7.6`.
+
+##### set chemistry-setpoint `-o, --orp`
+
+Specify the target ORP value for Intellichem to maintain as an `int` between `400`-`800`.
+
+
+**Note:** `chemistry-setpoint` replaces the previous chem-data.
+
+* _**New in v0.10.0.**_
+
+#### set `chemistry-value, cv`
 
 ```shell
-screenlogicpy set chem-data [--ch CALCIUM_HARDNESS] [--ta TOTAL_ALKALINITY] [--cya CYANURIC_ACID] [--salt SALT_or_TDS]
+screenlogicpy set chemistry-value [--calcium-hardness CALCIUM] [--total-alkalinity TA] [--cyanuric-acid CYA] [--total-dissolved-solids TDS]
 ```
 
-Sets various chemistry values used in LSI calculations within the IntelliChem system. Takes one or more optional arguments: (`-c`, `--ch`), (`-t`, `--ta`), (`-y`, `--cya`), and (`-s`, `--salt`).
+Sets values used in the calculation of Saturation Index in the IntelliChem system via four optional arguments:
 
-* _New in v0.6.0._
-* _**Changed in v0.9.0**: `chem-data` now sets values pertaining to LSI calculation in the IntelliChem system. pH and ORP settings have moved to the `chem-setpoint` sub-command._
+##### set chemistry-setpoint `-ch, --calcium-hardness`
+
+Specify the calcium hardness value for Saturation Index calculation as an `int` between `X`-`X`.
+
+##### set chemistry-setpoint `-ta, --total-alkalinity`
+
+Specify the total alkalinity value for Saturation Index calculation as an `int` between `X`-`X`.
+
+##### set chemistry-setpoint `-cya, --cyanuric-acid`
+
+Specify the cyanuric acid value for Saturation Index calculation as an `int` between `X`-`X`.
+
+##### set chemistry-setpoint `-tds, --total-dissolved-solids`
+
+Specify the total dissolved solids value for Saturation Index calculation as an `int` between `X`-`X`.
+
+* _**New in v0.10.0.**_
+
 
 # Reference
 
@@ -643,17 +671,17 @@ Sets various chemistry values used in LSI calculations within the IntelliChem sy
 
 ## Supported Subscribable Messages
 
-`screenlogicpy` includes functionality to automatically decode these messages and update it's data accordingly. Other message codes can be subscribed to, but the consuming application will need to implement any processing of the incoming message.
+`screenlogicpy` includes functionality to automatically decode these messages and update its data accordingly. Other message codes can be subscribed to, but the consuming application will need to implement any processing of the incoming message.
 
 ```python
 from screenlogicpy.const import CODE
 ```
 
-|Message Code|Imported CONST|Description|
-|------------|--------------|-----------|
-|`12500`|`CODE.STATUS_CHANGED`|Sent when basic status changes. Air/water temp, heater state, circuit state, basic chemistry (if available).|
-|`12504`|`CODE.COLOR_UPDATE`|Sent repeatedly during a color lights color mode transition.|
-|`12505`|`CODE.CHEMISTRY_CHANGED`|Sent when a change occurs to the state of an attached IntelliChem controller.|
+| Message Code | Imported CONST          | Description                                                                                                 |
+|--------------|-------------------------|-------------------------------------------------------------------------------------------------------------|
+| `12500`      | `CODE.STATUS_CHANGED`   | Sent when basic status changes. Air/water temp, heater state, circuit state, basic chemistry (if available).|
+| `12504`      | `CODE.COLOR_UPDATE`     | Sent repeatedly during a color lights color mode transition.                                                |
+| `12505`      | `CODE.CHEMISTRY_CHANGED`| Sent when a change occurs to the state of an attached IntelliChem controller.                               |
 
 ---
 
