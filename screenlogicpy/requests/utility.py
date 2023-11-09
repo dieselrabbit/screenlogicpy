@@ -110,15 +110,13 @@ def getString(buff, offset) -> tuple[str, int]:
 
 
 def getArray(buff, offset):
-    itemCount, offset = getSome("I", buff, offset)
+    itemCount, aStart = getSome("I", buff, offset)
     items = [0 for x in range(itemCount)]
     for i in range(itemCount):
-        items[i], offset = getSome("B", buff, offset)
-    offsetPad = 0
-    if itemCount % 4 != 0:
-        offsetPad = (4 - itemCount % 4) % 4
-        offset += offsetPad
-    return items, offset
+        items[i], offset = getSome("B", buff, aStart + i)
+    short = itemCount % 4
+    paddedLen = itemCount if short == 0 else (itemCount + 4) - short
+    return items, aStart + paddedLen
 
 
 def getTemperatureUnit(data: dict):
