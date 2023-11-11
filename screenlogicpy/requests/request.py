@@ -35,7 +35,11 @@ async def async_make_request(
                 f"Timeout waiting for response to message code '{requestCode}'"
             )
         except asyncio.CancelledError:
-            _LOGGER.debug(f"Future for request '{requestCode}' was canceled!")
+            _LOGGER.debug(f"Future for request '{requestCode}' was canceled")
+            if not protocol.is_connected:
+                raise ScreenLogicConnectionError(
+                    f"Request '{requestCode}' canceled. Connection was closed"
+                )
             return
 
         if not request.cancelled():
