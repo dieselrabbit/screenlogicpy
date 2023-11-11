@@ -172,7 +172,13 @@ class FakeTCPProtocolAdapter(asyncio.Protocol):
         return SLMessage(msg.id, msg.code + 1, self.responses.status.raw)
 
     def handle_pump_state_request(self, msg: SLMessage) -> SLMessage:
-        pump_num, _ = getSome("I", msg.data, 4)
+        try:
+            pump_num, _ = getSome("I", msg.data, 4)
+            if not 0 <= pump_num <= 7:
+                raise ValueError("Invalid pump number")
+        except Exception as ex:
+            print(ex)
+            return SLMessage(msg.id, CODE.ERROR_BAD_PARAMETER)
         return SLMessage(msg.id, msg.code + 1, self.responses.pumps[pump_num].raw)
 
     def handle_chemistry_status_request(self, msg: SLMessage) -> SLMessage:
