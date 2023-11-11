@@ -67,7 +67,9 @@ async def test_login_async_gateway_connect(MockProtocolAdapter):
         transport, protocol = await async_create_connection(
             FAKE_GATEWAY_ADDRESS, FAKE_GATEWAY_PORT
         )
-        await async_gateway_connect(transport, protocol, 0)
+        assert await async_gateway_connect(transport, protocol, 0) == FAKE_GATEWAY_MAC
+        assert transport
+        assert protocol.is_connected
 
 
 @pytest.mark.asyncio
@@ -97,7 +99,7 @@ async def test_login_async_gateway_connect_error2(MockProtocolAdapter):
             FakeTCPProtocolAdapter, "process_message", patch_process_message
         ), pytest.raises(ScreenLogicConnectionError) as sre:
             await async_gateway_connect(transport, protocol, 0)
-        assert sre.value.msg == "Timeout waiting for response to message code '14'"
+        assert sre.value.msg == "Request '14' canceled. Connection was closed"
 
 
 @pytest.mark.asyncio
@@ -111,7 +113,7 @@ async def test_login_async_gateway_login_error(MockProtocolAdapter):
 
         with pytest.raises(ScreenLogicConnectionError) as sle:
             await async_gateway_login(protocol, 0)
-        assert sle.value.msg == "Timeout waiting for response to message code '27'"
+        assert sle.value.msg == "Request '27' canceled. Connection was closed"
 
 
 @pytest.mark.asyncio
