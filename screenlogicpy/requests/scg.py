@@ -1,6 +1,6 @@
 import struct
 
-from ..const.common import STATE_TYPE, UNIT, ON_OFF
+from ..const.common import STATE_TYPE, UNIT, ON_OFF, ScreenLogicResponseError
 from ..const.msg import CODE, COM_MAX_RETRIES
 from ..const.data import ATTR, DEVICE, GROUP, VALUE
 from ..device_const.scg import SCG_RANGE
@@ -87,12 +87,14 @@ async def async_request_set_scg_config(
     super_time: int = 0,
     max_retries: int = COM_MAX_RETRIES,
 ) -> bool:
-    return (
-        await async_make_request(
+    if (
+        response := await async_make_request(
             protocol,
             CODE.SETSCG_QUERY,
             struct.pack("<IIIII", 0, pool_output, spa_output, super_chlor, super_time),
             max_retries,
         )
-        == b""
-    )
+    ) != b"":
+        raise ScreenLogicResponseError(
+            f"Set scg config failed. Unexpected response: {response}"
+        )

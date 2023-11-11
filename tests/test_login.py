@@ -2,7 +2,10 @@ import asyncio
 import pytest
 from unittest.mock import patch
 
-from screenlogicpy.const.common import ScreenLogicError
+from screenlogicpy.const.common import (
+    ScreenLogicConnectionError,
+    ScreenLogicLoginError,
+)
 from screenlogicpy.const.msg import CODE
 from screenlogicpy.requests.login import (
     async_connect_to_gateway,
@@ -52,7 +55,7 @@ async def test_login_async_get_mac_address(MockProtocolAdapter):
 @pytest.mark.asyncio
 async def test_login_async_create_connection_error(MockProtocolAdapter):
     async with MockProtocolAdapter:
-        with pytest.raises(ScreenLogicError):
+        with pytest.raises(ScreenLogicConnectionError):
             _, _ = await async_create_connection(
                 FAKE_GATEWAY_ADDRESS, FAKE_GATEWAY_PORT + 1
             )
@@ -64,7 +67,9 @@ async def test_login_async_gateway_connect(MockProtocolAdapter):
         transport, protocol = await async_create_connection(
             FAKE_GATEWAY_ADDRESS, FAKE_GATEWAY_PORT
         )
-        await async_gateway_connect(transport, protocol, 0)
+        assert await async_gateway_connect(transport, protocol, 0) == FAKE_GATEWAY_MAC
+        assert transport
+        assert protocol.is_connected
 
 
 @pytest.mark.asyncio
@@ -75,7 +80,7 @@ async def test_login_async_gateway_connect_error1(MockProtocolAdapter):
         )
         transport.close()
         await asyncio.sleep(1)
-        with pytest.raises(ScreenLogicError) as sle:
+        with pytest.raises(ScreenLogicConnectionError) as sle:
             await async_gateway_connect(transport, protocol, 0)
         assert sle.value.msg == "Host unexpectedly disconnected."
 
@@ -92,12 +97,9 @@ async def test_login_async_gateway_connect_error2(MockProtocolAdapter):
 
         with patch.object(
             FakeTCPProtocolAdapter, "process_message", patch_process_message
-        ), pytest.raises(ScreenLogicError) as sre:
+        ), pytest.raises(ScreenLogicConnectionError) as sre:
             await async_gateway_connect(transport, protocol, 0)
-        assert (
-            sre.value.msg
-            == "Host failed to respond to challenge: : Timeout waiting for response to message code '14' after 1 attempts"
-        )
+        assert sre.value.msg == "Request '14' canceled. Connection was closed"
 
 
 @pytest.mark.asyncio
@@ -109,12 +111,9 @@ async def test_login_async_gateway_login_error(MockProtocolAdapter):
         _ = await async_gateway_connect(transport, protocol, 0)
         transport.close()
 
-        with pytest.raises(ScreenLogicError) as sle:
+        with pytest.raises(ScreenLogicConnectionError) as sle:
             await async_gateway_login(protocol, 0)
-        assert (
-            sle.value.msg
-            == "Failed to logon to gateway: Timeout waiting for response to message code '27' after 1 attempts"
-        )
+        assert sle.value.msg == "Request '27' canceled. Connection was closed"
 
 
 @pytest.mark.asyncio
@@ -126,11 +125,11 @@ async def test_async_login_rejected(MockProtocolAdapter):
 
         with patch.object(
             FakeTCPProtocolAdapter, "handle_logon_request", patch_handle_login_request
-        ), pytest.raises(ScreenLogicError) as sle:
+        ), pytest.raises(ScreenLogicLoginError) as sle:
             await async_connect_to_gateway(
                 FAKE_GATEWAY_ADDRESS, FAKE_GATEWAY_PORT, max_retries=0
             )
         assert (
             sle.value.msg
-            == "Failed to logon to gateway: Login Rejected for request code: 27, request: b'\\\\\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x07\\x00\\x00\\x00Android\\x00\\x10\\x00\\x00\\x000000000000000000\\x00\\x02\\x00\\x00\\x00' after 1 attempts"
+            == "Login Rejected for request code: 27, request: b'\\\\\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x07\\x00\\x00\\x00Android\\x00\\x10\\x00\\x00\\x000000000000000000\\x00\\x02\\x00\\x00\\x00'"
         )

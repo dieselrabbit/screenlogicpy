@@ -2,9 +2,10 @@ import asyncio
 import pytest
 from unittest.mock import patch
 
-from screenlogicpy import ScreenLogicGateway, ScreenLogicRequestError
+from screenlogicpy import ScreenLogicGateway
+from screenlogicpy.const.common import ScreenLogicConnectionError
 from screenlogicpy.const.msg import CODE
-from screenlogicpy.requests.request import async_make_request
+from screenlogicpy.requests.ping import async_request_ping
 
 from .adapter import FakeTCPProtocolAdapter, SLMessage
 from .const_data import FAKE_CONNECT_INFO
@@ -25,7 +26,7 @@ async def test_request_connection_lost(
             await gateway.async_connect(**FAKE_CONNECT_INFO)
             assert gateway.is_connected
             with pytest.raises(
-                ScreenLogicRequestError,
-                match="Unable to make request. No active connection",
+                ScreenLogicConnectionError,
+                match="Request '16' canceled. Connection was closed",
             ):
-                await async_make_request(gateway._protocol, CODE.PING_QUERY)
+                await async_request_ping(gateway._protocol, 1)
