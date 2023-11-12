@@ -67,70 +67,56 @@ class FakeTCPProtocolAdapter(asyncio.Protocol):
         print("TCP Connected.")
 
     def data_received(self, data: bytes) -> None:
-        resp: SLMessage
         print("Pentair data received!")
-
-        if (resp := self.process_data(data)) is not None:
-            print(f"Sent msg {resp.code}, {resp.data}")
-            self.transport.write(makeMessage(resp.id, resp.code, resp.data))
+        self.process_data(data)
 
     def process_data(self, data: bytes) -> bytes:
         if self._cs == CONNECTION_STATE.NO_CONNECTION:
             if data == b"CONNECTSERVERHOST\r\n\r\n":
+                print("Adapter primmed!")
                 self._cs = CONNECTION_STATE.PRIMED
                 return None
             # Adapter not primed. Go away.
             self.transport.close()
 
-        def complete_messages(data: bytes) -> list[tuple[int, int, bytes]]:
-            """Return only complete ScreenLogic messages."""
+        self._buff.extend(data)
 
-            # Some pool configurations can require SL messages larger than can
-            # come through in a single call to data_received(), so lets wait until
-            # we have at least enough data to make a complete message before we
-            # process and pass it on. Conversely, multiple SL messages may come in
-            # a single call to data_received() so we collect all complete messages
-            # before sending on.
-
-            self._buff.extend(data)
-            complete = []
-            while len(self._buff) >= HEADER_LENGTH:
-                dataLen = struct.unpack_from("<I", self._buff, 4)[0]
-                nextMsgLen = HEADER_LENGTH + dataLen
-                if len(self._buff) >= nextMsgLen:
-                    out = bytearray()
-                    for _ in range(nextMsgLen):
-                        out.append(self._buff.pop(0))
-                    complete.append(takeMessage(bytes(out)))
-                else:
-                    break
-            if len(self._buff) > 0:
-                print(
-                    f"Returned all messages with {len(self._buff)} bytes in the buffer"
-                )
-                print(f"Buffer: {self._buff}")
-            return complete
-
-        for message in complete_messages(data):
-            print(f"Received msg {message[1]}, {message[2]}")
-            return self.process_message(SLMessage(*message))
-
-    def process_message(self, msg: SLMessage) -> bytes:
-        if self._cs == CONNECTION_STATE.CONNECTED:
-            if (
-                connected_handler := self.connected_response_map.get(msg.code)
-            ) is not None:
-                return connected_handler(msg)
-
-        if self._cs >= CONNECTION_STATE.PRIMED:
-            if (
-                primed_handler := self.unconnected_response_map.get(msg.code)
-            ) is not None:
-                return primed_handler(msg)
+        # Take complete messages
+        while len(self._buff) >= HEADER_LENGTH:
+            dataLen = struct.unpack_from("<I", self._buff, 4)[0]
+            nextMsgLen = HEADER_LENGTH + dataLen
+            if len(self._buff) >= nextMsgLen:
+                out = bytearray()
+                for _ in range(nextMsgLen):
+                    out.append(self._buff.pop(0))
+                self.process_message(SLMessage(*takeMessage(bytes(out))))
+                print(f"{len(self._buff)} left in buffer")
             else:
-                return SLMessage(msg.id, CODE.ERROR_INVALID_REQUEST)
+                break
 
-        self.transport.close()
+    def process_message(self, msg: SLMessage) -> None:
+        print(f"Received msg {msg.code}, {msg.data}")
+
+        def get_response(msg: SLMessage) -> SLMessage | None:
+            if self._cs == CONNECTION_STATE.CONNECTED:
+                if (
+                    connected_handler := self.connected_response_map.get(msg.code)
+                ) is not None:
+                    return connected_handler(msg)
+
+            if self._cs >= CONNECTION_STATE.PRIMED:
+                if (
+                    primed_handler := self.unconnected_response_map.get(msg.code)
+                ) is not None:
+                    return primed_handler(msg)
+                else:
+                    return SLMessage(msg.id, CODE.ERROR_INVALID_REQUEST)
+
+            self.transport.close()
+
+        if (resp := get_response(msg)) is not None:
+            print(f"Sent msg {resp.code}, {resp.data}")
+            self.transport.write(makeMessage(resp.id, resp.code, resp.data))
 
     def handle_challenge_request(self, msg: SLMessage) -> SLMessage:
         return SLMessage(
@@ -240,7 +226,8 @@ def decode_login(buff: bytes) -> tuple[bytes]:
     connType, offset = getSome("I", buff, offset)
     clientType, offset = getString(buff, offset)
     passWord, offset = getString(buff, offset)
-    offset += 1
+    if schema == 348:
+        offset += 1
     pid, offset = getSome("I", buff, offset)
 
     return schema, connType, clientType, passWord, pid
