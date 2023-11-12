@@ -3,6 +3,7 @@ import datetime
 
 import struct
 
+from ..const.common import ScreenLogicResponseError
 from ..const.data import DEVICE, GROUP, VALUE
 from ..const.msg import CODE
 from .protocol import ScreenLogicProtocol
@@ -14,7 +15,7 @@ async def async_request_date_time(
     protocol: ScreenLogicProtocol, data: dict, max_retries: int = None
 ) -> bytes:
     if result := await async_make_request(
-        protocol, CODE.DATETIME_QUERY, max_retries=max_retries
+        protocol, CODE.GET_DATETIME_QUERY, max_retries=max_retries
     ):
         decode_date_time(result, data)
         return result
@@ -40,12 +41,14 @@ async def async_request_set_date_time(
     auto_dst: int,
     max_retries: int = None,
 ) -> bool:
-    return (
-        await async_make_request(
+    if (
+        response := await async_make_request(
             protocol,
-            CODE.SETDATETIME_QUERY,
+            CODE.SET_DATETIME_QUERY,
             encodeMessageTime(date_time) + struct.pack("<I", auto_dst),
             max_retries,
         )
-        == b""
-    )
+    ) == b"":
+        raise ScreenLogicResponseError(
+            f"Set datetime failed. Unexpected response: {response}"
+        )
