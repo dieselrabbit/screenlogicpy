@@ -54,7 +54,7 @@ class VALUE:
     ACTIVE_ALERT = "active_alert"
     AIR_TEMPERATURE = "air_temperature"
     AUTO_DST = "auto_dst"
-    CALCIUM_HARNESS = "calcium_hardness"
+    CALCIUM_HARDNESS = "calcium_hardness"
     CIRCUIT_COUNT = "circuit_count"
     CLEANER_DELAY = "cleaner_delay"
     COLOR_COUNT = "color_count"
