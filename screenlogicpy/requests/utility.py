@@ -161,18 +161,6 @@ def getTime(buff: bytes, offset: int) -> tuple[datetime, int]:
     )
 
 
-def getTime(buff: bytes, offset: int) -> Tuple[datetime, int]:
-    fmt = "<8H"
-    year, month, _, day, hour, minute, second, millisecond = struct.unpack_from(
-        fmt, buff, offset
-    )
-    new_offset = offset + struct.calcsize(fmt)
-    return (
-        datetime(year, month, day, hour, minute, second, millisecond * 1000),
-        new_offset,
-    )
-
-
 def getTemperatureUnit(data: dict):
     return (
         UNIT.CELSIUS
