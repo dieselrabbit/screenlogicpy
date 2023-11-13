@@ -24,7 +24,7 @@ from .const_data import (
 )
 
 
-DEFAULT_RESPONSE = "slpy091_pool-52-build-7360-rel_easytouch2-8_98360.json"
+DEFAULT_RESPONSE = "slpy0100_pool-52-build-7360-rel_easytouch2-8_98360.json"
 
 
 def load_response_collection(filenames: list[str] | None = None):
