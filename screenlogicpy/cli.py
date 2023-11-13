@@ -249,6 +249,43 @@ async def cli(cli_args):
         )
         return 0
 
+    async def async_get_date_time():
+        format = args.format
+        await gateway.async_get_datetime()
+        timestamp = gateway.get_data(
+            DEVICE.CONTROLLER, GROUP.DATE_TIME, VALUE.TIMESTAMP, strict=True
+        )
+        if format is None:
+            print(datetime.fromtimestamp(timestamp))
+        else:
+            print(datetime.fromtimestamp(timestamp).strftime(format))
+        return 0
+
+    async def async_get_auto_dst():
+        await gateway.async_get_datetime()
+        print(gateway.get_data(DEVICE.CONTROLLER, GROUP.DATE_TIME, VALUE.AUTO_DST))
+        return 0
+
+    async def async_set_date_time():
+        if all(
+            (
+                args.date_time is None,
+                args.auto_dst is None,
+            )
+        ):
+            print("No new date/time values to set. Nothing to do.")
+            return 255
+
+        date_time = datetime.fromisoformat(args.date_time)
+        auto_dst = args.auto_dst
+        await gateway.async_set_date_time(date_time=date_time, auto_dst=auto_dst)
+        await gateway.async_get_datetime()
+        timestamp = gateway.get_data(
+            DEVICE.CONTROLLER, GROUP.DATE_TIME, VALUE.TIMESTAMP, strict=True
+        )
+        print(f"Controller time now: {datetime.fromtimestamp(timestamp)}")
+        return 0
+
     async def async_export_data_collection():
         sl_ver = file_format(__version__)
         pa_ver = file_format(gateway.version)
@@ -260,28 +297,6 @@ async def cli(cli_args):
         )
         export_response_collection(response_collection, filename)
         return 0
-
-    async def async_get_date_time(format=None):
-        await gateway.async_get_datetime()
-        timestamp = gateway.get_data(
-            DEVICE.CONTROLLER, GROUP.DATE_TIME, VALUE.TIMESTAMP, strict=True
-        )
-        print(datetime.fromtimestamp(timestamp).strftime(format))
-
-    async def async_set_date_time():
-        date_time = datetime.strptime(args.date_time)
-        if await gateway.async_set_date_time(date_time=date_time):
-            await gateway.async_get_datetime()
-            timestamp = gateway.get_data(
-                DEVICE.CONTROLLER, GROUP.DATE_TIME, VALUE.TIMESTAMP, strict=True
-            )
-            print(f"Controller time now: {datetime.fromtimestamp(timestamp)}")
-
-    async def async_get_auto_dst():
-        pass
-
-    async def async_set_auto_dst(enabled):
-        pass
 
     async def async_get_json():
         print(json.dumps(gateway.get_data(), indent=2))
@@ -378,6 +393,7 @@ async def cli(cli_args):
     get_date_time_parser.add_argument(
         "-f",
         "--format",
+        default=None,
         type=str,
         help="Optional format string to format the datetime value",
     )
@@ -572,12 +588,15 @@ async def cli(cli_args):
         "-dt",
         "--date-time",
         default=None,
+        metavar="ISO_8601",
         type=str,
-        help="A parsable datetime string",
+        help="A datetime string in ISO 8601 format",
     )
     set_date_time_parser.add_argument(
         "-dst",
-        "-auto-dst",
+        "--auto-dst",
+        default=None,
+        choices=on_off_options,
         type=str,
         help="Automatic adjustment of system time for Daylight Saving Time",
     )
