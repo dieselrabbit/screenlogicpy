@@ -456,28 +456,23 @@ class ScreenLogicGateway:
         )
 
     async def async_set_date_time(
-        self, *, date_time: datetime = None, auto_dst: int = None
+        self,
+        *,
+        date_time: datetime | None = None,
+        auto_dst: int | None = None,
     ):
         """Set date and time settings on the controller."""
         if date_time is None and auto_dst is None:
             raise ValueError("No date/time values to set")
 
-        date_time = (
-            datetime.fromtimestamp(
-                self.get_data(
-                    DEVICE.CONTROLLER, GROUP.DATE_TIME, VALUE.TIMESTAMP, strict=True
-                )
+        DATETIME_CONFIG = (DEVICE.CONTROLLER, GROUP.DATE_TIME)
+
+        if date_time is None:
+            date_time = datetime.fromtimestamp(
+                self.get_data(*DATETIME_CONFIG, VALUE.TIMESTAMP, strict=True)
             )
-            if date_time is None
-            else date_time
-        )
-        auto_dst = (
-            self.get_data(
-                DEVICE.CONTROLLER, GROUP.DATE_TIME, VALUE.AUTO_DST, strict=True
-            )
-            if auto_dst is None
-            else auto_dst
-        )
+        if auto_dst is None:
+            auto_dst = self.get_data(*DATETIME_CONFIG, VALUE.AUTO_DST, strict=True)
 
         return await self._async_connected_request(
             async_request_set_date_time, date_time, auto_dst
