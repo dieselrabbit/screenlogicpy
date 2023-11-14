@@ -472,7 +472,7 @@ class ScreenLogicGateway:
                 self.get_data(*DATETIME_CONFIG, VALUE.TIMESTAMP, strict=True)
             )
         if auto_dst is None:
-            auto_dst = self.get_data(*DATETIME_CONFIG, VALUE.AUTO_DST, strict=True)
+            auto_dst = self.get_value(*DATETIME_CONFIG, VALUE.AUTO_DST, strict=True)
 
         return await self._async_connected_request(
             async_request_set_date_time, date_time, auto_dst
