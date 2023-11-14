@@ -263,7 +263,11 @@ async def cli(cli_args):
 
     async def async_get_auto_dst():
         await gateway.async_get_datetime()
-        print(gateway.get_data(DEVICE.CONTROLLER, GROUP.DATE_TIME, VALUE.AUTO_DST))
+        print(
+            vFormat(
+                gateway.get_data(DEVICE.CONTROLLER, GROUP.DATE_TIME, VALUE.AUTO_DST)
+            )
+        )
         return 0
 
     async def async_set_date_time():

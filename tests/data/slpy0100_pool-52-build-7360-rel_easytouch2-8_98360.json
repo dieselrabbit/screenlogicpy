@@ -156,7 +156,10 @@
       },
       "date_time":{
         "timestamp": 1699835040.0,
-        "auto_dst": 1
+        "auto_dst":{
+          "name": "Automatic Daylight Saving Time",
+          "value": 1
+        }
       }
     },
     "circuit": {
@@ -1963,5 +1966,18 @@
       }
     }
   },
-  "color": null
+  "color": null,
+  "date_time": {
+    "raw": {
+      "__type": "<class 'bytes'>",
+      "repr": "b'\\xe7\\x07\\x0b\\x00\\x06\\x00\\x0c\\x00\\x10\\x00\\x18\\x00\\x00\\x00\\x00\\x00\\x01\\x00\\x00\\x00'"
+    },
+    "decoded":{
+      "timestamp":1699835040.0,
+      "auto_dst":{
+        "name": "Automatic Daylight Saving Time",
+        "value": 1
+      }
+    }
+  }
 }
