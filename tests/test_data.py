@@ -9,6 +9,7 @@ from screenlogicpy.data import (
 )
 from screenlogicpy.requests.gateway import decode_version
 from screenlogicpy.requests.config import decode_pool_config
+from screenlogicpy.requests.datetime import decode_date_time
 from screenlogicpy.requests.status import decode_pool_status
 from screenlogicpy.requests.pump import decode_pump_status
 from screenlogicpy.requests.chemistry import decode_chemistry
@@ -24,6 +25,7 @@ def test_validate_complete(response_collection: ScreenLogicResponseCollection):
         decode_pump_status(pump.raw, data, idx)
     decode_chemistry(response_collection.chemistry.raw, data)
     decode_scg_config(response_collection.scg.raw, data)
+    decode_date_time(response_collection.date_time.raw, data)
     assert data == response_collection.decoded_complete
 
 
