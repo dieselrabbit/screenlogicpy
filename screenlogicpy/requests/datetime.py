@@ -48,7 +48,7 @@ async def async_request_set_date_time(
             encodeMessageTime(date_time) + struct.pack("<I", auto_dst),
             max_retries,
         )
-    ) == b"":
+    ) != b"":
         raise ScreenLogicResponseError(
             f"Set datetime failed. Unexpected response: {response}"
         )
