@@ -87,7 +87,7 @@ def encodeMessageTime(time_to_encode: datetime):
         time_to_encode.day,
         time_to_encode.hour,
         time_to_encode.minute,
-        time_to_encode.second,
+        0,  # Setting seconds causes controller time to revert to the prev min after :59
         int(time_to_encode.microsecond / 1000),
     )
 
