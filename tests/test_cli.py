@@ -295,3 +295,37 @@ class TestCLI:
     ):
         assert await cli(arguments.split()) == return_code
         assert capsys.readouterr().out.strip() == expected_output
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "arguments, return_code, expected_output",
+        [
+            ("get date-time", 0, "2023-11-12 16:24:00"),
+            (
+                "-v get dt -f %I:%M%p",
+                0,
+                EXPECTED_VERBOSE_PREAMBLE + "04:24PM",
+            ),
+            ("get auto-dst", 0, "1"),
+            ("get dst", 0, "1"),
+            (
+                "set date-time --date-time 2023-11-12T16:24:00",
+                0,
+                "Controller time now: 2023-11-12 16:24:00",
+            ),
+            (
+                "set date-time",
+                0,
+                "Controller time now: 2023-11-12 16:24:00",
+            ),
+        ],
+    )
+    async def test_date_time(
+        self,
+        capsys: pytest.CaptureFixture,
+        arguments: str,
+        return_code: int,
+        expected_output: str,
+    ):
+        assert await cli(arguments.split()) == return_code
+        assert capsys.readouterr().out.strip() == expected_output

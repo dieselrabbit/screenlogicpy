@@ -1,10 +1,10 @@
-e7 07|01 00|04 00|1b 00|0e 00|13 00|00 00|cc 01|00 00|00 00
-year |month|dayOw|date |hour |min  |sec  |ms   |aDST |isDST?
-2023 |1    |4    |27   |14   |19   |00   |460  |0    |?
+e7 07|01 00|04 00|1b 00|0e 00|13 00|00 00|cc 01|00 00 00 00
+year |month|dayOw|date |hour |min  |sec  |ms   |aDST  
+2023 |1    |4    |27   |14   |19   |00   |460  |0    
 
-e7 07|01 00|04 00|1b 00|0e 00|15 00|00 00|1d 03|01 00|00 00
-year |month|dayOw|date |hour |min  |sec  |ms   |aDST |isDST?
-2023 |1    |4    |27   |14   |21   |00   |797  |1    |?
+e7 07|01 00|04 00|1b 00|0e 00|15 00|00 00|1d 03|01 00 00 00
+year |month|dayOw|date |hour |min  |sec  |ms   |aDST  
+2023 |1    |4    |27   |14   |21   |00   |797  |1     
 
 
 dayOw Monday = 0

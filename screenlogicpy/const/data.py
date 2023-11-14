@@ -43,6 +43,7 @@ class GROUP:
     COLOR = "color"
     COLOR_LIGHTS = "color_lights"
     CONFIGURATION = "configuration"
+    DATE_TIME = "date_time"
     DOSE_STATUS = "dose_status"
     EQUIPMENT = "equipment"
     SENSOR = "sensor"
@@ -52,6 +53,7 @@ class GROUP:
 class VALUE:
     ACTIVE_ALERT = "active_alert"
     AIR_TEMPERATURE = "air_temperature"
+    AUTO_DST = "auto_dst"
     CALCIUM_HARDNESS = "calcium_hardness"
     CIRCUIT_COUNT = "circuit_count"
     CLEANER_DELAY = "cleaner_delay"
@@ -123,6 +125,7 @@ class VALUE:
     STATE = "state"
     SUPER_CHLOR_TIMER = "super_chlor_timer"
     SUPER_CHLORINATE = "super_chlorinate"
+    TIMESTAMP = "timestamp"
     TOTAL_ALKALINITY = "total_alkalinity"
     TYPE = "type"
     WATTS_NOW = "watts_now"

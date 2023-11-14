@@ -30,7 +30,7 @@ def decode_scg_config(buff: bytes, data: dict) -> None:
     state, offset = getSome("I", buff, offset)  # 4
     scg_sensor[VALUE.STATE] = {
         ATTR.NAME: "Chlorinator",
-        ATTR.VALUE: ON_OFF.from_bool(state & 0x01),
+        ATTR.VALUE: ON_OFF.from_bool(state & 0x01).value,
     }
 
     scg_config: dict = scg.setdefault(GROUP.CONFIGURATION, {})

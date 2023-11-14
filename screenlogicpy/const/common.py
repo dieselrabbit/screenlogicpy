@@ -105,6 +105,7 @@ class SLValueRange:
 
 class DATA_REQUEST:
     CHEMISTRY = "chemistry"
+    DATE_TIME = "date_time"
     KEY_COLOR = "color"
     CONFIG = "config"
     PUMPS = "pumps"

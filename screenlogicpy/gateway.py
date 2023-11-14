@@ -1,5 +1,6 @@
 """Describes a ScreenLogicGateway class for interacting with a Pentair ScreenLogic system."""
 import asyncio
+from datetime import datetime
 import logging
 from typing import Awaitable, Callable
 
@@ -19,12 +20,14 @@ from .device_const.scg import SCG_RANGE as sr
 from .const.data import ATTR, DEVICE, GROUP, VALUE
 from .requests import (
     async_connect_to_gateway,
+    async_request_date_time,
     async_request_gateway_version,
     async_request_pool_button_press,
     async_request_pool_config,
     async_request_pool_lights_command,
     async_request_pool_status,
     async_request_pump_status,
+    async_request_set_date_time,
     async_request_set_heat_mode,
     async_request_set_heat_setpoint,
     async_request_chemistry,
@@ -224,9 +227,13 @@ class ScreenLogicGateway:
         ):
             self._last[DATA_REQUEST.SCG] = last_raw
 
-    # def get_data(self) -> dict:
-    #    """Return the data."""
-    #    return self._data
+    async def async_get_datetime(self):
+        """Request the current date and time from the controller."""
+        _LOGGER.debug("Requesting date/time")
+        if last_raw := await self._async_connected_request(
+            async_request_date_time, self._data, reconnect_delay=1
+        ):
+            self._last[DATA_REQUEST.DATE_TIME] = last_raw
 
     def get_data(self, *keypath, strict: bool = False):
         """
@@ -447,6 +454,33 @@ class ScreenLogicGateway:
             cya,
             salt_tds_ppm,
         )
+
+    async def async_set_date_time(
+        self,
+        *,
+        date_time: datetime | None = None,
+        auto_dst: int | None = None,
+    ):
+        """Set date and time settings on the controller."""
+        if date_time is None and auto_dst is None:
+            raise ValueError("No date/time values to set")
+
+        DATETIME_CONFIG = (DEVICE.CONTROLLER, GROUP.DATE_TIME)
+
+        if date_time is None:
+            date_time = datetime.fromtimestamp(
+                self.get_data(*DATETIME_CONFIG, VALUE.TIMESTAMP, strict=True)
+            )
+        if auto_dst is None:
+            auto_dst = self.get_value(*DATETIME_CONFIG, VALUE.AUTO_DST, strict=True)
+
+        return await self._async_connected_request(
+            async_request_set_date_time, date_time, auto_dst
+        )
+
+    async def async_synchronize_date_time(self):
+        """Set the date and time on the controller to the current system time."""
+        return await self.async_set_date_time(date_time=datetime.now())
 
     async def async_subscribe_client(
         self, callback: Callable[..., any], code: int

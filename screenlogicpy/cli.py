@@ -1,7 +1,10 @@
+import argparse
+import asyncio
+from datetime import datetime
+import json
 import logging
 import string
-import json
-import argparse
+
 from screenlogicpy import __version__
 from screenlogicpy.discovery import async_discover
 from screenlogicpy.gateway import ScreenLogicGateway
@@ -247,6 +250,53 @@ async def cli(cli_args):
         )
         return 0
 
+    async def async_get_date_time():
+        format = args.format
+        await gateway.async_get_datetime()
+        timestamp = gateway.get_data(
+            DEVICE.CONTROLLER, GROUP.DATE_TIME, VALUE.TIMESTAMP, strict=True
+        )
+        if format is None:
+            print(datetime.fromtimestamp(timestamp))
+        else:
+            print(datetime.fromtimestamp(timestamp).strftime(format))
+        return 0
+
+    async def async_get_auto_dst():
+        await gateway.async_get_datetime()
+        print(
+            vFormat(
+                gateway.get_data(DEVICE.CONTROLLER, GROUP.DATE_TIME, VALUE.AUTO_DST)
+            )
+        )
+        return 0
+
+    async def async_set_date_time():
+        date_time = (
+            datetime.fromisoformat(args.date_time)
+            if args.date_time is not None
+            else None
+        )
+        auto_dst = args.auto_dst
+
+        if all(
+            (
+                date_time is None,
+                auto_dst is None,
+            )
+        ):
+            date_time = datetime.now()
+
+        await gateway.async_get_datetime()
+        await gateway.async_set_date_time(date_time=date_time, auto_dst=auto_dst)
+        await asyncio.sleep(0.5)
+        await gateway.async_get_datetime()
+        timestamp = gateway.get_data(
+            DEVICE.CONTROLLER, GROUP.DATE_TIME, VALUE.TIMESTAMP, strict=True
+        )
+        print(f"Controller time now: {datetime.fromtimestamp(timestamp)}")
+        return 0
+
     async def async_export_data_collection():
         sl_ver = file_format(__version__)
         pa_ver = file_format(gateway.version)
@@ -259,11 +309,11 @@ async def cli(cli_args):
         export_response_collection(response_collection, filename)
         return 0
 
-    # Begin Parser Setup
     async def async_get_json():
         print(json.dumps(gateway.get_data(), indent=2))
         return 0
 
+    # Begin Parser Setup
     option_parser = argparse.ArgumentParser(
         prog="screenlogicpy", description="Interface for Pentair Screenlogic gateway"
     )
@@ -350,9 +400,20 @@ async def cli(cli_args):
     get_current_temp_parser.add_argument(**ARGUMENT_BODY)
     get_current_temp_parser.set_defaults(async_func=async_get_current_temp)
 
-    get_json_parser = get_subparsers.add_parser(
-        "json", aliases=["j"], help="Return the full data dict as JSON"
+    get_date_time_parser = get_subparsers.add_parser("date-time", aliases=["dt"])
+    get_date_time_parser.add_argument(
+        "-f",
+        "--format",
+        default=None,
+        type=str,
+        help="Optional format string to format the datetime value",
     )
+    get_date_time_parser.set_defaults(async_func=async_get_date_time)
+
+    get_auto_dst_parser = get_subparsers.add_parser("auto-dst", aliases=["dst"])
+    get_auto_dst_parser.set_defaults(async_func=async_get_auto_dst)
+
+    get_json_parser = get_subparsers.add_parser("json", aliases=["j"])
     get_json_parser.set_defaults(async_func=async_get_json)
 
     # Set options
@@ -532,6 +593,29 @@ async def cli(cli_args):
         help="Salt or total dissolved solids (if not using a SCG) for LSI calculations in the IntelliChem system.",
     )
     set_chem_data_parser.set_defaults(async_func=async_set_chem_value)
+
+    set_date_time_parser = set_subparsers.add_parser(
+        "date-time",
+        aliases=["dt"],
+        help="Sets pool controller date/time to host's date and time.",
+    )
+    set_date_time_parser.add_argument(
+        "-dt",
+        "--date-time",
+        default=None,
+        metavar="ISO_8601",
+        type=str,
+        help="Specify a datetime with an ISO 8601 formatted string",
+    )
+    set_date_time_parser.add_argument(
+        "-dst",
+        "--auto-dst",
+        default=None,
+        choices=on_off_options,
+        type=str,
+        help="Automatic adjustment of system time for Daylight Saving Time",
+    )
+    set_date_time_parser.set_defaults(async_func=async_set_date_time)
 
     args = option_parser.parse_args(cli_args)
 

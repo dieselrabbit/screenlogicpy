@@ -5,6 +5,7 @@ from typing import Any
 from .const.common import DATA_REQUEST
 from .requests.chemistry import decode_chemistry
 from .requests.config import decode_pool_config
+from .requests.datetime import decode_date_time
 from .requests.gateway import decode_version
 from .requests.lights import decode_color_update
 from .requests.pump import decode_pump_status
@@ -19,6 +20,7 @@ REQUEST_DECODE_FUNCS = {
     DATA_REQUEST.CHEMISTRY: decode_chemistry,
     DATA_REQUEST.SCG: decode_scg_config,
     DATA_REQUEST.KEY_COLOR: decode_color_update,
+    DATA_REQUEST.DATE_TIME: decode_date_time,
 }
 
 
@@ -38,6 +40,7 @@ class ScreenLogicResponseCollection:
     chemistry: ScreenLogicResponseSet | None = None
     scg: ScreenLogicResponseSet | None = None
     color: list[ScreenLogicResponseSet] = None
+    date_time: ScreenLogicResponseSet | None = None
 
 
 def build_response_collection(raw: dict, data: dict) -> ScreenLogicResponseCollection:
