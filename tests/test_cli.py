@@ -315,8 +315,8 @@ class TestCLI:
             ),
             (
                 "set date-time",
-                255,
-                "No new date/time values to set. Nothing to do.",
+                0,
+                "Controller time now: 2023-11-12 16:24:00",
             ),
         ],
     )
