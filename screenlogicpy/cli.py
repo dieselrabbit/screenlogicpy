@@ -1,4 +1,5 @@
 import argparse
+import asyncio
 from datetime import datetime
 import json
 import logging
@@ -271,18 +272,24 @@ async def cli(cli_args):
         return 0
 
     async def async_set_date_time():
+        date_time = (
+            datetime.fromisoformat(args.date_time)
+            if args.date_time is not None
+            else None
+        )
+        auto_dst = args.auto_dst
+
         if all(
             (
-                args.date_time is None,
-                args.auto_dst is None,
+                date_time is None,
+                auto_dst is None,
             )
         ):
-            print("No new date/time values to set. Nothing to do.")
-            return 255
+            date_time = datetime.now()
 
-        date_time = datetime.fromisoformat(args.date_time)
-        auto_dst = args.auto_dst
+        await gateway.async_get_datetime()
         await gateway.async_set_date_time(date_time=date_time, auto_dst=auto_dst)
+        await asyncio.sleep(0.5)
         await gateway.async_get_datetime()
         timestamp = gateway.get_data(
             DEVICE.CONTROLLER, GROUP.DATE_TIME, VALUE.TIMESTAMP, strict=True
@@ -587,14 +594,18 @@ async def cli(cli_args):
     )
     set_chem_data_parser.set_defaults(async_func=async_set_chem_value)
 
-    set_date_time_parser = set_subparsers.add_parser("date-time", aliases=["dt"])
+    set_date_time_parser = set_subparsers.add_parser(
+        "date-time",
+        aliases=["dt"],
+        help="Sets pool controller date/time to host's date and time.",
+    )
     set_date_time_parser.add_argument(
         "-dt",
         "--date-time",
         default=None,
         metavar="ISO_8601",
         type=str,
-        help="A datetime string in ISO 8601 format",
+        help="Specify a datetime with an ISO 8601 formatted string",
     )
     set_date_time_parser.add_argument(
         "-dst",
