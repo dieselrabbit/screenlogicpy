@@ -3,7 +3,7 @@ import struct
 from ..const.common import STATE_TYPE, UNIT, ON_OFF, ScreenLogicResponseError
 from ..const.msg import CODE, COM_MAX_RETRIES
 from ..const.data import ATTR, DEVICE, GROUP, VALUE
-from ..device_const.scg import SCG_RANGE
+from ..device_const.scg import SCG_RANGE, STATE_FLAG, STATUS_FLAG
 from ..device_const.system import BODY_TYPE
 from .protocol import ScreenLogicProtocol
 from .request import async_make_request
@@ -30,7 +30,7 @@ def decode_scg_config(buff: bytes, data: dict) -> None:
     state, offset = getSome("I", buff, offset)  # 4
     scg_sensor[VALUE.STATE] = {
         ATTR.NAME: "Chlorinator",
-        ATTR.VALUE: ON_OFF.from_bool(state & 0x01).value,
+        ATTR.VALUE: ON_OFF.from_bool(state & STATUS_FLAG.SCG_ACTIVE).value,
     }
 
     scg_config: dict = scg.setdefault(GROUP.CONFIGURATION, {})
@@ -67,6 +67,11 @@ def decode_scg_config(buff: bytes, data: dict) -> None:
 
     flags, offset = getSome("I", buff, offset)  # 20
     scg[VALUE.FLAGS] = flags
+
+    scg[VALUE.SUPER_CHLORINATE] = {
+        ATTR.NAME: "Super Chlorinate",
+        ATTR.VALUE: ON_OFF.from_bool(flags & STATE_FLAG.SUPER_CHLORINATE).value,
+    }
 
     superChlorTimer, offset = getSome("I", buff, offset)  # 24
     scg_config[VALUE.SUPER_CHLOR_TIMER] = {

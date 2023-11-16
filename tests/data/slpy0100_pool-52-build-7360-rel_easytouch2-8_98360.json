@@ -895,7 +895,11 @@
           "step": 1
         }
       },
-      "flags": 0
+      "flags": 0,
+      "super_chlorinate": {
+        "name": "Super Chlorinate",
+        "value": 0
+      }
     }
   },
   "version": {
@@ -1962,7 +1966,11 @@
             "step": 1
           }
         },
-        "flags": 0
+        "flags": 0,
+        "super_chlorinate": {
+          "name": "Super Chlorinate",
+          "value": 0
+        }
       }
     }
   },
