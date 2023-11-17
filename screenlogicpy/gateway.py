@@ -8,10 +8,9 @@ from .client import ClientManager
 from .const.common import (
     DATA_REQUEST,
     ON_OFF,
+    ScreenLogicException,
     ScreenLogicError,
     ScreenLogicConnectionError,
-    ScreenLogicRequestError,
-    ScreenLogicResponseError,
 )
 from .const.msg import COM_MAX_RETRIES
 from .device_const.chemistry import CHEM_RANGE as cr
@@ -546,18 +545,11 @@ class ScreenLogicGateway:
 
         try:
             return await attempt_request()
-        except (
-            ScreenLogicConnectionError,
-            ScreenLogicRequestError,
-            ScreenLogicResponseError,
-        ) as sle:
+        except ScreenLogicException as sle:
             _LOGGER.debug("%s. Attempting to reconnect", sle.msg)
             await self.async_disconnect(True)
             await asyncio.sleep(reconnect_delay)
-            try:
-                return await attempt_request()
-            except ScreenLogicRequestError as re2:
-                raise ScreenLogicError(re2.msg) from re2
+            return await attempt_request()
 
     def _common_connection_closed_callback(self):
         """Perform any needed cleanup."""
