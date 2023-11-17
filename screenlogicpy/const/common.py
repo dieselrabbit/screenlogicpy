@@ -32,22 +32,32 @@ class ScreenLogicWarning(ScreenLogicException):
 
 
 class ScreenLogicError(ScreenLogicException):
+    """General error."""
+
     pass
 
 
 class ScreenLogicRequestError(ScreenLogicException):
+    """Protocol adapter indicated an unknown or malformed request."""
+
     pass
 
 
 class ScreenLogicConnectionError(ScreenLogicException):
+    """Connection to the protocol adapter was lost."""
+
     pass
 
 
 class ScreenLogicResponseError(ScreenLogicException):
+    """Protocol adapter returned an unexpected response."""
+
     pass
 
 
 class ScreenLogicLoginError(ScreenLogicException):
+    """The login was explicitly rejected."""
+
     pass
 
 
