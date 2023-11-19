@@ -7,7 +7,7 @@ from screenlogicpy.requests.utility import makeMessage
 
 
 @pytest.mark.asyncio
-async def test_async_data_received(event_loop):
+async def test_async_data_received(event_loop: asyncio.AbstractEventLoop):
     CODE = 1196
     MESSAGE = b"success"
 
@@ -18,6 +18,18 @@ async def test_async_data_received(event_loop):
     protocol.data_received(payload)
 
     assert fut.result() == (0, CODE, MESSAGE)
+    async_callback_called = event_loop.create_future()
+    CODE2 = 1296
+
+    async def async_callback(data):
+        async_callback_called.set_result(data)
+
+    protocol.register_async_message_callback(CODE2, async_callback)
+
+    payload2 = makeMessage(1, CODE2, MESSAGE)
+    protocol.data_received(payload2)
+    await async_callback_called
+    assert async_callback_called.result() == MESSAGE
 
 
 @pytest.mark.asyncio
