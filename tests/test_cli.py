@@ -19,11 +19,13 @@ from .const_data import (
 
 
 @pytest_asyncio.fixture()
-async def PatchedGateway(response_collection: ScreenLogicResponseCollection):
+async def PatchedGateway(
+    event_loop, response_collection: ScreenLogicResponseCollection
+):
     with patch.multiple(
         ScreenLogicGateway,
         async_connect=lambda *args, **kwargs: stub_async_connect(
-            response_collection.decoded_complete, *args, **kwargs
+            event_loop, response_collection.decoded_complete, *args, **kwargs
         ),
         async_disconnect=DEFAULT,
         _async_connected_request=DEFAULT,
