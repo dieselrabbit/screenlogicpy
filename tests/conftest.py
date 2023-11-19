@@ -86,6 +86,7 @@ async def MockDiscoveryAdapter(
 
 
 async def stub_async_connect(
+    loop: asyncio.BaseEventLoop,
     data: dict,
     self: ScreenLogicGateway,
     ip: str = None,
@@ -106,18 +107,21 @@ async def stub_async_connect(
     self._name = name
     self._custom_connection_closed_callback = connection_closed_callback
     self._mac = FAKE_GATEWAY_MAC
-    self._protocol = MagicMock(spec=ScreenLogicProtocol, _connected=True)
+    self._protocol = ScreenLogicProtocol(loop)
+    self._protocol.connection_made(MagicMock(spec=asyncio.Transport))
     self._data = data
 
     return True
 
 
 @pytest_asyncio.fixture()
-async def MockConnectedGateway(response_collection: ScreenLogicResponseCollection):
+async def MockConnectedGateway(
+    event_loop, response_collection: ScreenLogicResponseCollection
+):
     with patch.multiple(
         ScreenLogicGateway,
         async_connect=lambda *args, **kwargs: stub_async_connect(
-            response_collection.decoded_complete, *args, **kwargs
+            event_loop, response_collection.decoded_complete, *args, **kwargs
         ),
         async_disconnect=DEFAULT,
         # get_debug=lambda self: {},
