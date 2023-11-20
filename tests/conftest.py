@@ -1,5 +1,6 @@
 import asyncio
 from collections.abc import Callable
+from dataclasses import asdict
 import os
 import pytest_asyncio
 import socket
@@ -7,7 +8,11 @@ import struct
 from unittest.mock import DEFAULT, MagicMock, patch
 
 from screenlogicpy import ScreenLogicGateway
-from screenlogicpy.data import ScreenLogicResponseCollection, import_response_collection
+from screenlogicpy.data import (
+    ScreenLogicResponseCollection,
+    deconstruct_response_collection,
+    import_response_collection,
+)
 from screenlogicpy.discovery import DISCOVERY_PORT
 from screenlogicpy.requests.protocol import ScreenLogicProtocol
 
@@ -87,7 +92,7 @@ async def MockDiscoveryAdapter(
 
 async def stub_async_connect(
     loop: asyncio.BaseEventLoop,
-    data: dict,
+    resp_col: ScreenLogicResponseCollection,
     self: ScreenLogicGateway,
     ip: str = None,
     port: int = None,
@@ -109,7 +114,7 @@ async def stub_async_connect(
     self._mac = FAKE_GATEWAY_MAC
     self._protocol = ScreenLogicProtocol(loop)
     self._protocol.connection_made(MagicMock(spec=asyncio.Transport))
-    self._data = data
+    self._last, self._data = deconstruct_response_collection(resp_col)
 
     return True
 
@@ -121,7 +126,7 @@ async def MockConnectedGateway(
     with patch.multiple(
         ScreenLogicGateway,
         async_connect=lambda *args, **kwargs: stub_async_connect(
-            event_loop, response_collection.decoded_complete, *args, **kwargs
+            event_loop, response_collection, *args, **kwargs
         ),
         async_disconnect=DEFAULT,
         # get_debug=lambda self: {},

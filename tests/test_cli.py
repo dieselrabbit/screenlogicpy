@@ -1,7 +1,7 @@
 import json
 import pytest
 import pytest_asyncio
-from unittest.mock import DEFAULT, patch
+from unittest.mock import DEFAULT, MagicMock, mock_open, patch
 
 from screenlogicpy import ScreenLogicGateway
 from screenlogicpy.cli import cli
@@ -25,7 +25,7 @@ async def PatchedGateway(
     with patch.multiple(
         ScreenLogicGateway,
         async_connect=lambda *args, **kwargs: stub_async_connect(
-            event_loop, response_collection.decoded_complete, *args, **kwargs
+            event_loop, response_collection, *args, **kwargs
         ),
         async_disconnect=DEFAULT,
         _async_connected_request=DEFAULT,
@@ -331,3 +331,38 @@ class TestCLI:
     ):
         assert await cli(arguments.split()) == return_code
         assert capsys.readouterr().out.strip() == expected_output
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "arguments, return_code, expected_output",
+        [
+            ("export", 0, ""),
+        ],
+    )
+    async def test_export_data_collection(
+        self,
+        capsys: pytest.CaptureFixture,
+        arguments: str,
+        return_code: int,
+        expected_output: str,
+    ):
+        written: str = ""
+
+        def write(data):
+            nonlocal written
+            written += data
+
+        mo: MagicMock = mock_open()
+        handle = mo()
+        handle.write.side_effect = write
+        with patch("screenlogicpy.data.open", mo), patch(
+            "screenlogicpy.cli.ScreenLogicGateway.async_update"
+        ):
+            assert await cli(arguments.split()) == return_code
+        mo.assert_called_with(
+            "slpy0100_pool-52-build-7360-rel_easytouch2-8_98360.json",
+            "w",
+            encoding="utf-8",
+        )
+
+        assert written
