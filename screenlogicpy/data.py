@@ -63,6 +63,25 @@ def build_response_collection(raw: dict, data: dict) -> ScreenLogicResponseColle
     return ScreenLogicResponseCollection(data, **SLResponseColArgs)
 
 
+def deconstruct_response_collection(
+    collection: ScreenLogicResponseCollection,
+) -> tuple[dict, dict]:
+    data = collection.decoded_complete
+    raw = {}
+    for dr, data_request in asdict(collection).items():
+        if dr == "decoded_complete":
+            continue
+        if isinstance(data_request, list):
+            data_dict = raw.setdefault(dr, {})
+            for idx, val in enumerate(data_request):
+                data_dict[idx] = val["raw"]
+
+        else:
+            raw[dr] = data_request["raw"] if data_request is not None else None
+
+    return raw, data
+
+
 T_KEY = "__type"
 
 
