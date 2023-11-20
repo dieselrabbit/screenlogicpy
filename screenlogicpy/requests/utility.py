@@ -103,26 +103,6 @@ def getSome(format, buff, offset) -> tuple[Any, int]:
     return struct.unpack_from(fmt, buff, offset)[0], newoffset
 
 
-def getValueAt(buff, offset, want, **kwargs):
-    fmt = want if want.startswith(">") else "<" + want
-    val = kwargs.get("adjustment", lambda x: x)(
-        struct.unpack_from(fmt, buff, offset)[0]
-    )
-    if name := kwargs.get("name"):
-        data = {
-            "name": name,
-            "value": val,
-        }
-        if unit := kwargs.get("unit"):
-            data["unit"] = unit
-        if device_type := kwargs.get("device_type"):
-            data["device_type"] = device_type
-    else:
-        data = val
-    newoffset = offset + struct.calcsize(fmt)
-    return data, newoffset
-
-
 def getString(buff, offset) -> tuple[str, int]:
     fmtLen = "<I"
     encoding = "utf-8"
