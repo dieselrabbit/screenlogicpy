@@ -4,7 +4,7 @@ import datetime
 import struct
 
 from ..const.common import ScreenLogicResponseError
-from ..const.data import DEVICE, GROUP, VALUE
+from ..const.data import ATTR, DEVICE, GROUP, VALUE
 from ..const.msg import CODE
 from .protocol import ScreenLogicProtocol
 from .request import async_make_request
@@ -30,8 +30,8 @@ def decode_date_time(buffer: bytes, data: dict):
 
     auto_dst, offset = getSome("I", buffer, offset)
     date_time[VALUE.AUTO_DST] = {
-        "name": "Automatic Daylight Saving Time",
-        "value": auto_dst,
+        ATTR.NAME: "Automatic Daylight Saving Time",
+        ATTR.VALUE: auto_dst,
     }
 
 
