@@ -181,6 +181,7 @@ class ScreenLogicGateway:
         await self.async_get_pumps()
         await self.async_get_chemistry()
         await self.async_get_scg()
+        await self.async_get_datetime()
         _LOGGER.debug("Update complete")
 
     async def async_get_config(self):
