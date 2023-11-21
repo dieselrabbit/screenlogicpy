@@ -115,8 +115,8 @@ class TestCLI:
     @pytest.mark.parametrize(
         "arguments, return_code, expected_output",
         [
-            ("get current-temp 0", 0, "69"),
-            ("get t spa", 0, "84"),
+            ("get current-temp 0", 0, "59"),
+            ("get t spa", 0, "59"),
         ],
     )
     async def test_get_current_temp(
@@ -243,19 +243,19 @@ class TestCLI:
     @pytest.mark.parametrize(
         "arguments, return_code, expected_output",
         [
-            ("set salt-generator --pool 100 --spa 20", 0, "51 0"),
+            ("set salt-generator --pool 100 --spa 20", 0, "0 0"),
             (
                 "-v set scg -p 20 -s 0",
                 0,
                 EXPECTED_VERBOSE_PREAMBLE
-                + "Pool Chlorinator Setpoint: 51 Spa Chlorinator Setpoint: 0",
+                + "Pool Chlorinator Setpoint: 0 Spa Chlorinator Setpoint: 0",
             ),
-            ("set scg -p 50", 0, "51"),
+            ("set scg -p 50", 0, "0"),
             ("set scg -s 20", 0, "0"),
             ("set scg", 65, "No new chlorinator values. Nothing to do."),
-            ("set super-chlorinate --state 1 --time 24", 0, "0"),
+            ("set super-chlorinate --state 1 --time 24", 0, "6"),
             ("set sc -s 0", 0, ""),
-            ("set sc -t 12", 0, "0"),
+            ("set sc -t 12", 0, "6"),
         ],
     )
     async def test_set_scg(
@@ -302,23 +302,23 @@ class TestCLI:
     @pytest.mark.parametrize(
         "arguments, return_code, expected_output",
         [
-            ("get date-time", 0, "2023-11-12 16:24:00"),
+            ("get date-time", 0, "2023-11-20 14:06:09"),
             (
                 "-v get dt -f %I:%M%p",
                 0,
-                EXPECTED_VERBOSE_PREAMBLE + "04:24PM",
+                EXPECTED_VERBOSE_PREAMBLE + "02:06PM",
             ),
             ("get auto-dst", 0, "1"),
             ("get dst", 0, "1"),
             (
                 "set date-time --date-time 2023-11-12T16:24:00",
                 0,
-                "Controller time now: 2023-11-12 16:24:00",
+                "Controller time now: 2023-11-20 14:06:09",
             ),
             (
                 "set date-time",
                 0,
-                "Controller time now: 2023-11-12 16:24:00",
+                "Controller time now: 2023-11-20 14:06:09",
             ),
         ],
     )
@@ -360,7 +360,7 @@ class TestCLI:
         ):
             assert await cli(arguments.split()) == return_code
         mo.assert_called_with(
-            "slpy0100_pool-52-build-7360-rel_easytouch2-8_98360.json",
+            "slpy0100_pool-52-build-7380-rel_easytouch2-8_32824.json",
             "w",
             encoding="utf-8",
         )

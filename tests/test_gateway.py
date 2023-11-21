@@ -75,9 +75,9 @@ async def test_gateway_async_connect_and_disconnect(
             assert gateway.port == FAKE_GATEWAY_PORT
             assert gateway.name == FAKE_GATEWAY_NAME
             assert gateway.mac == FAKE_GATEWAY_MAC
-            assert gateway.version == "POOL: 5.2 Build 736.0 Rel"
+            assert gateway.version == "POOL: 5.2 Build 738.0 Rel"
             assert gateway.controller_model == "EasyTouch2 8"
-            assert gateway.equipment_flags == 98360
+            assert gateway.equipment_flags == 32824
             assert gateway.temperature_unit == "°F"
             await gateway.async_disconnect()
 
@@ -176,7 +176,7 @@ async def test_gateway_get_scg(
             ("controller", "sensor", "air_temperature"),
             {
                 "name": "Air Temperature",
-                "value": 60,
+                "value": 64,
                 "unit": "°F",
                 "device_type": "temperature",
                 "state_type": "measurement",
@@ -185,13 +185,12 @@ async def test_gateway_get_scg(
         (
             ("controller", "equipment"),
             {
-                "flags": 98360,
+                "flags": 32824,
                 "list": [
                     "INTELLIBRITE",
                     "INTELLIFLO_0",
                     "INTELLIFLO_1",
                     "INTELLICHEM",
-                    "HYBRID_HEATER",
                 ],
             },
         ),
@@ -200,7 +199,7 @@ async def test_gateway_get_scg(
             {
                 "firmware": {
                     "name": "Protocol Adapter Firmware",
-                    "value": "POOL: 5.2 Build 736.0 Rel",
+                    "value": "POOL: 5.2 Build 738.0 Rel",
                 }
             },
         ),
@@ -227,7 +226,7 @@ def test_gateway_get_data(MockConnectedGateway: ScreenLogicGateway, path, expect
         ),
         (
             ("controller", "sensor", "air_temperature"),
-            60,
+            64,
         ),
         (
             ("circuit", 505),
@@ -375,7 +374,7 @@ async def test_gateway_async_set_scg_config(MockConnectedGateway: ScreenLogicGat
         mockRequest.assert_awaited_once_with(
             gateway._protocol,
             12576,
-            b"\x00\x00\x00\x002\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+            b"\x00\x00\x00\x002\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x06\x00\x00\x00",
             1,
         )
 

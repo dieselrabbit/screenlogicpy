@@ -51,12 +51,12 @@ ASYNC_SL_RESPONSES = {
 EXPECTED_DASHBOARD = """Discovered 'Fake: 00-00-00' at 127.0.0.1:6448
 EasyTouch2 8
 **************************
-Pool temperature is last 69°F
+Pool temperature is last 59°F
 Pool Heat Set Point: 83°F
 Pool Heat: Off
 Pool Heat Mode: Off
 --------------------------
-Spa temperature is last 84°F
+Spa temperature is last 59°F
 Spa Heat Set Point: 95°F
 Spa Heat: Off
 Spa Heat Mode: Heater
@@ -78,5 +78,5 @@ Spa Heat Mode: Heater
 
 EXPECTED_VERBOSE_PREAMBLE = """Discovered 'Fake: 00-00-00' at 127.0.0.1:6448
 EasyTouch2 8
-Version: POOL: 5.2 Build 736.0 Rel
+Version: POOL: 5.2 Build 738.0 Rel
 """
