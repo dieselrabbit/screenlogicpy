@@ -37,25 +37,31 @@ class ScreenLogicError(ScreenLogicException):
     pass
 
 
-class ScreenLogicRequestError(ScreenLogicException):
+class ScreenLogicCommunicationError(ScreenLogicException):
+    """Base class for all communication errors."""
+
+    pass
+
+
+class ScreenLogicRequestError(ScreenLogicCommunicationError):
     """Protocol adapter indicated an unknown or malformed request."""
 
     pass
 
 
-class ScreenLogicConnectionError(ScreenLogicException):
+class ScreenLogicConnectionError(ScreenLogicCommunicationError):
     """Connection to the protocol adapter was lost."""
 
     pass
 
 
-class ScreenLogicResponseError(ScreenLogicException):
+class ScreenLogicResponseError(ScreenLogicCommunicationError):
     """Protocol adapter returned an unexpected response."""
 
     pass
 
 
-class ScreenLogicLoginError(ScreenLogicException):
+class ScreenLogicLoginError(ScreenLogicCommunicationError):
     """The login was explicitly rejected."""
 
     pass

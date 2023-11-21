@@ -4,7 +4,7 @@ import logging
 import random
 from typing import Any, Awaitable, Callable
 
-from .const.common import COM_KEEPALIVE, ScreenLogicException
+from .const.common import COM_KEEPALIVE, ScreenLogicCommunicationError
 from .const.msg import (
     CODE,
     COM_MAX_RETRIES,
@@ -162,7 +162,7 @@ class ClientManager:
         try:
             if await async_request_ping(self._protocol, max_retries=0):
                 _LOGGER.debug("Ping successful.")
-        except ScreenLogicException as sle:
+        except ScreenLogicCommunicationError as sle:
             _LOGGER.warning(f"Failed to receive response to ping: {sle.msg}")
 
     async def _async_add_client(self):
@@ -177,7 +177,7 @@ class ClientManager:
             await async_request_remove_client(
                 self._protocol, self._client_id, max_retries=0
             )
-        except ScreenLogicException:
+        except ScreenLogicCommunicationError:
             pass
 
     async def async_subscribe_gateway(self) -> bool:

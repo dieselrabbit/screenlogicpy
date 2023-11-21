@@ -8,7 +8,7 @@ from .client import ClientManager
 from .const.common import (
     DATA_REQUEST,
     ON_OFF,
-    ScreenLogicException,
+    ScreenLogicCommunicationError,
     ScreenLogicError,
     ScreenLogicConnectionError,
 )
@@ -546,7 +546,7 @@ class ScreenLogicGateway:
 
         try:
             return await attempt_request()
-        except ScreenLogicException as sle:
+        except ScreenLogicCommunicationError as sle:
             _LOGGER.debug("%s. Attempting to reconnect", sle.msg)
             await self.async_disconnect(True)
             await asyncio.sleep(reconnect_delay)
