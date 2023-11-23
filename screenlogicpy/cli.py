@@ -343,7 +343,10 @@ async def cli(cli_args):
     )
 
     # pylint: disable=unused-variable
-    export_parser = subparsers.add_parser("export")  # noqa F841
+    export_parser = subparsers.add_parser(
+        "export",
+        help="Exports complete response collection to slpy[libversion]\_[adapter-firmware]\_[controller-model]\_[equipment-flags].json",
+    )  # noqa F841
 
     # Get options
     get_parser = subparsers.add_parser("get", help="Gets the specified value or state")
@@ -562,7 +565,7 @@ async def cli(cli_args):
     set_chem_data_parser = set_subparsers.add_parser(
         "chemistry-value",
         aliases=["cv"],
-        help="Set various chemistry values for LSI calculation in the IntelliChem system",
+        help="Set various user-supplied chemistry values for LSI calculation in the IntelliChem system",
     )
     set_chem_data_parser.add_argument(
         "-ch",
