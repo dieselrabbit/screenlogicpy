@@ -634,7 +634,7 @@ Specify a new state for super chlorination as an `int` or `string` representing 
 
 #### set super-chlorinate `-t, --time`
 
-Specify the number of hours to run super chlorination for as an `int` between `1`-`24`.
+Specify the number of hours to run super chlorination for as an `int` between `1`-`72`.
 
 * _**New in v0.10.0.**_
 
