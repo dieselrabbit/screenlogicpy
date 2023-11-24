@@ -126,6 +126,7 @@ class VALUE:
     SUPER_CHLOR_TIMER = "super_chlor_timer"
     SUPER_CHLORINATE = "super_chlorinate"
     TIMESTAMP = "timestamp"
+    TIMESTAMP_HOST = "timestamp_host"
     TOTAL_ALKALINITY = "total_alkalinity"
     TYPE = "type"
     WATTS_NOW = "watts_now"

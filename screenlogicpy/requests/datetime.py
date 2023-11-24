@@ -1,6 +1,4 @@
-import datetime
-
-
+from datetime import datetime
 import struct
 
 from ..const.common import ScreenLogicResponseError
@@ -22,11 +20,13 @@ async def async_request_date_time(
 
 
 def decode_date_time(buffer: bytes, data: dict):
+    host_time = datetime.now()
     controller: dict = data.setdefault(DEVICE.CONTROLLER, {})
     date_time: dict = controller.setdefault(GROUP.DATE_TIME, {})
 
     dt, offset = getTime(buffer, 0)
     date_time[VALUE.TIMESTAMP] = dt.timestamp()
+    date_time[VALUE.TIMESTAMP_HOST] = host_time.timestamp()
 
     auto_dst, offset = getSome("I", buffer, offset)
     date_time[VALUE.AUTO_DST] = {

@@ -1,3 +1,4 @@
+from datetime import datetime
 from unittest.mock import MagicMock, mock_open, patch
 
 from screenlogicpy.data import (
@@ -25,7 +26,10 @@ def test_validate_complete(response_collection: ScreenLogicResponseCollection):
         decode_pump_status(pump.raw, data, idx)
     decode_chemistry(response_collection.chemistry.raw, data)
     decode_scg_config(response_collection.scg.raw, data)
-    decode_date_time(response_collection.date_time.raw, data)
+    with patch("screenlogicpy.requests.datetime.datetime") as mock_datetime:
+        mock_datetime.now.return_value = datetime.fromtimestamp(1700517812.0)
+        mock_datetime.side_effect = lambda *a, **kwa: datetime(*a, **kwa)
+        decode_date_time(response_collection.date_time.raw, data)
     assert data == response_collection.decoded_complete
 
 
