@@ -3,7 +3,9 @@
     "adapter": {
       "firmware": {
         "name": "Protocol Adapter Firmware",
-        "value": "POOL: 5.2 Build 738.0 Rel"
+        "value": "POOL: 5.2 Build 738.0 Rel",
+        "major": 5.2,
+        "minor": 738.0
       }
     },
     "controller": {
@@ -889,8 +891,10 @@
       },
       "firmware": {
         "name": "IntelliChem Firmware",
-        "value": "1.060"
-      },
+        "value": "1.060",
+        "major": 1,
+        "minor": 60
+    },
       "water_balance": {
         "flags": 0,
         "corrosive": {
@@ -966,8 +970,10 @@
       "adapter": {
         "firmware": {
           "name": "Protocol Adapter Firmware",
-          "value": "POOL: 5.2 Build 738.0 Rel"
-        }
+          "value": "POOL: 5.2 Build 738.0 Rel",
+          "major": 5.2,
+          "minor": 738.0
+          }
       }
     }
   },
@@ -2006,7 +2012,9 @@
         },
         "firmware": {
           "name": "IntelliChem Firmware",
-          "value": "1.060"
+          "value": "1.060",
+          "major": 1,
+          "minor": 60
         },
         "water_balance": {
           "flags": 0,

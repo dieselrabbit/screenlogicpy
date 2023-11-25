@@ -281,6 +281,8 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
     intellichem[VALUE.FIRMWARE] = {
         ATTR.NAME: "IntelliChem Firmware",
         ATTR.VALUE: f"{vMajor}.{vMinor:03}",
+        ATTR.MAJOR: vMajor,
+        ATTR.MINOR: vMinor,
     }
 
     intellichem_balance: dict = intellichem.setdefault(GROUP.WATER_BALANCE, {})

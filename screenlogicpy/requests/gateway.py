@@ -17,8 +17,11 @@ async def async_request_gateway_version(
 
 def decode_version(buff: bytes, data: dict):
     adapter: dict = data.setdefault(DEVICE.ADAPTER, {})
-
+    firmware = decodeMessageString(buff)
+    fw_parts = firmware.split()
     adapter[VALUE.FIRMWARE] = {
         ATTR.NAME: "Protocol Adapter Firmware",
-        ATTR.VALUE: decodeMessageString(buff),
+        ATTR.VALUE: firmware,
+        ATTR.MAJOR: float(fw_parts[1]),
+        ATTR.MINOR: float(fw_parts[3]),
     }

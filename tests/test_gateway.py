@@ -200,6 +200,8 @@ async def test_gateway_get_scg(
                 "firmware": {
                     "name": "Protocol Adapter Firmware",
                     "value": "POOL: 5.2 Build 738.0 Rel",
+                    "major": 5.2,
+                    "minor": 738.0,
                 }
             },
         ),

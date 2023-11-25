@@ -44,6 +44,8 @@ TEST_DECODED_VERSION = {
         "firmware": {
             "name": "Protocol Adapter Firmware",
             "value": "POOL: 5.2 Build 736.0 Rel",
+            "major": 5.2,
+            "minor": 736.0,
         }
     }
 }
@@ -133,6 +135,8 @@ TEST_DATA = {
         "firmware": {
             "name": "Protocol Adapter Firmware",
             "value": "POOL: 5.2 Build 736.0 Rel",
+            "major": 5.2,
+            "minor": 736.0,
         }
     },
     "pump": {
