@@ -1,10 +1,12 @@
+from unittest.mock import patch
+
 from screenlogicpy.data import ScreenLogicResponseCollection
 from screenlogicpy.requests.config import decode_pool_config
 from screenlogicpy.requests.status import decode_pool_status
 from screenlogicpy.requests.pump import decode_pump_status
 from screenlogicpy.requests.chemistry import decode_chemistry
 from screenlogicpy.requests.scg import decode_scg_config
-from screenlogicpy.requests.utility import makeMessage, takeMessages
+from screenlogicpy.requests.utility import getAdapterVersion, makeMessage, takeMessages
 from screenlogicpy.requests.gateway import decode_version
 
 
@@ -17,7 +19,11 @@ def test_decode_version(response_collection: ScreenLogicResponseCollection):
 
 def test_decode_config(response_collection: ScreenLogicResponseCollection):
     data = {}
-    decode_pool_config(response_collection.config.raw, data)
+    with patch(
+        "screenlogicpy.requests.config.getAdapterVersion",
+        return_value=getAdapterVersion(response_collection.decoded_complete),
+    ):
+        decode_pool_config(response_collection.config.raw, data)
 
     assert data == response_collection.config.decoded
 
