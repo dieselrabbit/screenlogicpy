@@ -7,9 +7,6 @@ from screenlogicpy.const.common import (
 )
 from screenlogicpy.const.msg import CODE
 
-from .data_sets import TESTING_DATA_COLLECTION as TDC
-
-
 FAKE_GATEWAY_ADDRESS = "127.0.0.1"
 FAKE_GATEWAY_CHK = 2
 FAKE_GATEWAY_DISCOVERY_PORT = 1444
@@ -27,26 +24,6 @@ FAKE_CONNECT_INFO = {
     SL_GATEWAY_NAME: FAKE_GATEWAY_NAME,
 }
 
-ASYNC_SL_RESPONSES = {
-    CODE.VERSION_QUERY: TDC.version.raw,
-    CODE.CTRLCONFIG_QUERY: TDC.config.raw,
-    CODE.POOLSTATUS_QUERY: TDC.status.raw,
-    CODE.STATUS_CHANGED: TDC.status.raw,
-    CODE.PUMPSTATUS_QUERY: TDC.pumps[0].raw,
-    CODE.CHEMISTRY_QUERY: TDC.chemistry.raw,
-    CODE.CHEMISTRY_CHANGED: TDC.chemistry.raw,
-    CODE.SCGCONFIG_QUERY: TDC.scg.raw,
-    CODE.COLOR_UPDATE: TDC.color[7].raw,
-    CODE.BUTTONPRESS_QUERY: b"",
-    CODE.LIGHTCOMMAND_QUERY: b"",
-    CODE.SETHEATMODE_QUERY: b"",
-    CODE.SETHEATTEMP_QUERY: b"",
-    CODE.SETSCG_QUERY: b"",
-    CODE.SETCHEMDATA_QUERY: b"",
-    CODE.ADD_CLIENT_QUERY: b"",
-    CODE.REMOVE_CLIENT_QUERY: b"",
-    CODE.PING_QUERY: b"",
-}
 
 EXPECTED_DASHBOARD = """Discovered 'Fake: 00-00-00' at 127.0.0.1:6448
 EasyTouch2 8

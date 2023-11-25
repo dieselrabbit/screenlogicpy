@@ -7,10 +7,10 @@ from unittest.mock import patch
 from screenlogicpy import ScreenLogicGateway
 from screenlogicpy.client import ClientManager
 from screenlogicpy.const.msg import CODE
+from screenlogicpy.data import ScreenLogicResponseCollection
 from .const_data import (
     FAKE_CONNECT_INFO,
 )
-from .data_sets import TESTING_DATA_COLLECTION as TDC
 
 
 @pytest.mark.asyncio()
@@ -74,11 +74,11 @@ async def test_sub_unsub(event_loop, MockProtocolAdapter):
 
 
 @pytest.mark.asyncio()
-async def test_notify():
+async def test_notify(response_collection: ScreenLogicResponseCollection):
     code1 = CODE.STATUS_CHANGED
     code2 = CODE.CHEMISTRY_CHANGED
-    status_response = TDC.status
-    chem_response = TDC.chemistry
+    status_response = response_collection.status
+    chem_response = response_collection.chemistry
 
     cb1_hit = False
     cb2_hit = False
@@ -159,7 +159,6 @@ async def test_attach_existing(MockProtocolAdapter):
         },
     }
     async with MockProtocolAdapter:
-
         await gateway.async_connect(**FAKE_CONNECT_INFO)
 
         assert gateway._protocol._callbacks == {
