@@ -302,7 +302,7 @@ async def cli(cli_args):
         pa_ver = file_format(gateway.version)
         model = file_format(gateway.controller_model)
         equip = gateway.equipment_flags.value
-        filename = f"slpy{sl_ver}_{pa_ver}_{model}_{equip}.json"
+        filename = f"slpy-{sl_ver}_{pa_ver}_{model}_{equip}.json"
         response_collection = build_response_collection(
             gateway.get_debug(), gateway.get_data()
         )

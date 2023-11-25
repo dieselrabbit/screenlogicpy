@@ -29,7 +29,7 @@ from .const_data import (
 )
 
 
-DEFAULT_RESPONSE = "slpy0100_pool-52-build-7380-rel_easytouch2-8_32824.json"
+DEFAULT_RESPONSE = "slpy-0100_pool-52-build-7380-rel_easytouch2-8_32824.json"
 
 
 def load_response_collection(filenames: list[str] | None = None):
