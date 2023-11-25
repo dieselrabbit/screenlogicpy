@@ -150,3 +150,7 @@ def getTemperatureUnit(data: dict):
         .get(ATTR.VALUE)
         else UNIT.FAHRENHEIT
     )
+
+
+def getAdapterVersion(data: dict):
+    return data.get(DEVICE.ADAPTER, {}).get(VALUE.FIRMWARE, {}).get(ATTR.MINOR)
