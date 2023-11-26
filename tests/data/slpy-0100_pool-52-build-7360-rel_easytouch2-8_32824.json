@@ -77,13 +77,12 @@
         "value": "EasyTouch2 8"
       },
       "equipment": {
-        "flags": 98360,
+        "flags": 32824,
         "list": [
           "INTELLIBRITE",
           "INTELLIFLO_0",
           "INTELLIFLO_1",
-          "INTELLICHEM",
-          "HYBRID_HEATER"
+          "INTELLICHEM"
         ]
       },
       "sensor": {
@@ -994,7 +993,7 @@
           "value": "EasyTouch2 8"
         },
         "equipment": {
-          "flags": 98360,
+          "flags": 4294934584,
           "list": [
             "INTELLIBRITE",
             "INTELLIFLO_0",
