@@ -6,7 +6,6 @@ from unittest.mock import DEFAULT, MagicMock, mock_open, patch
 from screenlogicpy import ScreenLogicGateway
 from screenlogicpy.cli import cli
 from screenlogicpy.data import ScreenLogicResponseCollection
-from screenlogicpy.requests.utility import getAdapterVersion
 
 from .conftest import stub_async_connect
 from .const_data import (
@@ -32,9 +31,6 @@ async def PatchedGateway(
         _async_connected_request=DEFAULT,
     ) as gateway, patch(
         "screenlogicpy.cli.async_discover", return_value=[FAKE_CONNECT_INFO]
-    ), patch(
-        "screenlogicpy.requests.config.getAdapterVersion",
-        return_value=getAdapterVersion(response_collection.decoded_complete),
     ):
         yield gateway
 

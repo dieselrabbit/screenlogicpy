@@ -62,8 +62,8 @@ def decode_pool_config(buff: bytes, data: dict) -> dict:
     equipFlags, offset = getSome("I", buff, offset)
 
     # Include only known flags.
-    minor = getAdapterVersion(data)
-    equipFlags = equipFlags & EQUIPMENT_MASK_736 if minor <= 736 else equipFlags
+    if (minor := getAdapterVersion(data)) is not None:
+        equipFlags = equipFlags & EQUIPMENT_MASK_736 if minor <= 736 else equipFlags
 
     controller_equipment[VALUE.FLAGS] = equipFlags
 
