@@ -8,6 +8,7 @@ from unittest.mock import DEFAULT, MagicMock, patch
 
 from screenlogicpy import ScreenLogicGateway, __version__ as sl_version
 from screenlogicpy.cli import file_format
+from screenlogicpy.const.common import ScreenLogicError
 from screenlogicpy.data import (
     ScreenLogicResponseCollection,
     deconstruct_response_collection,
@@ -33,11 +34,16 @@ DEFAULT_RESPONSE = "slpy-0100_pool-52-build-7380-rel_easytouch2-8_32824.json"
 
 
 def load_response_collections(filenames: list[str] | None = None):
-    dir = "tests\\data\\"
-    files = filenames or glob(f"slpy-{file_format(sl_version)}*.json", root_dir=dir)
+    dir = "tests/data/"
+    file_filter = f"slpy-{file_format(sl_version)}*.json"
+    files = filenames or glob(file_filter, root_dir=dir)
     response_collections = []
     for file in files:
         response_collections.append((file, import_response_collection(f"{dir}{file}")))
+    if not response_collections:
+        raise ScreenLogicError(
+            f"No response collections imported from {dir}{file_filter}"
+        )
     return response_collections
 
 
