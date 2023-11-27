@@ -1,13 +1,13 @@
 import asyncio
 from collections.abc import Callable
-from dataclasses import asdict
-import os
+from glob import glob
 import pytest_asyncio
 import socket
 import struct
 from unittest.mock import DEFAULT, MagicMock, patch
 
-from screenlogicpy import ScreenLogicGateway
+from screenlogicpy import ScreenLogicGateway, __version__ as sl_version
+from screenlogicpy.cli import file_format
 from screenlogicpy.data import (
     ScreenLogicResponseCollection,
     deconstruct_response_collection,
@@ -32,18 +32,18 @@ from .const_data import (
 DEFAULT_RESPONSE = "slpy-0100_pool-52-build-7380-rel_easytouch2-8_32824.json"
 
 
-def load_response_collection(filenames: list[str] | None = None):
-    dir = "tests/data/"
-    files = filenames or os.listdir(dir)
-    resp_colls = []
+def load_response_collections(filenames: list[str] | None = None):
+    dir = "tests\\data\\"
+    files = filenames or glob(f"slpy-{file_format(sl_version)}*.json", root_dir=dir)
+    response_collections = []
     for file in files:
-        resp_colls.append(import_response_collection(f"{dir}{file}"))
-    return resp_colls
+        response_collections.append((file, import_response_collection(f"{dir}{file}")))
+    return response_collections
 
 
 @pytest_asyncio.fixture()
 async def response_collection():
-    return load_response_collection([DEFAULT_RESPONSE])[0]
+    return load_response_collections([DEFAULT_RESPONSE])[0][1]
 
 
 @pytest_asyncio.fixture()

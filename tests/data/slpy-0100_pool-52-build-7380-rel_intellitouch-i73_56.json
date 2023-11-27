@@ -3,7 +3,9 @@
     "adapter": {
       "firmware": {
         "name": "Protocol Adapter Firmware",
-        "value": "POOL: 5.2 Build 738.0 Rel"
+        "value": "POOL: 5.2 Build 738.0 Rel",
+        "major": 5.2,
+        "minor": 738.0
       }
     },
     "controller": {
@@ -23,11 +25,11 @@
           "name": "Is Celsius",
           "value": 0
         },
-        "controller_type": 0,
+        "controller_type": 1,
         "hardware_type": 0,
-        "controller_data": 32,
+        "controller_data": 0,
         "generic_circuit_name": "Water Features",
-        "circuit_count": 6,
+        "circuit_count": 7,
         "color_count": 8,
         "color": [
           {
@@ -97,19 +99,18 @@
         ],
         "interface_tab_flags": 127,
         "show_alarms": 1,
-        "remotes": 32,
+        "remotes": 0,
         "unknown_at_offset_09": 0,
         "unknown_at_offset_10": 0,
         "unknown_at_offset_11": 0
       },
       "model": {
         "name": "Model",
-        "value": "IntelliTouch i5+3S"
+        "value": "IntelliTouch i7+3"
       },
       "equipment": {
-        "flags": 60,
+        "flags": 56,
         "list": [
-          "CHLORINATOR",
           "INTELLIBRITE",
           "INTELLIFLO_0",
           "INTELLIFLO_1"
@@ -145,7 +146,7 @@
         },
         "air_temperature": {
           "name": "Air Temperature",
-          "value": 79,
+          "value": 91,
           "unit": "°F",
           "device_type": "temperature",
           "state_type": "measurement"
@@ -186,7 +187,7 @@
         },
         "active_alert": {
           "name": "Active Alert",
-          "value": 1,
+          "value": 0,
           "device_type": "alarm"
         }
       }
@@ -215,17 +216,17 @@
       },
       "501": {
         "circuit_id": 501,
-        "name": "Pool Light",
+        "name": "Cleaner",
         "configuration": {
-          "name_index": 62,
+          "name_index": 21,
           "flags": 0,
           "default_runtime": 720,
-          "unknown_at_offset_94": 0,
-          "unknown_at_offset_95": 0,
+          "unknown_at_offset_90": 0,
+          "unknown_at_offset_91": 0,
           "delay": 0
         },
-        "function": 16,
-        "interface": 3,
+        "function": 5,
+        "interface": 5,
         "color": {
           "color_set": 0,
           "color_position": 0,
@@ -236,17 +237,17 @@
       },
       "502": {
         "circuit_id": 502,
-        "name": "Spa Light",
+        "name": "Jets",
         "configuration": {
-          "name_index": 73,
+          "name_index": 45,
           "flags": 0,
           "default_runtime": 720,
-          "unknown_at_offset_126": 0,
-          "unknown_at_offset_127": 0,
+          "unknown_at_offset_114": 0,
+          "unknown_at_offset_115": 0,
           "delay": 0
         },
-        "function": 16,
-        "interface": 3,
+        "function": 0,
+        "interface": 5,
         "color": {
           "color_set": 0,
           "color_position": 0,
@@ -257,42 +258,42 @@
       },
       "503": {
         "circuit_id": 503,
-        "name": "Cleaner",
+        "name": "Pool Light",
         "configuration": {
-          "name_index": 21,
+          "name_index": 62,
           "flags": 0,
           "default_runtime": 720,
-          "unknown_at_offset_154": 0,
-          "unknown_at_offset_155": 0,
+          "unknown_at_offset_146": 0,
+          "unknown_at_offset_147": 0,
           "delay": 0
         },
-        "function": 5,
-        "interface": 5,
+        "function": 16,
+        "interface": 3,
         "color": {
           "color_set": 0,
           "color_position": 0,
-          "color_stagger": 0
+          "color_stagger": 10
         },
         "device_id": 4,
         "value": 0
       },
       "504": {
         "circuit_id": 504,
-        "name": "Jets",
+        "name": "Spa Light",
         "configuration": {
-          "name_index": 45,
+          "name_index": 73,
           "flags": 0,
           "default_runtime": 720,
           "unknown_at_offset_178": 0,
           "unknown_at_offset_179": 0,
           "delay": 0
         },
-        "function": 0,
-        "interface": 5,
+        "function": 16,
+        "interface": 3,
         "color": {
           "color_set": 0,
-          "color_position": 0,
-          "color_stagger": 0
+          "color_position": 1,
+          "color_stagger": 10
         },
         "device_id": 5,
         "value": 0
@@ -317,6 +318,27 @@
         },
         "device_id": 6,
         "value": 1
+      },
+      "506": {
+        "circuit_id": 506,
+        "name": "Air Blower",
+        "configuration": {
+          "name_index": 1,
+          "flags": 0,
+          "default_runtime": 720,
+          "unknown_at_offset_234": 0,
+          "unknown_at_offset_235": 0,
+          "delay": 0
+        },
+        "function": 0,
+        "interface": 5,
+        "color": {
+          "color_set": 0,
+          "color_position": 0,
+          "color_stagger": 0
+        },
+        "device_id": 7,
+        "value": 0
       }
     },
     "pump": {
@@ -329,38 +351,44 @@
         },
         "watts_now": {
           "name": "Pool Pump Watts Now",
-          "value": 68,
+          "value": 63,
           "unit": "W",
           "device_type": "power",
           "state_type": "measurement"
         },
         "rpm_now": {
           "name": "Pool Pump RPM Now",
-          "value": 1100,
+          "value": 1050,
           "unit": "rpm",
           "state_type": "measurement"
         },
         "unknown_at_offset_16": 0,
+        "gpm_now": {
+          "name": "Pool Pump GPM Now",
+          "value": 255,
+          "unit": "gpm",
+          "state_type": "measurement"
+        },
         "unknown_at_offset_24": 255,
         "preset": {
           "0": {
             "device_id": 6,
-            "setpoint": 1100,
+            "setpoint": 1050,
             "is_rpm": 1
           },
           "1": {
-            "device_id": 2,
-            "setpoint": 2300,
+            "device_id": 1,
+            "setpoint": 1850,
             "is_rpm": 1
           },
           "2": {
-            "device_id": 1,
-            "setpoint": 2070,
+            "device_id": 2,
+            "setpoint": 1500,
             "is_rpm": 1
           },
           "3": {
-            "device_id": 4,
-            "setpoint": 2440,
+            "device_id": 0,
+            "setpoint": 1000,
             "is_rpm": 1
           },
           "4": {
@@ -386,7 +414,7 @@
         }
       },
       "1": {
-        "data": 133,
+        "data": 131,
         "type": 2,
         "state": {
           "name": "Jets Pump",
@@ -415,8 +443,8 @@
         "unknown_at_offset_24": 255,
         "preset": {
           "0": {
-            "device_id": 5,
-            "setpoint": 2800,
+            "device_id": 3,
+            "setpoint": 2970,
             "is_rpm": 1
           },
           "1": {
@@ -483,7 +511,7 @@
         "name": "Pool",
         "last_temperature": {
           "name": "Last Pool Temperature",
-          "value": 80,
+          "value": 86,
           "unit": "°F",
           "device_type": "temperature",
           "state_type": "measurement"
@@ -501,7 +529,7 @@
         },
         "heat_setpoint": {
           "name": "Pool Heat Set Point",
-          "value": 84,
+          "value": 85,
           "unit": "°F",
           "device_type": "temperature"
         },
@@ -531,7 +559,7 @@
         "name": "Spa",
         "last_temperature": {
           "name": "Last Spa Temperature",
-          "value": 83,
+          "value": 84,
           "unit": "°F",
           "device_type": "temperature",
           "state_type": "measurement"
@@ -549,19 +577,19 @@
         },
         "heat_setpoint": {
           "name": "Spa Heat Set Point",
-          "value": 103,
+          "value": 102,
           "unit": "°F",
           "device_type": "temperature"
         },
         "cool_setpoint": {
           "name": "Spa Cool Set Point",
-          "value": 79,
+          "value": 91,
           "unit": "°F",
           "device_type": "temperature"
         },
         "heat_mode": {
           "name": "Spa Heat Mode",
-          "value": 0,
+          "value": 3,
           "device_type": "enum",
           "enum_options": [
             "Off",
@@ -617,32 +645,44 @@
         "ph_setpoint": {
           "name": "pH Setpoint",
           "value": 0.0,
-          "unit": "pH"
+          "unit": "pH",
+          "min_setpoint": 7.2,
+          "max_setpoint": 7.6
         },
         "orp_setpoint": {
           "name": "ORP Setpoint",
           "value": 0,
-          "unit": "mV"
+          "unit": "mV",
+          "min_setpoint": 400,
+          "max_setpoint": 800
         },
-        "calcium_harness": {
+        "calcium_hardness": {
           "name": "Calcium Hardness",
           "value": 0,
-          "unit": "ppm"
+          "unit": "ppm",
+          "min_setpoint": 25,
+          "max_setpoint": 800
         },
         "cya": {
           "name": "Cyanuric Acid",
           "value": 0,
-          "unit": "ppm"
+          "unit": "ppm",
+          "min_setpoint": 0,
+          "max_setpoint": 201
         },
         "total_alkalinity": {
           "name": "Total Alkalinity",
           "value": 0,
-          "unit": "ppm"
+          "unit": "ppm",
+          "min_setpoint": 25,
+          "max_setpoint": 800
         },
         "salt_tds_ppm": {
           "name": "Salt/TDS",
           "value": 0,
-          "unit": "ppm"
+          "unit": "ppm",
+          "min_setpoint": 500,
+          "max_setpoint": 6500
         },
         "probe_is_celsius": 0,
         "flags": 0
@@ -758,7 +798,9 @@
       },
       "firmware": {
         "name": "IntelliChem Firmware",
-        "value": "0.000"
+        "value": "0.000",
+        "major": 0,
+        "minor": 0
       },
       "water_balance": {
         "flags": 0,
@@ -778,11 +820,11 @@
       "unknown_at_offset_46": 0
     },
     "scg": {
-      "scg_present": 1,
+      "scg_present": 0,
       "sensor": {
         "state": {
           "name": "Chlorinator",
-          "value": 0
+          "value": 1
         },
         "salt_ppm": {
           "name": "Chlorinator Salt",
@@ -798,7 +840,7 @@
           "unit": "%",
           "min_setpoint": 0,
           "max_setpoint": 100,
-          "step": 5,
+          "step": 1,
           "body_type": 0
         },
         "spa_setpoint": {
@@ -807,26 +849,45 @@
           "unit": "%",
           "min_setpoint": 0,
           "max_setpoint": 100,
-          "step": 5,
+          "step": 1,
           "body_type": 1
         },
         "super_chlor_timer": {
           "name": "Super Chlorination Timer",
           "value": 0,
           "unit": "hr",
-          "min_setpoint": 1,
+          "min_setpoint": 0,
           "max_setpoint": 72,
           "step": 1
         }
       },
-      "flags": 0
+      "flags": 0,
+      "super_chlorinate": {
+        "name": "Super Chlorinate",
+        "value": 0
+      }
     }
   },
-  "version": null,
+  "version": {
+    "raw": {
+      "__type": "<class 'bytes'>",
+      "repr": "b'\\x19\\x00\\x00\\x00POOL: 5.2 Build 738.0 Rel\\x00\\x00\\x00\\x02\\x00\\x00\\x00\\x05\\x00\\x00\\x00\\x02\\x00\\x00\\x00\\x02\\x00\\x00\\x00\\x02\\x00\\x00\\x00\\x0c\\x00\\x00\\x00'"
+    },
+    "decoded": {
+      "adapter": {
+        "firmware": {
+          "name": "Protocol Adapter Firmware",
+          "value": "POOL: 5.2 Build 738.0 Rel",
+          "major": 5.2,
+          "minor": 738.0
+        }
+      }
+    }
+  },
   "config": {
     "raw": {
       "__type": "<class 'bytes'>",
-      "repr": "b'd\\x00\\x00\\x00(h(h\\x00\\x00\\x00 <\\x00\\x00\\x00\\x0e\\x00\\x00\\x00Water Features\\x00\\x00\\x06\\x00\\x00\\x00\\xf4\\x01\\x00\\x00\\x03\\x00\\x00\\x00Spa\\x00G\\x01\\x01\\x01\\x00\\x00\\x00\\x01\\xd0\\x02\\x00\\x00\\xf5\\x01\\x00\\x00\\n\\x00\\x00\\x00Pool Light\\x00\\x00>\\x10\\x03\\x00\\x00\\x00\\x00\\x02\\xd0\\x02\\x00\\x00\\xf6\\x01\\x00\\x00\\t\\x00\\x00\\x00Spa Light\\x00\\x00\\x00I\\x10\\x03\\x00\\x00\\x00\\x00\\x03\\xd0\\x02\\x00\\x00\\xf7\\x01\\x00\\x00\\x07\\x00\\x00\\x00Cleaner\\x00\\x15\\x05\\x05\\x00\\x00\\x00\\x00\\x04\\xd0\\x02\\x00\\x00\\xf8\\x01\\x00\\x00\\x04\\x00\\x00\\x00Jets-\\x00\\x05\\x00\\x00\\x00\\x00\\x05\\xd0\\x02\\x00\\x00\\xf9\\x01\\x00\\x00\\x04\\x00\\x00\\x00Pool<\\x02\\x00\\x01\\x00\\x00\\x00\\x06\\xd0\\x02\\x00\\x00\\x08\\x00\\x00\\x00\\x05\\x00\\x00\\x00White\\x00\\x00\\x00\\xff\\x00\\x00\\x00\\xff\\x00\\x00\\x00\\xff\\x00\\x00\\x00\\x0b\\x00\\x00\\x00Light Green\\x00\\xa0\\x00\\x00\\x00\\xff\\x00\\x00\\x00\\xa0\\x00\\x00\\x00\\x05\\x00\\x00\\x00Green\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\xff\\x00\\x00\\x00P\\x00\\x00\\x00\\x04\\x00\\x00\\x00Cyan\\x00\\x00\\x00\\x00\\xff\\x00\\x00\\x00\\xc8\\x00\\x00\\x00\\x04\\x00\\x00\\x00Blued\\x00\\x00\\x00\\x8c\\x00\\x00\\x00\\xff\\x00\\x00\\x00\\x08\\x00\\x00\\x00Lavender\\xe6\\x00\\x00\\x00\\x82\\x00\\x00\\x00\\xff\\x00\\x00\\x00\\x07\\x00\\x00\\x00Magenta\\x00\\xff\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x80\\x00\\x00\\x00\\r\\x00\\x00\\x00Light Magenta\\x00\\x00\\x00\\xff\\x00\\x00\\x00\\xb4\\x00\\x00\\x00\\xd2\\x00\\x00\\x00\\x86\\x85\\x00\\x00\\x00\\x00\\x00\\x00\\x7f\\x00\\x00\\x00\\x01\\x00\\x00\\x00'"
+      "repr": "b'd\\x00\\x00\\x00(h(h\\x00\\x01\\x00\\x008\\x00\\x00\\x00\\x0e\\x00\\x00\\x00Water Features\\x00\\x00\\x07\\x00\\x00\\x00\\xf4\\x01\\x00\\x00\\x03\\x00\\x00\\x00Spa\\x00G\\x01\\x01\\x01\\x00\\x00\\x00\\x01\\xd0\\x02\\x00\\x00\\xf5\\x01\\x00\\x00\\x07\\x00\\x00\\x00Cleaner\\x00\\x15\\x05\\x05\\x00\\x00\\x00\\x00\\x02\\xd0\\x02\\x00\\x00\\xf6\\x01\\x00\\x00\\x04\\x00\\x00\\x00Jets-\\x00\\x05\\x00\\x00\\x00\\x00\\x03\\xd0\\x02\\x00\\x00\\xf7\\x01\\x00\\x00\\n\\x00\\x00\\x00Pool Light\\x00\\x00>\\x10\\x03\\x00\\x00\\x00\\n\\x04\\xd0\\x02\\x00\\x00\\xf8\\x01\\x00\\x00\\t\\x00\\x00\\x00Spa Light\\x00\\x00\\x00I\\x10\\x03\\x00\\x00\\x01\\n\\x05\\xd0\\x02\\x00\\x00\\xf9\\x01\\x00\\x00\\x04\\x00\\x00\\x00Pool<\\x02\\x00\\x01\\x00\\x00\\x00\\x06\\xd0\\x02\\x00\\x00\\xfa\\x01\\x00\\x00\\n\\x00\\x00\\x00Air Blower\\x00\\x00\\x01\\x00\\x05\\x00\\x00\\x00\\x00\\x07\\xd0\\x02\\x00\\x00\\x08\\x00\\x00\\x00\\x05\\x00\\x00\\x00White\\x00\\x00\\x00\\xff\\x00\\x00\\x00\\xff\\x00\\x00\\x00\\xff\\x00\\x00\\x00\\x0b\\x00\\x00\\x00Light Green\\x00\\xa0\\x00\\x00\\x00\\xff\\x00\\x00\\x00\\xa0\\x00\\x00\\x00\\x05\\x00\\x00\\x00Green\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\xff\\x00\\x00\\x00P\\x00\\x00\\x00\\x04\\x00\\x00\\x00Cyan\\x00\\x00\\x00\\x00\\xff\\x00\\x00\\x00\\xc8\\x00\\x00\\x00\\x04\\x00\\x00\\x00Blued\\x00\\x00\\x00\\x8c\\x00\\x00\\x00\\xff\\x00\\x00\\x00\\x08\\x00\\x00\\x00Lavender\\xe6\\x00\\x00\\x00\\x82\\x00\\x00\\x00\\xff\\x00\\x00\\x00\\x07\\x00\\x00\\x00Magenta\\x00\\xff\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x80\\x00\\x00\\x00\\r\\x00\\x00\\x00Light Magenta\\x00\\x00\\x00\\xff\\x00\\x00\\x00\\xb4\\x00\\x00\\x00\\xd2\\x00\\x00\\x00\\x86\\x83\\x00\\x00\\x00\\x00\\x00\\x00\\x7f\\x00\\x00\\x00\\x01\\x00\\x00\\x00'"
     },
     "decoded": {
       "controller": {
@@ -846,11 +907,11 @@
             "name": "Is Celsius",
             "value": 0
           },
-          "controller_type": 0,
+          "controller_type": 1,
           "hardware_type": 0,
-          "controller_data": 32,
+          "controller_data": 0,
           "generic_circuit_name": "Water Features",
-          "circuit_count": 6,
+          "circuit_count": 7,
           "color_count": 8,
           "color": [
             {
@@ -923,12 +984,11 @@
         },
         "model": {
           "name": "Model",
-          "value": "IntelliTouch i5+3S"
+          "value": "IntelliTouch i7+3"
         },
         "equipment": {
-          "flags": 60,
+          "flags": 56,
           "list": [
-            "CHLORINATOR",
             "INTELLIBRITE",
             "INTELLIFLO_0",
             "INTELLIFLO_1"
@@ -957,16 +1017,16 @@
         },
         "501": {
           "circuit_id": 501,
-          "name": "Pool Light",
+          "name": "Cleaner",
           "configuration": {
-            "name_index": 62,
+            "name_index": 21,
             "flags": 0,
             "default_runtime": 720,
-            "unknown_at_offset_94": 0,
-            "unknown_at_offset_95": 0
+            "unknown_at_offset_90": 0,
+            "unknown_at_offset_91": 0
           },
-          "function": 16,
-          "interface": 3,
+          "function": 5,
+          "interface": 5,
           "color": {
             "color_set": 0,
             "color_position": 0,
@@ -976,16 +1036,16 @@
         },
         "502": {
           "circuit_id": 502,
-          "name": "Spa Light",
+          "name": "Jets",
           "configuration": {
-            "name_index": 73,
+            "name_index": 45,
             "flags": 0,
             "default_runtime": 720,
-            "unknown_at_offset_126": 0,
-            "unknown_at_offset_127": 0
+            "unknown_at_offset_114": 0,
+            "unknown_at_offset_115": 0
           },
-          "function": 16,
-          "interface": 3,
+          "function": 0,
+          "interface": 5,
           "color": {
             "color_set": 0,
             "color_position": 0,
@@ -995,39 +1055,39 @@
         },
         "503": {
           "circuit_id": 503,
-          "name": "Cleaner",
+          "name": "Pool Light",
           "configuration": {
-            "name_index": 21,
+            "name_index": 62,
             "flags": 0,
             "default_runtime": 720,
-            "unknown_at_offset_154": 0,
-            "unknown_at_offset_155": 0
+            "unknown_at_offset_146": 0,
+            "unknown_at_offset_147": 0
           },
-          "function": 5,
-          "interface": 5,
+          "function": 16,
+          "interface": 3,
           "color": {
             "color_set": 0,
             "color_position": 0,
-            "color_stagger": 0
+            "color_stagger": 10
           },
           "device_id": 4
         },
         "504": {
           "circuit_id": 504,
-          "name": "Jets",
+          "name": "Spa Light",
           "configuration": {
-            "name_index": 45,
+            "name_index": 73,
             "flags": 0,
             "default_runtime": 720,
             "unknown_at_offset_178": 0,
             "unknown_at_offset_179": 0
           },
-          "function": 0,
-          "interface": 5,
+          "function": 16,
+          "interface": 3,
           "color": {
             "color_set": 0,
-            "color_position": 0,
-            "color_stagger": 0
+            "color_position": 1,
+            "color_stagger": 10
           },
           "device_id": 5
         },
@@ -1049,6 +1109,25 @@
             "color_stagger": 0
           },
           "device_id": 6
+        },
+        "506": {
+          "circuit_id": 506,
+          "name": "Air Blower",
+          "configuration": {
+            "name_index": 1,
+            "flags": 0,
+            "default_runtime": 720,
+            "unknown_at_offset_234": 0,
+            "unknown_at_offset_235": 0
+          },
+          "function": 0,
+          "interface": 5,
+          "color": {
+            "color_set": 0,
+            "color_position": 0,
+            "color_stagger": 0
+          },
+          "device_id": 7
         }
       },
       "pump": {
@@ -1056,7 +1135,7 @@
           "data": 134
         },
         "1": {
-          "data": 133
+          "data": 131
         },
         "2": {
           "data": 0
@@ -1082,7 +1161,7 @@
   "status": {
     "raw": {
       "__type": "<class 'bytes'>",
-      "repr": "b'\\x01\\x00\\x00\\x00\\x00 \\x00\\x00\\x00\\x00\\x00\\x00O\\x00\\x00\\x00\\x02\\x00\\x00\\x00\\x00\\x00\\x00\\x00P\\x00\\x00\\x00\\x00\\x00\\x00\\x00T\\x00\\x00\\x00d\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x01\\x00\\x00\\x00S\\x00\\x00\\x00\\x00\\x00\\x00\\x00g\\x00\\x00\\x00O\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x06\\x00\\x00\\x00\\xf4\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\xf5\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\xf6\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\xf7\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\xf8\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\xf9\\x01\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x01\\x00\\x00\\x00'"
+      "repr": "b'\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00[\\x00\\x00\\x00\\x02\\x00\\x00\\x00\\x00\\x00\\x00\\x00V\\x00\\x00\\x00\\x00\\x00\\x00\\x00U\\x00\\x00\\x00d\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x01\\x00\\x00\\x00T\\x00\\x00\\x00\\x00\\x00\\x00\\x00f\\x00\\x00\\x00[\\x00\\x00\\x00\\x03\\x00\\x00\\x00\\x07\\x00\\x00\\x00\\xf4\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\xf5\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\xf6\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\xf7\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\n\\x00\\xf8\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x01\\n\\x00\\xf9\\x01\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\xfa\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00'"
     },
     "decoded": {
       "controller": {
@@ -1116,7 +1195,7 @@
           },
           "air_temperature": {
             "name": "Air Temperature",
-            "value": 79,
+            "value": 91,
             "unit": "°F",
             "device_type": "temperature",
             "state_type": "measurement"
@@ -1157,12 +1236,12 @@
           },
           "active_alert": {
             "name": "Active Alert",
-            "value": 1,
+            "value": 0,
             "device_type": "alarm"
           }
         },
         "configuration": {
-          "remotes": 32,
+          "remotes": 0,
           "unknown_at_offset_09": 0,
           "unknown_at_offset_10": 0,
           "unknown_at_offset_11": 0
@@ -1174,7 +1253,7 @@
           "name": "Pool",
           "last_temperature": {
             "name": "Last Pool Temperature",
-            "value": 80,
+            "value": 86,
             "unit": "°F",
             "device_type": "temperature",
             "state_type": "measurement"
@@ -1192,7 +1271,7 @@
           },
           "heat_setpoint": {
             "name": "Pool Heat Set Point",
-            "value": 84,
+            "value": 85,
             "unit": "°F",
             "device_type": "temperature"
           },
@@ -1220,7 +1299,7 @@
           "name": "Spa",
           "last_temperature": {
             "name": "Last Spa Temperature",
-            "value": 83,
+            "value": 84,
             "unit": "°F",
             "device_type": "temperature",
             "state_type": "measurement"
@@ -1238,19 +1317,19 @@
           },
           "heat_setpoint": {
             "name": "Spa Heat Set Point",
-            "value": 103,
+            "value": 102,
             "unit": "°F",
             "device_type": "temperature"
           },
           "cool_setpoint": {
             "name": "Spa Cool Set Point",
-            "value": 79,
+            "value": 91,
             "unit": "°F",
             "device_type": "temperature"
           },
           "heat_mode": {
             "name": "Spa Heat Mode",
-            "value": 0,
+            "value": 3,
             "device_type": "enum",
             "enum_options": [
               "Off",
@@ -1305,7 +1384,7 @@
           "color": {
             "color_set": 0,
             "color_position": 0,
-            "color_stagger": 0
+            "color_stagger": 10
           },
           "configuration": {
             "delay": 0
@@ -1316,8 +1395,8 @@
           "value": 0,
           "color": {
             "color_set": 0,
-            "color_position": 0,
-            "color_stagger": 0
+            "color_position": 1,
+            "color_stagger": 10
           },
           "configuration": {
             "delay": 0
@@ -1334,6 +1413,18 @@
           "configuration": {
             "delay": 0
           }
+        },
+        "506": {
+          "circuit_id": 506,
+          "value": 0,
+          "color": {
+            "color_set": 0,
+            "color_position": 0,
+            "color_stagger": 0
+          },
+          "configuration": {
+            "delay": 0
+          }
         }
       }
     }
@@ -1342,7 +1433,7 @@
     {
       "raw": {
         "__type": "<class 'bytes'>",
-        "repr": "b'\\x02\\x00\\x00\\x00\\x01\\x00\\x00\\x00D\\x00\\x00\\x00L\\x04\\x00\\x00\\x00\\x00\\x00\\x00\\xff\\x00\\x00\\x00\\xff\\x00\\x00\\x00\\x06\\x00\\x00\\x00L\\x04\\x00\\x00\\x01\\x00\\x00\\x00\\x02\\x00\\x00\\x00\\xfc\\x08\\x00\\x00\\x01\\x00\\x00\\x00\\x01\\x00\\x00\\x00\\x16\\x08\\x00\\x00\\x01\\x00\\x00\\x00\\x04\\x00\\x00\\x00\\x88\\t\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\xe8\\x03\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\xe8\\x03\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\xe8\\x03\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\xe8\\x03\\x00\\x00\\x01\\x00\\x00\\x00'"
+        "repr": "b'\\x02\\x00\\x00\\x00\\x01\\x00\\x00\\x00?\\x00\\x00\\x00\\x1a\\x04\\x00\\x00\\x00\\x00\\x00\\x00\\xff\\x00\\x00\\x00\\xff\\x00\\x00\\x00\\x06\\x00\\x00\\x00\\x1a\\x04\\x00\\x00\\x01\\x00\\x00\\x00\\x01\\x00\\x00\\x00:\\x07\\x00\\x00\\x01\\x00\\x00\\x00\\x02\\x00\\x00\\x00\\xdc\\x05\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\xe8\\x03\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\xe8\\x03\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\xe8\\x03\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\xe8\\x03\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\xe8\\x03\\x00\\x00\\x01\\x00\\x00\\x00'"
       },
       "decoded": {
         "pump": {
@@ -1354,14 +1445,14 @@
             },
             "watts_now": {
               "name": "Default Pump Watts Now",
-              "value": 68,
+              "value": 63,
               "unit": "W",
               "device_type": "power",
               "state_type": "measurement"
             },
             "rpm_now": {
               "name": "Default Pump RPM Now",
-              "value": 1100,
+              "value": 1050,
               "unit": "rpm",
               "state_type": "measurement"
             },
@@ -1376,22 +1467,22 @@
             "preset": {
               "0": {
                 "device_id": 6,
-                "setpoint": 1100,
+                "setpoint": 1050,
                 "is_rpm": 1
               },
               "1": {
-                "device_id": 2,
-                "setpoint": 2300,
+                "device_id": 1,
+                "setpoint": 1850,
                 "is_rpm": 1
               },
               "2": {
-                "device_id": 1,
-                "setpoint": 2070,
+                "device_id": 2,
+                "setpoint": 1500,
                 "is_rpm": 1
               },
               "3": {
-                "device_id": 4,
-                "setpoint": 2440,
+                "device_id": 0,
+                "setpoint": 1000,
                 "is_rpm": 1
               },
               "4": {
@@ -1422,7 +1513,7 @@
     {
       "raw": {
         "__type": "<class 'bytes'>",
-        "repr": "b'\\x02\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\xff\\x00\\x00\\x00\\x05\\x00\\x00\\x00\\xf0\\n\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\xe8\\x03\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\xe8\\x03\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\xe8\\x03\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\xe8\\x03\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\xe8\\x03\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\xe8\\x03\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\xe8\\x03\\x00\\x00\\x01\\x00\\x00\\x00'"
+        "repr": "b'\\x02\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\xff\\x00\\x00\\x00\\x03\\x00\\x00\\x00\\x9a\\x0b\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\xe8\\x03\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\xe8\\x03\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\xe8\\x03\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\xe8\\x03\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\xe8\\x03\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\xe8\\x03\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\xe8\\x03\\x00\\x00\\x01\\x00\\x00\\x00'"
       },
       "decoded": {
         "pump": {
@@ -1455,8 +1546,8 @@
             "unknown_at_offset_24": 255,
             "preset": {
               "0": {
-                "device_id": 5,
-                "setpoint": 2800,
+                "device_id": 3,
+                "setpoint": 2970,
                 "is_rpm": 1
               },
               "1": {
@@ -1550,32 +1641,44 @@
           "ph_setpoint": {
             "name": "pH Setpoint",
             "value": 0.0,
-            "unit": "pH"
+            "unit": "pH",
+            "min_setpoint": 7.2,
+            "max_setpoint": 7.6
           },
           "orp_setpoint": {
             "name": "ORP Setpoint",
             "value": 0,
-            "unit": "mV"
+            "unit": "mV",
+            "min_setpoint": 400,
+            "max_setpoint": 800
           },
-          "calcium_harness": {
+          "calcium_hardness": {
             "name": "Calcium Hardness",
             "value": 0,
-            "unit": "ppm"
+            "unit": "ppm",
+            "min_setpoint": 25,
+            "max_setpoint": 800
           },
           "cya": {
             "name": "Cyanuric Acid",
             "value": 0,
-            "unit": "ppm"
+            "unit": "ppm",
+            "min_setpoint": 0,
+            "max_setpoint": 201
           },
           "total_alkalinity": {
             "name": "Total Alkalinity",
             "value": 0,
-            "unit": "ppm"
+            "unit": "ppm",
+            "min_setpoint": 25,
+            "max_setpoint": 800
           },
           "salt_tds_ppm": {
             "name": "Salt/TDS",
             "value": 0,
-            "unit": "ppm"
+            "unit": "ppm",
+            "min_setpoint": 500,
+            "max_setpoint": 6500
           },
           "probe_is_celsius": 0,
           "flags": 0
@@ -1691,7 +1794,9 @@
         },
         "firmware": {
           "name": "IntelliChem Firmware",
-          "value": "0.000"
+          "value": "0.000",
+          "major": 0,
+          "minor": 0
         },
         "water_balance": {
           "flags": 0,
@@ -1715,15 +1820,15 @@
   "scg": {
     "raw": {
       "__type": "<class 'bytes'>",
-      "repr": "b'\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x002\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00'"
+      "repr": "b'\\x00\\x00\\x00\\x00\\x01\\x00\\x00\\x002\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00'"
     },
     "decoded": {
       "scg": {
-        "scg_present": 1,
+        "scg_present": 0,
         "sensor": {
           "state": {
             "name": "Chlorinator",
-            "value": 0
+            "value": 1
           },
           "salt_ppm": {
             "name": "Chlorinator Salt",
@@ -1739,7 +1844,7 @@
             "unit": "%",
             "min_setpoint": 0,
             "max_setpoint": 100,
-            "step": 5,
+            "step": 1,
             "body_type": 0
           },
           "spa_setpoint": {
@@ -1748,21 +1853,26 @@
             "unit": "%",
             "min_setpoint": 0,
             "max_setpoint": 100,
-            "step": 5,
+            "step": 1,
             "body_type": 1
           },
           "super_chlor_timer": {
             "name": "Super Chlorination Timer",
             "value": 0,
             "unit": "hr",
-            "min_setpoint": 1,
+            "min_setpoint": 0,
             "max_setpoint": 72,
             "step": 1
           }
         },
-        "flags": 0
+        "flags": 0,
+        "super_chlorinate": {
+          "name": "Super Chlorinate",
+          "value": 0
+        }
       }
     }
   },
-  "color": null
+  "color": null,
+  "date_time": null
 }
