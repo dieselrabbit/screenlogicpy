@@ -123,7 +123,12 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# personal
 notes/notes.txt
 notes/circuit_names*.txt
 scratchpad/local_*
 notes/8060_set_sys_data.txt
+
+# source data
+diagnostics/
