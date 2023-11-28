@@ -1,6 +1,6 @@
 import argparse
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 import logging
 import string
@@ -257,9 +257,9 @@ async def cli(cli_args):
             DEVICE.CONTROLLER, GROUP.DATE_TIME, VALUE.TIMESTAMP, strict=True
         )
         if format is None:
-            print(datetime.fromtimestamp(timestamp))
+            print(datetime.fromtimestamp(timestamp, tz=timezone.utc).ctime())
         else:
-            print(datetime.fromtimestamp(timestamp).strftime(format))
+            print(datetime.fromtimestamp(timestamp, tz=timezone.utc).strftime(format))
         return 0
 
     async def async_get_auto_dst():
@@ -285,7 +285,7 @@ async def cli(cli_args):
                 auto_dst is None,
             )
         ):
-            date_time = datetime.now()
+            date_time = datetime.now(tz=timezone.utc)
 
         await gateway.async_get_datetime()
         await gateway.async_set_date_time(date_time=date_time, auto_dst=auto_dst)
@@ -294,7 +294,9 @@ async def cli(cli_args):
         timestamp = gateway.get_data(
             DEVICE.CONTROLLER, GROUP.DATE_TIME, VALUE.TIMESTAMP, strict=True
         )
-        print(f"Controller time now: {datetime.fromtimestamp(timestamp)}")
+        print(
+            f"Controller time now: {datetime.fromtimestamp(timestamp, tz=timezone.utc).ctime()}"
+        )
         return 0
 
     async def async_export_data_collection():

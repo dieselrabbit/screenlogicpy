@@ -302,7 +302,7 @@ class TestCLI:
     @pytest.mark.parametrize(
         "arguments, return_code, expected_output",
         [
-            ("get date-time", 0, "2023-11-20 14:06:09"),
+            ("get date-time", 0, "Mon Nov 20 14:06:09 2023"),
             (
                 "-v get dt -f %I:%M%p",
                 0,
@@ -313,12 +313,12 @@ class TestCLI:
             (
                 "set date-time --date-time 2023-11-12T16:24:00",
                 0,
-                "Controller time now: 2023-11-20 14:06:09",
+                "Controller time now: Mon Nov 20 14:06:09 2023",
             ),
             (
                 "set date-time",
                 0,
-                "Controller time now: 2023-11-20 14:06:09",
+                "Controller time now: Mon Nov 20 14:06:09 2023",
             ),
         ],
     )

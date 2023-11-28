@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import struct
 import sys
 from typing import Any
@@ -94,7 +94,9 @@ def encodeMessageTime(time_to_encode: datetime):
 
 def decodeMessageTime(data: bytes) -> datetime:
     year, month, _, day, hour, minute, second, millisecond = struct.unpack("<8H", data)
-    return datetime(year, month, day, hour, minute, second, millisecond * 1000)
+    return datetime(
+        year, month, day, hour, minute, second, millisecond * 1000, tzinfo=timezone.utc
+    )
 
 
 def getSome(format, buff, offset) -> tuple[Any, int]:
@@ -136,7 +138,9 @@ def getTime(buff: bytes, offset: int) -> tuple[datetime, int]:
     )
     new_offset = offset + struct.calcsize(fmt)
     return (
-        datetime(year, month, day, hour, minute, second, millisecond * 1000),
+        datetime(
+            year, month, day, hour, minute, second, millisecond * 1000, timezone.utc
+        ),
         new_offset,
     )
 
