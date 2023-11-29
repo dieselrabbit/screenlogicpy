@@ -1,6 +1,5 @@
 """Discovery for screenlogic gateways."""
 import asyncio
-import ipaddress
 import logging
 import socket
 import struct
@@ -13,8 +12,9 @@ from .const.common import (  # pylint: disable=relative-beyond-top-level
     SL_GATEWAY_TYPE,
     ScreenLogicError,
 )
+from .requests.utility import getSome
 
-DISCOVERY_PAYLOAD = struct.pack("<bbbbbbbb", 1, 0, 0, 0, 0, 0, 0, 0)
+DISCOVERY_PAYLOAD = struct.pack("<8b", 1, 0, 0, 0, 0, 0, 0, 0)
 DISCOVERY_RESPONSE_FORMAT = "<I4BH2B"
 DISCOVERY_RESPONSE_SIZE = struct.calcsize(DISCOVERY_RESPONSE_FORMAT)
 DISCOVERY_ADDRESS = "255.255.255.255"
@@ -36,43 +36,28 @@ def create_broadcast_socket():
 
 def process_discovery_response(data):
     """Process a discovery response."""
-    try:
-        paddedfmt = (
-            DISCOVERY_RESPONSE_FORMAT + str(len(data) - DISCOVERY_RESPONSE_SIZE) + "s"
+
+    chk, offset = getSome("I", data, 0)
+
+    if chk != DISCOVERY_CHKSUM:
+        raise ScreenLogicError(
+            f"ScreenLogic Discovery: Unexpected response checksum: '{chk}'"
         )
-        (
-            chk,
-            ip1,
-            ip2,
-            ip3,
-            ip4,
-            gateway_port,
-            gateway_type,
-            gateway_subtype,
-            gateway_name,
-        ) = struct.unpack(paddedfmt, data)
 
-        # not sure we need to check if "chk" isn't what we wanted.
-        if chk != DISCOVERY_CHKSUM:
-            raise ScreenLogicError(
-                "ScreenLogic Discovery: Unexpected response checksum."
-            )
+    ip1, offset = getSome("B", data, offset)
+    ip2, offset = getSome("B", data, offset)
+    ip3, offset = getSome("B", data, offset)
+    ip4, offset = getSome("B", data, offset)
 
-        # make sure we got a good IP address
-        received_ip = f"{str(ip1)}.{str(ip2)}.{str(ip3)}.{str(ip4)}"
-        gateway_ip = str(ipaddress.ip_address(received_ip))
-    except ValueError as err:
-        raise ScreenLogicError(
-            "ScreenLogic Discovery: Got an invalid IP address from the gateway."
-        ) from err
-    except NameError as err:
-        raise ScreenLogicError(
-            "ScreenLogic Discovery: Received garbage from the gateway."
-        ) from err
-    except Exception as err:
-        raise ScreenLogicError(
-            "ScreenLogic Discovery: Couldn't get an IP address for the gateway."
-        ) from err
+    gateway_ip = f"{str(ip1)}.{str(ip2)}.{str(ip3)}.{str(ip4)}"
+
+    gateway_port, offset = getSome("H", data, offset)
+
+    gateway_type, offset = getSome("B", data, offset)
+
+    gateway_subtype, offset = getSome("B", data, offset)
+
+    gateway_name, offset = getSome(f"{len(data) - offset}s", data, offset)
 
     return {
         SL_GATEWAY_IP: gateway_ip,

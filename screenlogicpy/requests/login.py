@@ -3,7 +3,7 @@ import logging
 import struct
 from typing import Callable
 
-from ..const import ScreenLogicError, ScreenLogicRequestError
+from ..const.common import ScreenLogicConnectionError
 from ..const.msg import CODE, COM_MAX_RETRIES, COM_TIMEOUT
 from .protocol import ScreenLogicProtocol
 from .request import async_make_request
@@ -22,19 +22,6 @@ def create_login_message() -> bytes:
     passwd = encodeMessageString(password)
     fmt = f"<II{len(clientVersion)}s{len(passwd)}sxI"
     return struct.pack(fmt, schema, connectionType, clientVersion, passwd, pid)
-
-
-def create_local_login_message() -> bytes:
-    schema = 348
-    connectionType = 0
-    clientVersion = encodeMessageString("Local Config")
-    passwdPayload = b"\x10\x00\x00\x00\x48\x9e\x60\x3a\xc3\x1d\xb9\xb1\x0c\xc1\x4a\x37\x50\x97\xa8\x22"
-    mac = encodeMessageString("00-00-00-00-00-00")
-    pid = 2
-    fmt = f"<II{len(clientVersion)}s{len(passwdPayload)}sI{len(mac)}sI"
-    return struct.pack(
-        fmt, schema, connectionType, clientVersion, passwdPayload, pid, mac, 0
-    )
 
 
 async def async_get_mac_address(
@@ -64,12 +51,12 @@ async def async_create_connection(
             )
     except asyncio.TimeoutError as to_ex:
         _LOGGER.debug("Timeout attempting to connect to host")
-        raise ScreenLogicError(
+        raise ScreenLogicConnectionError(
             f"Failed to connect to host at {gateway_ip}:{gateway_port}"
         ) from to_ex
     except OSError as os_ex:
         _LOGGER.debug(f"Error attempting to connect to host: {str(os_ex)}")
-        raise ScreenLogicError(
+        raise ScreenLogicConnectionError(
             f"Failed to connect to host at {gateway_ip}:{gateway_port}"
         ) from os_ex
 
@@ -83,37 +70,29 @@ async def async_gateway_connect(
         _LOGGER.debug("Pinging protocol adapter")
         transport.write(connectString)
     except Exception as ex:
-        raise ScreenLogicError("Error sending connect ping") from ex
+        raise ScreenLogicConnectionError("Error sending connect ping") from ex
 
     await asyncio.sleep(0.25)
     if not protocol.is_connected:
-        raise ScreenLogicError("Host unexpectedly disconnected.")
+        raise ScreenLogicConnectionError("Host unexpectedly disconnected.")
 
     _LOGGER.debug("Sending challenge")
-    try:
-        # mac address
-        return decodeMessageString(
-            await async_make_request(
-                protocol, CODE.CHALLENGE_QUERY, max_retries=max_retries
-            )
+    # mac address
+    return decodeMessageString(
+        await async_make_request(
+            protocol, CODE.CHALLENGE_QUERY, max_retries=max_retries
         )
-    except ScreenLogicRequestError as re:
-        raise ScreenLogicError(
-            f"Host failed to respond to challenge: : {re.msg}"
-        ) from re
+    )
 
 
 async def async_gateway_login(protocol: ScreenLogicProtocol, max_retries: int) -> bool:
     _LOGGER.debug("Logging in")
-    try:
-        return (
-            await async_make_request(
-                protocol, CODE.LOCALLOGIN_QUERY, create_login_message(), max_retries
-            )
-            is not None
+    return (
+        await async_make_request(
+            protocol, CODE.LOCALLOGIN_QUERY, create_login_message(), max_retries
         )
-    except ScreenLogicRequestError as re:
-        raise ScreenLogicError(f"Failed to logon to gateway: {re.msg}") from re
+        is not None
+    )
 
 
 async def async_connect_to_gateway(

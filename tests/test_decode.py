@@ -1,6 +1,6 @@
-from dataclasses import astuple
 import pytest
 
+from screenlogicpy.data import ScreenLogicResponseCollection
 from screenlogicpy.requests.config import decode_pool_config
 from screenlogicpy.requests.status import decode_pool_status
 from screenlogicpy.requests.pump import decode_pump_status
@@ -9,94 +9,71 @@ from screenlogicpy.requests.scg import decode_scg_config
 from screenlogicpy.requests.utility import makeMessage, takeMessages
 from screenlogicpy.requests.gateway import decode_version
 
-from .data_sets import TEST_DATA_COLLECTIONS, TESTING_DATA_COLLECTION as TDC
+from tests.conftest import load_response_collections
 
 
-@pytest.mark.parametrize(
-    "buffer, expected",
-    [astuple(col.version) for col in TEST_DATA_COLLECTIONS if col.version],
-)
-def test_decode_version(buffer, expected):
-    data = {}
-    decode_version(buffer, data)
-
-    assert data == expected
+def get_rc_id(rc_tup: tuple[str, ScreenLogicResponseCollection]):
+    return rc_tup[0]
 
 
-@pytest.mark.parametrize(
-    "buffer, expected",
-    [astuple(col.config) for col in TEST_DATA_COLLECTIONS if col.config],
-)
-def test_decode_config(buffer, expected):
-    data = {}
-    decode_pool_config(buffer, data)
-
-    assert data == expected
-
-    decode_pool_config(buffer, data)
-
-    assert data == expected
+@pytest.fixture(params=load_response_collections(), ids=get_rc_id)
+def response_collection(request):
+    return request.param[1]
 
 
-@pytest.mark.parametrize(
-    "buffer, expected",
-    [astuple(col.status) for col in TEST_DATA_COLLECTIONS if col.status],
-)
-def test_decode_status(buffer, expected):
-    data = {}
-    decode_pool_status(buffer, data)
+class TestDecode:
+    def test_decode_version(self, response_collection: ScreenLogicResponseCollection):
+        data = {}
+        decode_version(response_collection.version.raw, data)
 
-    assert data == expected
+        assert data == response_collection.version.decoded
 
+    def test_decode_config(self, response_collection: ScreenLogicResponseCollection):
+        data = {}
+        decode_pool_config(response_collection.config.raw, data)
 
-@pytest.mark.parametrize(
-    "buffer, expected",
-    [astuple(pump) for col in TEST_DATA_COLLECTIONS for pump in col.pumps if col.pumps],
-)
-def test_decode_pump(buffer, expected):
-    data = {}
-    decode_pump_status(buffer, data, 0)
+        assert data == response_collection.config.decoded
 
-    assert data == expected
+    def test_decode_status(self, response_collection: ScreenLogicResponseCollection):
+        data = {}
+        decode_pool_status(response_collection.status.raw, data)
 
+        assert data == response_collection.status.decoded
 
-@pytest.mark.parametrize(
-    "buffer, expected",
-    [astuple(col.chemistry) for col in TEST_DATA_COLLECTIONS if col.chemistry],
-)
-def test_decode_chemistry(buffer, expected):
-    data = {}
-    decode_chemistry(buffer, data)
+    def test_decode_pump(self, response_collection: ScreenLogicResponseCollection):
+        for pump_num, pump_response in enumerate(response_collection.pumps):
+            data = {}
+            decode_pump_status(pump_response.raw, data, pump_num)
 
-    assert data == expected
+            assert data == pump_response.decoded
 
+    def test_decode_chemistry(self, response_collection: ScreenLogicResponseCollection):
+        data = {}
+        decode_chemistry(response_collection.chemistry.raw, data)
 
-@pytest.mark.parametrize(
-    "buffer, expected",
-    [astuple(col.scg) for col in TEST_DATA_COLLECTIONS if col.scg],
-)
-def test_decode_scg(buffer, expected):
-    data = {}
-    decode_scg_config(buffer, data)
+        assert data == response_collection.chemistry.decoded
 
-    assert data == expected
+    def test_decode_scg(self, response_collection: ScreenLogicResponseCollection):
+        data = {}
+        decode_scg_config(response_collection.scg.raw, data)
 
+        assert data == response_collection.scg.decoded
 
-def test_takeMessages():
-    mID1 = 27
-    mCD1 = 12593
-    mDT1 = TDC.chemistry.raw
-    mID2 = 28
-    mCD2 = 12573
-    mDT2 = TDC.scg.raw
+    def test_takeMessages(self, response_collection: ScreenLogicResponseCollection):
+        mID1 = 27
+        mCD1 = 12593
+        mDT1 = response_collection.chemistry.raw
+        mID2 = 28
+        mCD2 = 12573
+        mDT2 = response_collection.scg.raw
 
-    joined = makeMessage(mID1, mCD1, mDT1) + makeMessage(mID2, mCD2, mDT2)
-    messages = takeMessages(joined)
+        joined = makeMessage(mID1, mCD1, mDT1) + makeMessage(mID2, mCD2, mDT2)
+        messages = takeMessages(joined)
 
-    assert messages[0][0] == mID1
-    assert messages[0][1] == mCD1
-    assert messages[0][2] == mDT1
+        assert messages[0][0] == mID1
+        assert messages[0][1] == mCD1
+        assert messages[0][2] == mDT1
 
-    assert messages[1][0] == mID2
-    assert messages[1][1] == mCD2
-    assert messages[1][2] == mDT2
+        assert messages[1][0] == mID2
+        assert messages[1][1] == mCD2
+        assert messages[1][2] == mDT2

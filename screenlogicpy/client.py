@@ -4,7 +4,7 @@ import logging
 import random
 from typing import Any, Awaitable, Callable
 
-from .const.common import COM_KEEPALIVE, ScreenLogicRequestError
+from .const.common import COM_KEEPALIVE, ScreenLogicCommunicationError
 from .const.msg import (
     CODE,
     COM_MAX_RETRIES,
@@ -131,8 +131,7 @@ class ClientManager:
 
         if self.client_needed:
             _LOGGER.debug("Client needed.")
-            if not await self.async_subscribe_gateway():
-                return None
+            await self.async_subscribe_gateway()
 
         def remove_listener():
             """Remove listener callback."""
@@ -163,25 +162,23 @@ class ClientManager:
         try:
             if await async_request_ping(self._protocol, max_retries=0):
                 _LOGGER.debug("Ping successful.")
-        except ScreenLogicRequestError as re:
-            _LOGGER.warning(f"Failed to receive response to ping: {re.msg}")
+        except ScreenLogicCommunicationError as sle:
+            _LOGGER.warning(f"Failed to receive response to ping: {sle.msg}")
 
     async def _async_add_client(self):
         """Send a managed add client request."""
         _LOGGER.debug("Requesting add client")
-        return await self._async_managed_request(
-            async_request_add_client, self._client_id
-        )
+        await self._async_managed_request(async_request_add_client, self._client_id)
 
     async def _async_remove_client(self):
         """Send a unmanaged remove client request."""
         _LOGGER.debug("Requesting remove client")
         try:
-            return await async_request_remove_client(
+            await async_request_remove_client(
                 self._protocol, self._client_id, max_retries=0
             )
-        except ScreenLogicRequestError:
-            return False
+        except ScreenLogicCommunicationError:
+            pass
 
     async def async_subscribe_gateway(self) -> bool:
         """
@@ -194,14 +191,12 @@ class ClientManager:
             async with self._client_sub_unsub_lock:
                 if not self.is_client:
                     _LOGGER.debug("Subscribing gateway.")
-                    if await self._async_add_client():
-                        self._is_client = True
-                        self._protocol.enable_keepalive(self._async_ping, COM_KEEPALIVE)
-                        _LOGGER.debug(
-                            f"Gateway subscribed with client id: {self._client_id}"
-                        )
-                        return True
-                    return False
+                    await self._async_add_client()
+                    self._is_client = True
+                    self._protocol.enable_keepalive(self._async_ping, COM_KEEPALIVE)
+                    _LOGGER.debug(
+                        f"Gateway subscribed with client id: {self._client_id}"
+                    )
                 return True
 
     async def async_unsubscribe_gateway(self) -> bool:
@@ -218,5 +213,5 @@ class ClientManager:
                     self._protocol.disable_keepalive()
                     self._protocol.remove_all_async_message_callbacks()
                     _LOGGER.debug(f"Gateway unsubscribing client id: {self._client_id}")
-                    return await self._async_remove_client()
+                    await self._async_remove_client()
                 return True

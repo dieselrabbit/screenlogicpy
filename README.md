@@ -16,7 +16,8 @@ $ pip install screenlogicpy
 
 * _Changed in v0.5.0: The screenlogicpy library has moved over to using asyncio for all network I/O. Relevant methods now require the `async`/`await` syntax._
 * _New in v0.8.0: Support for Python 3.8 and 3.9 is being phased out across future releases. Version 0.8.x will be the last versions to support Python 3.8._
-* _**New in v0.9.0**: Support for Python 3.8 has been removed. Support for Python 3.9 is being phased out across future releases. Version 0.9.x will be the last versions to support Python 3.9._
+* _New in v0.9.0: Support for Python 3.8 has been removed. Support for Python 3.9 is being phased out across future releases. Version 0.9.x will be the last versions to support Python 3.9._
+* _**New in v0.10.0**: Support for Python 3.9 has been deprecated. Additionally, support for Python 3.10 is being phased out across future releases. Versions 0.10.x will be the last versions to support Python 3.10._
 
 The `ScreenLogicGateway` class is the primary interface.
 
@@ -37,11 +38,12 @@ Once instantiated, use `async_connect()` to connect and login to the ScreenLogic
 If disconnected, this method may be called without any parameters to reconnect with the previous connection info, or with new parameters to connect to a different host.
 
 ```python
-success = await gateway.async_connect("192.168.x.x")
+await gateway.async_connect("192.168.x.x")
 ```
 
 * _New in v0.5.0._  
 * _Changed in v0.7.0: `async_connect()` now accepts adapter connection info. This supports handling ip changes to the protocol adapter._
+* _**Changed in v0.10.0**: `async_connect()` no longer returns a `bool` indicating success. If the action is unsuccessful, an exception indicating the failure mode is raised._
 
 ## Polling the pool state
 
@@ -57,10 +59,12 @@ This update consists of sending requests for:
 2. Detailed information for _each_ configured pump
 3. Detailed pool chemistry information
 4. Status and settings for any configured salt chlorine generators
+5. The controller's current date and time, and auto DST settings
 
 **Warning:** This method is not rate-limited. The calling application is responsible for maintaining reasonable intervals between updates. The ScreenLogic protocol adapter may respond with an error message if too many requests are made too quickly.
 
 * _Changed in v0.5.0: This method is now an async coroutine and no longer disconnects from the protocol adapter after polling the data._
+* _**Changed in v0.10.0**: Now includes polling for information regarding the controller's date and time settings._
 
 ## Subscribing to pool state updates
 
@@ -116,6 +120,9 @@ await gateway.async_get_chemistry()
 
 # Updates the state of any configured salt chlorine generators
 await gateway.async_get_scg()
+
+# Updates the current pool controller time and Daylight Saving Time adjustments setting
+await gateway.async_get_datetime()
 ```
 
 Push subscriptions and polling of all or specific data can be used on their own or at the same time.  
@@ -227,89 +234,96 @@ The following actions can be performed with methods on the `ScreenLogicGateway` 
 * Set a heating mode for a specific body of water (spa/pool)
 * Set a target heating temperature for a specific body of water (spa/pool)
 * Select various color-enabled lighting options
-* Set the chlorinator output levels
+* Set chlorinator output levels and super-chlorination values
 * Setting IntelliChem chemistry values
+* Setting the pool controller's system date and time
 
-Each method will `return True` if the operation reported no exceptions.
+If the action is unsuccessful, an exception will be raised indicating the failure mode.
 **Note:** The methods do not confirm the requested action is now in effect on the pool controller.
+
+* _**Changed in v0.10.0**: Actions no longer return a `bool` indicating success. If the action is unsuccessful, an exception is raised indicating the failure mode._
 
 ## Turning a circuit ON or OFF
 
-A circuit can be requested to be turned on or off with the `async_set_circuit()` method. `async_set_circuit` takes two required arguments, `circuitID` which is the id number of the circuit as an `int`, and `circuitState` which represents the desired new state of the circuit, as an `int`. See [Circuit State](#circuit-state) below.
+A circuit can be requested to be turned on or off with the `async_set_circuit()` method. `async_set_circuit` takes two required arguments, `circuitID` which is the id number of the circuit as an `int`, and `circuitState` which represents the desired new state of the circuit, as an `int`. See [State](#state) below.
 
 ```python
-success = await gateway.async_set_circuit(circuitID, circuitState)
+await gateway.async_set_circuit(circuitID, circuitState)
 ```
 
 * _Changed in v0.5.0: This method is now an async coroutine._
+* _**Changed in v0.10.0**: No longer returns a `bool` indicating success. If the action is unsuccessful, an exception is raised indicating the failure mode._
 
 ## Setting a heating mode
 
 The desired heating mode can be set per body of water (pool or spa) with `async_set_heat_mode()`. `async_set_heat_mode` takes two required arguments, `body` as an `int` representing the [body of water](#body), and `mode` as an `int` of the desired [heating mode](#heat-modes).
 
 ```python
-success = await gateway.async_set_heat_mode(body, mode)
+await gateway.async_set_heat_mode(body, mode)
 ```
 
 * _Changed in v0.5.0: This method is now an async coroutine._
+* _**Changed in v0.10.0**: No longer returns a `bool` indicating success. If the action is unsuccessful, an exception is raised indicating the failure mode._
 
 ## Setting a target temperature
 
 The target heating temperature can be set per body of water (pool or spa) with `async_set_heat_temp()`. `async_set_heat_temp` takes two required arguments, `body` as an `int` representing the [body of water](#body), and `temp` as an `int` of the desired target temperature.
 
 ```python
-success = await gateway.async_set_heat_temp(body, temp)
+await gateway.async_set_heat_temp(body, temp)
 ```
 
-_Changed in v0.5.0: This method is now an async coroutine._
+* _Changed in v0.5.0: This method is now an async coroutine._
+* _**Changed in v0.10.0**: No longer returns a `bool` indicating success. If the action is unsuccessful, an exception is raised indicating the failure mode._
   
 ## Setting light colors or shows
 
 Colors or color-shows can be set for compatible color-enable lighting with `async_set_color_lights()`. `async_set_color_lights` takes one required argument, `light_command` as an `int` representing the desired [command/show/color](#color-modes)
 
 ```python
-success = await gateway.async_set_color_lights(light_command)
+await gateway.async_set_color_lights(light_command)
 ```
 
 * _Changed in v0.5.0: This method is now an async coroutine._
+* _**Changed in v0.10.0**: No longer returns a `bool` indicating success. If the action is unsuccessful, an exception is raised indicating the failure mode._
 
-## Setting chlorinator output levels
+## Setting chlorinator output levels, super chlorination
 
-Chlorinator output levels can be set with `async_set_scg_config()`.  `async_set_scg_config` takes two `int` arguments, `pool_output` and `spa_output`.
+Chlorinator output levels can be set with `async_set_scg_config()`.  `async_set_scg_config` takes up to four keyword arguments, `pool_setpoint`, `spa_setpoint`, `super_chlorinate`, and `super_chlor_timer`. All are `int` with `super_chlorinate` representing an ON or OFF state. See [State](#state) below.
 
 ```python
-success = await gateway.async_set_scg_config(pool_output, spa_output)  
+await gateway.async_set_scg_config(pool_setpoint=pool_output, spa_setpoint=spa_output)  
 ```
 
 * _New in v0.5.0._
+* _**Changed in v0.10.0**:_
+  * _Added `super_chlorinate`, and `super_chlor_timer` parameters to control super chlorination functions._
+  * _Now accepts keyword arguments only. This allows the caller to specify only the value(s) they want to update, retaining all other existing values._
+  * _No longer returns a `bool` indicating success. If the action is unsuccessful, an exception is raised indicating the failure mode._
 
-## Setting IntelliChem Chemistry values
+## Setting IntelliChem chemistry values
 
-Chemistry values used in the IntelliChem system can be set with `async_set_chem_data()`. `async_set_chem_data` takes six arguments, `ph_setpoint`, `orp_setpoint`, `calcium`, `alkalinity`, `cyanuric`, and `salt`.  `ph_setpoint` is a `float` and the rest are `int`.
-
-```python
-success = await gateway.async_set_chem_data(ph_setpoint, orp_setpoint, calcium, alkalinity, cyanuric, salt)
-```
-
-Currently all values are required, even if you only want to change one of them. For this reason, it is recommended that the calling code gathers all the current values first, then updates whichever value(s) are desired before calling `async_set_chem_data()`.
+Chemistry values used in the IntelliChem system can be set with `async_set_chem_data()`. `async_set_chem_data` takes up to six keyword arguments, `ph_setpoint`, `orp_setpoint`, `calcium_hardness`, `total_alkalinity`, `cyanuric_acid`, and `salt_tds_ppm`. `ph_setpoint` is a `float` and the rest are `int`.
 
 ```python
-chem_data = gateway.get_data()[DATA.KEY_CHEMISTRY]
-ph = chem_data["ph_setpoint"]["value"]
-orp = chem_data["orp_setpoint"]["value"]
-ch = chem_data["calcium_harness"]["value"]
-ta = chem_data["total_alkalinity"]["value"]
-ca = chem_data["cya"]["value"]
-sa = chem_data["salt_tds_ppm"]["value"]
-
-ph = ...  # Code to update any of the values
-
-success = await gateway.async_set_chem_data(ph, orp, ch, ta, ca, sa)
+await gateway.async_set_chem_data(ph_setpoint=ph, orp_setpoint=orp, calcium_hardness=cal, total_alkalinity=alk, cyanuric_acid=cya, salt_tds_ppm=salt)
 ```
-
-**Note:** Only `ph_setpoint` and `orp_setpoint` are settable through the command line.
 
 * _New in v0.6.0._
+* _**Changed in v0.10.0**:_
+  * _Added `calcium_hardness`, `total_alkalinity`, `cyanuric_acid`, and `salt_tds_ppm` parameters._
+  * _Now accepts keyword arguments only. This allows the caller to specify only the value(s) they want to update, retaining all other existing values._
+  * _No longer returns a `bool` indicating success. If the action is unsuccessful, an exception is raised indicating the failure mode._
+
+## Setting controller date and time
+
+The system date and time in the pool controller can be set with `async_set_date_time()`. Method takes up to two keyword arguments, `date_time` as a python `datetime` object and `auto_dst` as an `int` representing an ON or OFF state. See [State](#state) below.
+
+```python
+await gateway.async_set_date_time(date_time=datetime.now(), auto_dst=set_dst)
+```
+
+* _**New in v0.10.0.**_
 
 ## Handling unsolicited messages
 
@@ -410,7 +424,7 @@ Spa Heat Mode: Heater
 ## Argument usage
 
 ```text
-screenlogicpy [-h] [-v] [-i IP] [-p PORT] {discover,get,set} ...
+screenlogicpy [-h] [-v] [-i IP] [-p PORT] {discover,export,get,set} ...
 ```
 
 ## Optional arguments
@@ -451,6 +465,14 @@ screenlogicpy discover
 Attempts to discover ScreenLogic protocol adapters on the local network via UDP broadcast. Returns `[ip address]:[port]` of each discovered ScreenLogic protocol adapter, one per line.  
 **Note:** Discovery is limited to finding protocol adapters on the same subnet as the host running `screenlogicpy`.
 
+### `export`
+
+```shell
+screenlogicpy export
+```
+
+Exports a response collection saved as a JSON file that can be used for debugging/testing purposes. A response collection includes each controller response with both the original `bytes` data along with a decoded `dict` of that data, and all data merged into a complete `dict` as it would be in the `ScreenLogicGateway`. JSON file is named for "slpy[libversion]\_[adapter-firmware]\_[controller-model]\_[equipment-flags].json".
+
 ### `get`
 
 ```shell
@@ -462,7 +484,7 @@ The get option is use with additional options to return the current state of the
 #### get `circuit, c`
 
 ```shell
-screenlogicpy get circuit [circuit number]
+screenlogicpy get circuit CIRCUIT_NUM
 ```
 
 Returns 1 for on and 0 for off
@@ -470,38 +492,58 @@ Returns 1 for on and 0 for off
 #### get `heat-mode, hm`
 
 ```shell
-screenlogicpy get heat-mode [body]
+screenlogicpy get heat-mode BODY
 ```
 
 Returns the current heating mode for the specified body of water.  
-**Note:** `[body]` can be an `int` or `string` representing the [body of water](#body).
+**Note:** `BODY` can be an `int` or `string` representing the [body of water](#body).
 
 #### get `heat-temp, ht`
 
 ```shell
-screenlogicpy get heat-temp [body]
+screenlogicpy get heat-temp BODY
 ```
 
 Returns the current target heating temperature for the specified body of water.  
-**Note:** `[body]` can be an `int` or `string` representing the [body of water](#body).
+**Note:** `BODY` can be an `int` or `string` representing the [body of water](#body).
 
 #### get `heat-state, hs`
 
 ```shell
-screenlogicpy get heat-state [body]
+screenlogicpy get heat-state BODY
 ```
 
 Returns the current state of the heater for the specified body of water. The current state will match the heat mode when heating is active, otherwise will be 0 (off).  
-**Note:** `[body]` can be an `int` or `string` representing the [body of water](#body).
+**Note:** `BODY` can be an `int` or `string` representing the [body of water](#body).
 
 #### get `current-temp, t`
 
 ```shell
-screenlogicpy get current-temp [body]
+screenlogicpy get current-temp BODY
 ```
 
 Returns the current temperature for the specified body of water. This is actually the last-known temperature from when that body of water was active (Pool or Spa)  
-**Note:** `[body]` can be an `int` or `string` representing the [body of water](#body).
+**Note:** `BODY` can be an `int` or `string` representing the [body of water](#body).
+
+#### get `date-time, dt`
+
+```shell
+screenlogicpy get date-time [--format FORMAT]
+```
+
+Returns the pool controller's internal date and time in ISO 8601 format. Use the optional argument to specify a format string.
+
+##### get date-time `--format, -f`
+
+Specify a format string for the returned `datetime` to be formatted with.
+
+#### get `auto-dst, dst`
+
+```shell
+screenlogicpy get auto-dst
+```
+
+Returns the value of the pool controller's "Adjust for Daylight Savings Time" setting.
 
 #### get `json, j`
 
@@ -514,7 +556,7 @@ Returns a json dump of all data cached in the data `dict`.
 ### `set`
 
 ```shell
-screenlogicpy set {circuit,c,color-lights,cl,heat-mode,hm,heat-temp,ht} ...
+screenlogicpy set {circuit,c,color-lights,cl,heat-mode,hm,heat-temp,ht,salt-generator,scg,super-chlorinate,sc,chemistry-setpoint,cs,chemistry-value,cv,date-time,dt} ...
 ```
 
 All `set` commands work like their corresponding `get` commands, but take an additional argument or arguments for the desired setting.
@@ -522,29 +564,29 @@ All `set` commands work like their corresponding `get` commands, but take an add
 #### set `circuit, c`
 
 ```shell
-screenlogicpy set circuit [circuit number] [circuit state]
+screenlogicpy set circuit CIRCUIT_NUM STATE
 ```
 
 Sets the specified circuit to the specified circuit state.  
-**Note:** `[circuit state]` can be an `int` or `string` representing the desired [circuit state](#circuit-state).
+**Note:** `STATE` can be an `int` or `string` representing the desired [state](#state).
 
 #### set `heat-mode, hm`
 
 ```shell
-screenlogicpy set heat-mode [body] [heat mode]
+screenlogicpy set heat-mode BODY MODE
 ```
 
 Sets the desired heating mode for the specified body of water.  
-**Note:** `[body]` can be an `int` or `string` representing the [body of water](#body). `[heat mode]` can be an `int` or `string` representing the desired [heat mode](#heat-modes)
+**Note:** `BODY` can be an `int` or `string` representing the [body of water](#body). `MODE` can be an `int` or `string` representing the desired [heat mode](#heat-modes)
 
 #### set `heat-temp, ht`
 
 ```shell
-screenlogicpy set heat-temp [body] [heat temp]
+screenlogicpy set heat-temp BODY TEMP
 ```
 
 Sets the desired target heating temperature for the specified body of water.  
-**Note:** `[body]` can be an `int` or `string` representing the [body of water](#body). `[heat temp]` is an `int` representing the desired target temperature.
+**Note:** `BODY` can be an `int` or `string` representing the [body of water](#body). `TEMP` is an `int` representing the desired target temperature.
 
 #### set `color-lights, cl`
 
@@ -560,28 +602,109 @@ Sets a color mode for all color-capable lights configured on the pool controller
 #### set `salt-generator, scg`
 
 ```shell
-screenlogicpy set salt-generator [pool_pct] [spa_pct]
+screenlogicpy set salt-generator [--pool POOL_PCT] [--spa SPA_PCT]
 ```
 
-Sets the chlorinator output levels for the pool and spa. Pentair treats spa output level as a percentage of the pool's output level.  
-**Note:** `[pool_pct]` can be an `int` between `0`-`100`, or `*` to keep the current value. `[spa_pct]` can be an `int` between `0`-`100`, or `*` to keep the current value.
+Sets the chlorinator output levels for the pool and/or spa via two optional arguments:
+
+##### set salt-generator `-p, --pool`
+
+Specify the output level for the pool as an `int` between `0`-`100`.
+
+##### set salt-generator `-s, --spa`
+
+Specify the output level for the spa as an `int` between `0`-`100`.
+
+**Note:** Pentair treats spa output level as a percentage of the pool's output level.
 
 * _New in v0.5.0._
+* _**Changed in v0.10.0:** Pool and spa arguments are now optional. Users may specify one or the other, or both._
 
-#### set `chem-data, ch`
+#### set `super-chlorinate, sc`
 
 ```shell
-screenlogicpy set chem-data [ph_setpoint] [orp_setpoint]
+screenlogicpy set super-chlorinate [--state ON_OFF] [--time HOURS]
 ```
 
-Sets the pH and/or ORP set points for the IntelliChem system.  
-**Note:** `[ph_setpoint]` can be a `float` between `7.2`-`7.6`, or `*` to keep the current value. `[orp_setpoint]` can be an `int` between `400`-`800`, or `*` to keep the current value.
+Enables or disables super chlorination for the specified amount of time via two option arguments:
 
-* _New in v0.6.0._
+##### set super-chlorinate `-s, --state`
+
+Specify a new state for super chlorination as an `int` or `string` representing the desired [state](#state).
+
+#### set super-chlorinate `-t, --time`
+
+Specify the number of hours to run super chlorination for as an `int` between `1`-`72`.
+
+* _**New in v0.10.0.**_
+
+#### set `chemistry-setpoint, cs`
+
+```shell
+screenlogicpy set chemistry-setpoint [--ph PH] [--orp ORP]
+```
+
+Sets the pH and/or ORP set points for the IntelliChem system via two optional arguments:
+
+##### set chemistry-setpoint `-p, --ph`
+
+Specify the target pH value for Intellichem to maintain as a `float` between `7.2`-`7.6`.
+
+##### set chemistry-setpoint `-o, --orp`
+
+Specify the target ORP value for Intellichem to maintain as an `int` between `400`-`800`.
+
+**Note:** `chemistry-setpoint` replaces the previous chem-data.
+
+* _**New in v0.10.0.**_
+
+#### set `chemistry-value, cv`
+
+```shell
+screenlogicpy set chemistry-value [--calcium-hardness CALCIUM] [--total-alkalinity TA] [--cyanuric-acid CYA] [--total-dissolved-solids TDS]
+```
+
+Sets values used in the calculation of Saturation Index in the IntelliChem system via four optional arguments:
+
+##### set chemistry-value `-ch, --calcium-hardness`
+
+Specify the calcium hardness value for Saturation Index calculation as an `int` between `25`-`800`.
+
+##### set chemistry-value `-ta, --total-alkalinity`
+
+Specify the total alkalinity value for Saturation Index calculation as an `int` between `25`-`800`.
+
+##### set chemistry-value `-cya, --cyanuric-acid`
+
+Specify the cyanuric acid value for Saturation Index calculation as an `int` between `0`-`201`.
+
+##### set chemistry-value `-tds, --total-dissolved-solids`
+
+Specify the total dissolved solids value for Saturation Index calculation as an `int` between `500`-`6500`.
+
+* _**New in v0.10.0.**_
+
+#### set `date-time, dt`
+
+```shell
+screenlogicpy set date-time [--date-time ISO_8601] [--auto-dst ON_OFF]
+```
+
+Sets the date and time on the pool controller (used in schedules), and the "Adjust for DST" setting via optional arguments:
+
+##### set date-time `-dt, --date-time`
+
+Specify a date and time with an ISO 8601 formatted `string`. **Note:** `string` must not contain spaces. Use the 'T' character between the date and the time (`2023-11-12T16:24:00`).
+
+##### set date-time `-dst, --auto-dst`
+
+Enable or disable automatic adjustment of system time for Daylight Saving Time as an `int` or `string` representing the desired [state](#state).
+
+* _**New in v0.10.0.**_
 
 # Reference
 
-## Circuit State
+## State
 
 | `int` | `string` | Name |
 | ----- | -------- | ---- |
@@ -604,7 +727,6 @@ Sets the pH and/or ORP set points for the IntelliChem system.
 | `2`   | `solar_preferred` | Solar Preferred | Heating will use solar if available to achieve the desired temperature set point, otherwise it will use the heater. |
 | `3`   | `heater`          | Heater          | Heating will use the heater to achieve the desired temperature set point.                                           |
 | `4`   | `dont_change`     | Don't Change    | Don't change the heating mode based on circuit or function changes.                                                 |
-
 
 ## Color Modes
 
@@ -635,22 +757,22 @@ Sets the pH and/or ORP set points for the IntelliChem system.
 
 ## Supported Subscribable Messages
 
-`screenlogicpy` includes functionality to automatically decode these messages and update it's data accordingly. Other message codes can be subscribed to, but the consuming application will need to implement any processing of the incoming message.
+`screenlogicpy` includes functionality to automatically decode these messages and update its data accordingly. Other message codes can be subscribed to, but the consuming application will need to implement any processing of the incoming message.
 
 ```python
 from screenlogicpy.const import CODE
 ```
 
-|Message Code|Imported CONST|Description|
-|------------|--------------|-----------|
-|`12500`|`CODE.STATUS_CHANGED`|Sent when basic status changes. Air/water temp, heater state, circuit state, basic chemistry (if available).|
-|`12504`|`CODE.COLOR_UPDATE`|Sent repeatedly during a color lights color mode transition.|
-|`12505`|`CODE.CHEMISTRY_CHANGED`|Sent when a change occurs to the state of an attached IntelliChem controller.|
+| Message Code | Imported CONST          | Description                                                                                                 |
+|--------------|-------------------------|-------------------------------------------------------------------------------------------------------------|
+| `12500`      | `CODE.STATUS_CHANGED`   | Sent when basic status changes. Air/water temp, heater state, circuit state, basic chemistry (if available).|
+| `12504`      | `CODE.COLOR_UPDATE`     | Sent repeatedly during a color lights color mode transition.                                                |
+| `12505`      | `CODE.CHEMISTRY_CHANGED`| Sent when a change occurs to the state of an attached IntelliChem controller.                               |
 
 ---
 
 ## Acknowledgements
 
-Inspired by https://github.com/keithpjolley/soipip
+Inspired by [https://github.com/keithpjolley/soipip](https://github.com/keithpjolley/soipip)
 
-The protocol and codes are documented fairly well here: https://github.com/ceisenach/screenlogic_over_ip
+The protocol and codes are documented fairly well here: [https://github.com/ceisenach/screenlogic_over_ip](https://github.com/ceisenach/screenlogic_over_ip)

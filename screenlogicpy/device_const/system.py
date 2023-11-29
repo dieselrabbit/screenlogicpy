@@ -49,7 +49,8 @@ class CONTROLLER_STATE(SLIntEnum):
     SERVICE = 3
 
 
-EQUIPMENT_MASK = 0x1FFFF
+# Only lower half of equipment int is valid on build 736.0
+EQUIPMENT_MASK_736 = 0xFFFF
 
 
 class EQUIPMENT_FLAG(IntFlag):

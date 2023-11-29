@@ -1,18 +1,20 @@
 # import json
 import struct
 
-from ..const.msg import CODE
 from ..const.common import (
     DEVICE_TYPE,
     ON_OFF,
     STATE_TYPE,
     UNIT,
+    ScreenLogicResponseError,
 )
 from ..const.data import ATTR, DEVICE, GROUP, VALUE, UNKNOWN
+from ..const.msg import CODE
 from ..device_const.chemistry import (
     ALARM_FLAG,
     ALERT_FLAG,
     BALANCE_FLAG,
+    CHEM_RANGE,
     DOSE_MASK,
     DOSE_STATE,
 )
@@ -66,6 +68,8 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
         ATTR.NAME: "pH Setpoint",
         ATTR.VALUE: (pHSetpoint / 100),
         ATTR.UNIT: UNIT.PH,
+        ATTR.MIN_SETPOINT: CHEM_RANGE.PH_SETPOINT.minimum,
+        ATTR.MAX_SETPOINT: CHEM_RANGE.PH_SETPOINT.maximum,
     }
 
     orpSetpoint, offset = getSome(">H", buff, offset)  # 11
@@ -73,6 +77,8 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
         ATTR.NAME: "ORP Setpoint",
         ATTR.VALUE: orpSetpoint,
         ATTR.UNIT: UNIT.MILLIVOLT,
+        ATTR.MIN_SETPOINT: CHEM_RANGE.ORP_SETPOINT.minimum,
+        ATTR.MAX_SETPOINT: CHEM_RANGE.ORP_SETPOINT.maximum,
     }
 
     intellichem_dosing: dict = intellichem.setdefault(GROUP.DOSE_STATUS, {})
@@ -136,10 +142,12 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
     }
 
     cal, offset = getSome(">H", buff, offset)  # 28
-    intellichem_config[VALUE.CALCIUM_HARNESS] = {
+    intellichem_config[VALUE.CALCIUM_HARDNESS] = {
         ATTR.NAME: "Calcium Hardness",
         ATTR.VALUE: cal,
         ATTR.UNIT: UNIT.PARTS_PER_MILLION,
+        ATTR.MIN_SETPOINT: CHEM_RANGE.CALCIUM_HARDNESS.minimum,
+        ATTR.MAX_SETPOINT: CHEM_RANGE.CALCIUM_HARDNESS.maximum,
     }
 
     cya, offset = getSome(">H", buff, offset)  # 30
@@ -147,6 +155,8 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
         ATTR.NAME: "Cyanuric Acid",
         ATTR.VALUE: cya,
         ATTR.UNIT: UNIT.PARTS_PER_MILLION,
+        ATTR.MIN_SETPOINT: CHEM_RANGE.CYANURIC_ACID.minimum,
+        ATTR.MAX_SETPOINT: CHEM_RANGE.CYANURIC_ACID.maximum,
     }
 
     alk, offset = getSome(">H", buff, offset)  # 32
@@ -154,6 +164,8 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
         ATTR.NAME: "Total Alkalinity",
         ATTR.VALUE: alk,
         ATTR.UNIT: UNIT.PARTS_PER_MILLION,
+        ATTR.MIN_SETPOINT: CHEM_RANGE.TOTAL_ALKALINITY.minimum,
+        ATTR.MAX_SETPOINT: CHEM_RANGE.TOTAL_ALKALINITY.maximum,
     }
 
     saltPPM, offset = getSome("B", buff, offset)  # 34
@@ -161,6 +173,8 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
         ATTR.NAME: "Salt/TDS",
         ATTR.VALUE: (saltPPM * 50),
         ATTR.UNIT: UNIT.PARTS_PER_MILLION,
+        ATTR.MIN_SETPOINT: CHEM_RANGE.SALT_TDS.minimum,
+        ATTR.MAX_SETPOINT: CHEM_RANGE.SALT_TDS.maximum,
     }
 
     # Probe temp unit is Celsius?
@@ -186,42 +200,42 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
 
     intellichem_alarm[VALUE.FLOW_ALARM] = {
         ATTR.NAME: "Flow Alarm",
-        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM_FLAG.FLOW),
+        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM_FLAG.FLOW).value,
         ATTR.DEVICE_TYPE: DEVICE_TYPE.ALARM,
     }
     intellichem_alarm[VALUE.PH_HIGH_ALARM] = {
         ATTR.NAME: "pH HIGH Alarm",
-        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM_FLAG.PH_HIGH),
+        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM_FLAG.PH_HIGH).value,
         ATTR.DEVICE_TYPE: DEVICE_TYPE.ALARM,
     }
     intellichem_alarm[VALUE.PH_LOW_ALARM] = {
         ATTR.NAME: "pH LOW Alarm",
-        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM_FLAG.PH_LOW),
+        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM_FLAG.PH_LOW).value,
         ATTR.DEVICE_TYPE: DEVICE_TYPE.ALARM,
     }
     intellichem_alarm[VALUE.ORP_HIGH_ALARM] = {
         ATTR.NAME: "ORP HIGH Alarm",
-        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM_FLAG.ORP_HIGH),
+        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM_FLAG.ORP_HIGH).value,
         ATTR.DEVICE_TYPE: DEVICE_TYPE.ALARM,
     }
     intellichem_alarm[VALUE.ORP_LOW_ALARM] = {
         ATTR.NAME: "ORP LOW Alarm",
-        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM_FLAG.ORP_LOW),
+        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM_FLAG.ORP_LOW).value,
         ATTR.DEVICE_TYPE: DEVICE_TYPE.ALARM,
     }
     intellichem_alarm[VALUE.PH_SUPPLY_ALARM] = {
         ATTR.NAME: "pH Supply Alarm",
-        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM_FLAG.PH_SUPPLY),
+        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM_FLAG.PH_SUPPLY).value,
         ATTR.DEVICE_TYPE: DEVICE_TYPE.ALARM,
     }
     intellichem_alarm[VALUE.ORP_SUPPLY_ALARM] = {
         ATTR.NAME: "ORP Supply Alarm",
-        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM_FLAG.ORP_SUPPLY),
+        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM_FLAG.ORP_SUPPLY).value,
         ATTR.DEVICE_TYPE: DEVICE_TYPE.ALARM,
     }
     intellichem_alarm[VALUE.PROBE_FAULT_ALARM] = {
         ATTR.NAME: "Probe Fault",
-        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM_FLAG.PROBE_FAULT),
+        ATTR.VALUE: ON_OFF.from_bool(alarms & ALARM_FLAG.PROBE_FAULT).value,
         ATTR.DEVICE_TYPE: DEVICE_TYPE.ALARM,
     }
 
@@ -232,15 +246,15 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
 
     intellichem_alert[VALUE.PH_LOCKOUT] = {
         ATTR.NAME: "pH Lockout",
-        ATTR.VALUE: ON_OFF.from_bool(alerts & ALERT_FLAG.PH_LOCKOUT),
+        ATTR.VALUE: ON_OFF.from_bool(alerts & ALERT_FLAG.PH_LOCKOUT).value,
     }
     intellichem_alert[VALUE.PH_LIMIT] = {
         ATTR.NAME: "pH Dose Limit Reached",
-        ATTR.VALUE: ON_OFF.from_bool(alerts & ALERT_FLAG.PH_LIMIT),
+        ATTR.VALUE: ON_OFF.from_bool(alerts & ALERT_FLAG.PH_LIMIT).value,
     }
     intellichem_alert[VALUE.ORP_LIMIT] = {
         ATTR.NAME: "ORP Dose Limit Reached",
-        ATTR.VALUE: ON_OFF.from_bool(alerts & ALERT_FLAG.ORP_LIMIT),
+        ATTR.VALUE: ON_OFF.from_bool(alerts & ALERT_FLAG.ORP_LIMIT).value,
     }
 
     dose_flags, offset = getSome("B", buff, offset)  # 39 (34)
@@ -267,6 +281,8 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
     intellichem[VALUE.FIRMWARE] = {
         ATTR.NAME: "IntelliChem Firmware",
         ATTR.VALUE: f"{vMajor}.{vMinor:03}",
+        ATTR.MAJOR: vMajor,
+        ATTR.MINOR: vMinor,
     }
 
     intellichem_balance: dict = intellichem.setdefault(GROUP.WATER_BALANCE, {})
@@ -276,14 +292,14 @@ def decode_chemistry(buff: bytes, data: dict) -> None:
     # SI <= -0.41
     intellichem_balance[VALUE.CORROSIVE] = {
         ATTR.NAME: "SI Corrosive",
-        ATTR.VALUE: ON_OFF.from_bool(balance_flags & BALANCE_FLAG.CORROSIVE),
+        ATTR.VALUE: ON_OFF.from_bool(balance_flags & BALANCE_FLAG.CORROSIVE).value,
         ATTR.DEVICE_TYPE: DEVICE_TYPE.ALARM,
     }
 
     # SI >= +0.53
     intellichem_balance[VALUE.SCALING] = {
         ATTR.NAME: "SI Scaling",
-        ATTR.VALUE: ON_OFF.from_bool(balance_flags & BALANCE_FLAG.SCALING),
+        ATTR.VALUE: ON_OFF.from_bool(balance_flags & BALANCE_FLAG.SCALING).value,
         ATTR.DEVICE_TYPE: DEVICE_TYPE.ALARM,
     }
 
@@ -302,8 +318,8 @@ async def async_request_set_chem_data(
     salt: int,
     max_retries: int,
 ):
-    return (
-        await async_make_request(
+    if (
+        response := await async_make_request(
             protocol,
             CODE.SETCHEMDATA_QUERY,
             struct.pack(
@@ -318,5 +334,7 @@ async def async_request_set_chem_data(
             ),
             max_retries,
         )
-        == b""
-    )
+    ) != b"":
+        raise ScreenLogicResponseError(
+            f"Set chem data failed. Unexpected response: {response}"
+        )

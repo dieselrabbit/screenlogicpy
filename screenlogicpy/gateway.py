@@ -1,28 +1,32 @@
 """Describes a ScreenLogicGateway class for interacting with a Pentair ScreenLogic system."""
 import asyncio
+from datetime import datetime
 import logging
 from typing import Awaitable, Callable
 
 from .client import ClientManager
 from .const.common import (
     DATA_REQUEST,
-    RANGE,
+    ON_OFF,
+    ScreenLogicCommunicationError,
     ScreenLogicError,
-    ScreenLogicRequestError,
+    ScreenLogicConnectionError,
 )
 from .const.msg import COM_MAX_RETRIES
-from .device_const.chemistry import RANGE_PH_SETPOINT, RANGE_ORP_SETPOINT
-from .device_const.system import BODY_TYPE, EQUIPMENT_FLAG
-from .device_const.scg import LIMIT_FOR_BODY
+from .device_const.chemistry import CHEM_RANGE as cr
+from .device_const.system import EQUIPMENT_FLAG
+from .device_const.scg import SCG_RANGE as sr
 from .const.data import ATTR, DEVICE, GROUP, VALUE
 from .requests import (
     async_connect_to_gateway,
+    async_request_date_time,
     async_request_gateway_version,
     async_request_pool_button_press,
     async_request_pool_config,
     async_request_pool_lights_command,
     async_request_pool_status,
     async_request_pump_status,
+    async_request_set_date_time,
     async_request_set_heat_mode,
     async_request_set_heat_setpoint,
     async_request_chemistry,
@@ -143,7 +147,7 @@ class ScreenLogicGateway:
         )
         if connectPkg:
             self._transport, self._protocol, self._mac = connectPkg
-            await async_request_gateway_version(
+            self._last[DATA_REQUEST.VERSION] = await async_request_gateway_version(
                 self._protocol, self._data, self._max_retries
             )
             if self.version:
@@ -164,22 +168,21 @@ class ScreenLogicGateway:
 
         await self._protocol.async_close(force)
 
-    async def async_update(self) -> bool:
+    async def async_update(self) -> None:
         """
         Update all ScreenLogic data.
-
-        Try to reconnect to the ScreenLogic protocol adapter if needed.
         """
-        if not await self.async_connect() or not self._data:
-            return False
+
+        if not self._data:
+            raise ScreenLogicError("Internal data missing")
 
         _LOGGER.debug("Beginning update of all data")
         await self.async_get_status()
         await self.async_get_pumps()
         await self.async_get_chemistry()
         await self.async_get_scg()
+        await self.async_get_datetime()
         _LOGGER.debug("Update complete")
-        return True
 
     async def async_get_config(self):
         """Request pool configuration data."""
@@ -224,9 +227,13 @@ class ScreenLogicGateway:
         ):
             self._last[DATA_REQUEST.SCG] = last_raw
 
-    # def get_data(self) -> dict:
-    #    """Return the data."""
-    #    return self._data
+    async def async_get_datetime(self):
+        """Request the current date and time from the controller."""
+        _LOGGER.debug("Requesting date/time")
+        if last_raw := await self._async_connected_request(
+            async_request_date_time, self._data, reconnect_delay=1
+        ):
+            self._last[DATA_REQUEST.DATE_TIME] = last_raw
 
     def get_data(self, *keypath, strict: bool = False):
         """
@@ -305,7 +312,7 @@ class ScreenLogicGateway:
         if not self._is_valid_circuit_state(circuitState):
             raise ValueError(f"Invalid circuitState: {circuitState}")
 
-        return await self._async_connected_request(
+        await self._async_connected_request(
             async_request_pool_button_press, circuitID, circuitState
         )
 
@@ -316,9 +323,7 @@ class ScreenLogicGateway:
         if not self._is_valid_heattemp(body, temp):
             raise ValueError(f"Invalid temp ({temp}) for body ({body})")
 
-        return await self._async_connected_request(
-            async_request_set_heat_setpoint, body, temp
-        )
+        await self._async_connected_request(async_request_set_heat_setpoint, body, temp)
 
     async def async_set_heat_mode(self, body: int, mode: int):
         """Set the heating mode for the specified body."""
@@ -327,58 +332,155 @@ class ScreenLogicGateway:
         if not self._is_valid_heatmode(mode):
             raise ValueError(f"Invalid mode: {mode}")
 
-        return await self._async_connected_request(
-            async_request_set_heat_mode, body, mode
-        )
+        await self._async_connected_request(async_request_set_heat_mode, body, mode)
 
     async def async_set_color_lights(self, light_command: int):
         """Set the light show mode for all capable lights."""
         if not self._is_valid_color_mode(light_command):
             raise ValueError(f"Invalid light_command: {light_command}")
 
-        return await self._async_connected_request(
+        await self._async_connected_request(
             async_request_pool_lights_command, light_command
         )
 
-    async def async_set_scg_config(self, pool_output: int, spa_output: int):
-        """Set the salt-chlorine-generator output for both pool and spa."""
-        if not self._is_valid_scg_value(pool_output, BODY_TYPE.POOL):
-            raise ValueError(f"Invalid pool_output: {pool_output}")
-        if not self._is_valid_scg_value(spa_output, BODY_TYPE.SPA):
-            raise ValueError(f"Invalid spa_output: {spa_output}")
+    async def async_set_scg_config(
+        self,
+        *,
+        pool_setpoint: int | None = None,
+        spa_setpoint: int | None = None,
+        super_chlorinate: int | None = None,
+        super_chlor_timer: int | None = None,
+    ):
+        """Set the salt-chlorine-generator output.
 
-        return await self._async_connected_request(
-            async_request_set_scg_config, pool_output, spa_output
+        Sets output values for both pool and spa, along with super chlorination timer.
+        """
+        SCG_CONFIG = (DEVICE.SCG, GROUP.CONFIGURATION)
+        try:
+            if pool_setpoint is None:
+                pool_setpoint = self.get_value(
+                    *SCG_CONFIG, VALUE.POOL_SETPOINT, strict=True
+                )
+
+            if spa_setpoint is None:
+                spa_setpoint = self.get_value(
+                    *SCG_CONFIG, VALUE.SPA_SETPOINT, strict=True
+                )
+
+            if super_chlorinate is None:
+                super_chlorinate = (
+                    0  # self.get_data(*SCG_CONFIG, VALUE.SUPER_CHLORINATE, strict=True)
+                )
+
+            if super_chlor_timer is None:
+                super_chlor_timer = self.get_value(
+                    *SCG_CONFIG, VALUE.SUPER_CHLOR_TIMER, strict=True
+                )
+
+            sr.POOL_SETPOINT.check(pool_setpoint)
+            sr.SPA_SETPOINT.check(spa_setpoint)
+            super_chlorinate = ON_OFF.parse(super_chlorinate).value
+            sr.SUPER_CHLOR_RT.check(super_chlor_timer)
+        except (KeyError, ValueError) as ex:
+            raise ScreenLogicError(ex.args[0]) from ex
+
+        await self._async_connected_request(
+            async_request_set_scg_config,
+            pool_setpoint,
+            spa_setpoint,
+            super_chlorinate,
+            super_chlor_timer,
         )
 
     async def async_set_chem_data(
         self,
-        ph_setpoint: float,
-        orp_setpoint: int,
-        calcium: int,
-        alkalinity: int,
-        cyanuric: int,
-        salt: int,
+        *,
+        ph_setpoint: float | None = None,
+        orp_setpoint: int | None = None,
+        calcium_hardness: int | None = None,
+        total_alkalinity: int | None = None,
+        cya: int | None = None,
+        salt_tds_ppm: int | None = None,
     ):
         """Set configurable chemistry values."""
-        if self._is_valid_ph_setpoint(ph_setpoint):
-            ph_setpoint = int(ph_setpoint * 100)
-        else:
-            raise ValueError(f"Invalid PH Set point: {ph_setpoint}")
-        if not self._is_valid_orp_setpoint(orp_setpoint):
-            raise ValueError(f"Invalid ORP Set point: {orp_setpoint}")
-        if calcium < 0 or alkalinity < 0 or cyanuric < 0 or salt < 0:
-            raise ValueError("Invalid Chemistry setting.")
+        INTELLICHEM_CONFIG = (DEVICE.INTELLICHEM, GROUP.CONFIGURATION)
 
-        return await self._async_connected_request(
+        try:
+            if ph_setpoint is None:
+                ph_setpoint = self.get_value(
+                    *INTELLICHEM_CONFIG, VALUE.PH_SETPOINT, strict=True
+                )
+
+            if orp_setpoint is None:
+                orp_setpoint = self.get_value(
+                    *INTELLICHEM_CONFIG, VALUE.ORP_SETPOINT, strict=True
+                )
+
+            if calcium_hardness is None:
+                calcium_hardness = self.get_value(
+                    *INTELLICHEM_CONFIG, VALUE.CALCIUM_HARDNESS, strict=True
+                )
+
+            if total_alkalinity is None:
+                total_alkalinity = self.get_value(
+                    *INTELLICHEM_CONFIG, VALUE.TOTAL_ALKALINITY, strict=True
+                )
+
+            if cya is None:
+                cya = self.get_value(*INTELLICHEM_CONFIG, VALUE.CYA, strict=True)
+
+            if salt_tds_ppm is None:
+                salt_tds_ppm = self.get_value(
+                    *INTELLICHEM_CONFIG, VALUE.SALT_TDS_PPM, strict=True
+                )
+
+            cr.PH_SETPOINT.check(ph_setpoint)
+            cr.ORP_SETPOINT.check(orp_setpoint)
+            cr.CALCIUM_HARDNESS.check(calcium_hardness)
+            cr.TOTAL_ALKALINITY.check(total_alkalinity)
+            cr.CYANURIC_ACID.check(cya)
+            cr.SALT_TDS.check(salt_tds_ppm)
+        except (KeyError, ValueError) as ex:
+            raise ScreenLogicError(ex.args[0]) from ex
+
+        ph_setpoint = int(ph_setpoint * 100)
+
+        await self._async_connected_request(
             async_request_set_chem_data,
             ph_setpoint,
             orp_setpoint,
-            calcium,
-            alkalinity,
-            cyanuric,
-            salt,
+            calcium_hardness,
+            total_alkalinity,
+            cya,
+            salt_tds_ppm,
         )
+
+    async def async_set_date_time(
+        self,
+        *,
+        date_time: datetime | None = None,
+        auto_dst: int | None = None,
+    ):
+        """Set date and time settings on the controller."""
+        if date_time is None and auto_dst is None:
+            raise ValueError("No date/time values to set")
+
+        DATETIME_CONFIG = (DEVICE.CONTROLLER, GROUP.DATE_TIME)
+
+        if date_time is None:
+            date_time = datetime.fromtimestamp(
+                self.get_data(*DATETIME_CONFIG, VALUE.TIMESTAMP, strict=True)
+            )
+        if auto_dst is None:
+            auto_dst = self.get_value(*DATETIME_CONFIG, VALUE.AUTO_DST, strict=True)
+
+        return await self._async_connected_request(
+            async_request_set_date_time, date_time, auto_dst
+        )
+
+    async def async_synchronize_date_time(self):
+        """Set the date and time on the controller to the current system time."""
+        return await self.async_set_date_time(date_time=datetime.now())
 
     async def async_subscribe_client(
         self, callback: Callable[..., any], code: int
@@ -415,7 +517,9 @@ class ScreenLogicGateway:
         if self._protocol:
             self._protocol.remove_async_message_callback(message_code)
 
-    async def async_send_message(self, message_code: int, message: bytes = b""):
+    async def async_send_message(
+        self, message_code: int, message: bytes = b""
+    ) -> bytes:
         """Send a message to the ScreenLogic protocol adapter."""
         _LOGGER.debug(f"User requesting {message_code}")
         return await self._async_connected_request(
@@ -434,23 +538,19 @@ class ScreenLogicGateway:
             kwargs["max_retries"] = self._max_retries
 
         async def attempt_request():
-            if await self.async_connect():
-                return await async_method(self._protocol, *args, **kwargs)
-
-            raise ScreenLogicError(
-                f"Not connected and unable to connect to protocol adapter to complete request: {async_method.func_name}"
-            )
+            if not await self.async_connect():
+                raise ScreenLogicConnectionError(
+                    f"Not connected and unable to connect to protocol adapter to complete request: {async_method.func_name}"
+                )
+            return await async_method(self._protocol, *args, **kwargs)
 
         try:
             return await attempt_request()
-        except ScreenLogicRequestError as re:
-            _LOGGER.debug("%s. Attempting to reconnect", re.msg)
+        except ScreenLogicCommunicationError as sle:
+            _LOGGER.debug("%s. Attempting to reconnect", sle.msg)
             await self.async_disconnect(True)
             await asyncio.sleep(reconnect_delay)
-            try:
-                return await attempt_request()
-            except ScreenLogicRequestError as re2:
-                raise ScreenLogicError(re2.msg) from re2
+            return await attempt_request()
 
     def _common_connection_closed_callback(self):
         """Perform any needed cleanup."""
@@ -482,21 +582,3 @@ class ScreenLogicGateway:
     def _is_valid_color_mode(self, mode):
         """Validate color mode number."""
         return 0 <= mode <= 21
-
-    def _is_valid_scg_value(self, scg_value, body_type):
-        """Validate chlorinator value for body."""
-        return 0 <= scg_value <= LIMIT_FOR_BODY[body_type]
-
-    def _is_valid_ph_setpoint(self, ph_setpoint: float):
-        """Validate pH setpoint."""
-        return (
-            RANGE_PH_SETPOINT[RANGE.MIN] <= ph_setpoint <= RANGE_PH_SETPOINT[RANGE.MAX]
-        )
-
-    def _is_valid_orp_setpoint(self, orp_setpoint: int):
-        """Validate ORP setpoint."""
-        return (
-            RANGE_ORP_SETPOINT[RANGE.MIN]
-            <= orp_setpoint
-            <= RANGE_ORP_SETPOINT[RANGE.MAX]
-        )

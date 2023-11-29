@@ -1,3 +1,7 @@
 Active                                             0001
+Very Low Salt                                         ?
+Low Salt                                              ?
+Good Salt                                             ?
+High Salt                                             ?
 UNKNOWN                                       1000 0000
-IntelliChem in Control              1000 0000 0000 0000
+IntelliChem in Control?             1000 0000 0000 0000

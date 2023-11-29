@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 import struct
 import sys
 from typing import Any
@@ -54,19 +55,47 @@ def takeMessages(data: bytes) -> list[tuple[int, int, bytes]]:
         ) from err
 
 
-def encodeMessageString(string) -> bytes:
-    data = string.encode()
+def encodeMessageString(string: str, utf_16: bool = False) -> bytes:
+    encoding = "utf-16" if utf_16 else "utf-8"
+    data = string.encode(encoding)
     length = len(data)
     over = length % 4
     pad = (4 - over) if over > 0 else 0  # pad string to multiple of 4
     fmt = f"<I{str(length + pad)}s"
+    if utf_16:
+        length = length | 0x80000000  # Set high bit for utf-16
     return struct.pack(fmt, length, data)
 
 
 def decodeMessageString(data) -> str:
+    encoding = "utf-8"
     size = struct.unpack_from("<I", data, 0)[0]
+    if size & 0x80000000:  # High bit signifies utf-16 encoding
+        size = size & 0x7FFFFFFF  # Strip off the high bit
+        encoding = "utf-16"
     return struct.unpack_from(f"<{str(size)}s", data, struct.calcsize("<I"))[0].decode(
-        "utf-8"
+        encoding
+    )
+
+
+def encodeMessageTime(time_to_encode: datetime):
+    return struct.pack(
+        "<8H",
+        time_to_encode.year,
+        time_to_encode.month,
+        time_to_encode.weekday(),
+        time_to_encode.day,
+        time_to_encode.hour,
+        time_to_encode.minute,
+        0,  # Setting seconds causes controller time to revert to the prev min after :59
+        int(time_to_encode.microsecond / 1000),
+    )
+
+
+def decodeMessageTime(data: bytes) -> datetime:
+    year, month, _, day, hour, minute, second, millisecond = struct.unpack("<8H", data)
+    return datetime(
+        year, month, day, hour, minute, second, millisecond * 1000, tzinfo=timezone.utc
     )
 
 
@@ -76,49 +105,44 @@ def getSome(format, buff, offset) -> tuple[Any, int]:
     return struct.unpack_from(fmt, buff, offset)[0], newoffset
 
 
-def getValueAt(buff, offset, want, **kwargs):
-    fmt = want if want.startswith(">") else "<" + want
-    val = kwargs.get("adjustment", lambda x: x)(
-        struct.unpack_from(fmt, buff, offset)[0]
-    )
-    if name := kwargs.get("name"):
-        data = {
-            "name": name,
-            "value": val,
-        }
-        if unit := kwargs.get("unit"):
-            data["unit"] = unit
-        if device_type := kwargs.get("device_type"):
-            data["device_type"] = device_type
-    else:
-        data = val
-    newoffset = offset + struct.calcsize(fmt)
-    return data, newoffset
-
-
 def getString(buff, offset) -> tuple[str, int]:
     fmtLen = "<I"
+    encoding = "utf-8"
     offsetLen = offset + struct.calcsize(fmtLen)
     sLen = struct.unpack_from(fmtLen, buff, offset)[0]
+    if sLen & 0x80000000:  # High bit signifies utf-16 encoding
+        sLen = sLen & 0x7FFFFFFF  # Strip off the high bit
+        encoding = "utf-16"
     if sLen % 4 != 0:
         sLen += 4 - sLen % 4
-
     fmt = f"<{sLen}s"
     newoffset = offsetLen + struct.calcsize(fmt)
     padded_str = struct.unpack_from(fmt, buff, offsetLen)[0]
-    return padded_str.decode("utf-8").strip("\0"), newoffset
+    return padded_str.decode(encoding).strip("\0"), newoffset
 
 
 def getArray(buff, offset):
-    itemCount, offset = getSome("I", buff, offset)
+    itemCount, aStart = getSome("I", buff, offset)
     items = [0 for x in range(itemCount)]
     for i in range(itemCount):
-        items[i], offset = getSome("B", buff, offset)
-    offsetPad = 0
-    if itemCount % 4 != 0:
-        offsetPad = (4 - itemCount % 4) % 4
-        offset += offsetPad
-    return items, offset
+        items[i], offset = getSome("B", buff, aStart + i)
+    short = itemCount % 4
+    paddedLen = itemCount if short == 0 else (itemCount + 4) - short
+    return items, aStart + paddedLen
+
+
+def getTime(buff: bytes, offset: int) -> tuple[datetime, int]:
+    fmt = "<8H"
+    year, month, _, day, hour, minute, second, millisecond = struct.unpack_from(
+        fmt, buff, offset
+    )
+    new_offset = offset + struct.calcsize(fmt)
+    return (
+        datetime(
+            year, month, day, hour, minute, second, millisecond * 1000, timezone.utc
+        ),
+        new_offset,
+    )
 
 
 def getTemperatureUnit(data: dict):
@@ -130,3 +154,7 @@ def getTemperatureUnit(data: dict):
         .get(ATTR.VALUE)
         else UNIT.FAHRENHEIT
     )
+
+
+def getAdapterVersion(data: dict):
+    return data.get(DEVICE.ADAPTER, {}).get(VALUE.FIRMWARE, {}).get(ATTR.MINOR)

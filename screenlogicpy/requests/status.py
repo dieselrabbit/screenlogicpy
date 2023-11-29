@@ -42,7 +42,7 @@ def decode_pool_status(buff: bytes, data: dict) -> None:
     freezeMode, offset = getSome("B", buff, offset)  # byte offset 4
     controller_sensor[VALUE.FREEZE_MODE] = {
         ATTR.NAME: "Freeze Mode",
-        ATTR.VALUE: ON_OFF.from_bool(freezeMode & 0x08),
+        ATTR.VALUE: ON_OFF.from_bool(freezeMode & 0x08).value,
     }
 
     controller_config: dict = controller.setdefault(GROUP.CONFIGURATION, {})

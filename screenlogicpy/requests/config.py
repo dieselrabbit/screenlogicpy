@@ -3,10 +3,10 @@ import struct
 
 from ..const.msg import CODE
 from ..const.data import ATTR, DEVICE, GROUP, VALUE, UNKNOWN
-from ..device_const.system import CONTROLLER, EQUIPMENT_FLAG, EQUIPMENT_MASK
+from ..device_const.system import CONTROLLER, EQUIPMENT_FLAG, EQUIPMENT_MASK_736
 from .protocol import ScreenLogicProtocol
 from .request import async_make_request
-from .utility import getSome, getString
+from .utility import getAdapterVersion, getSome, getString
 
 
 async def async_request_pool_config(
@@ -62,7 +62,10 @@ def decode_pool_config(buff: bytes, data: dict) -> dict:
     equipFlags, offset = getSome("I", buff, offset)
 
     # Include only known flags.
-    controller_equipment[VALUE.FLAGS] = equipFlags & EQUIPMENT_MASK
+    if (minor := getAdapterVersion(data)) is not None:
+        equipFlags = equipFlags & EQUIPMENT_MASK_736 if minor <= 736 else equipFlags
+
+    controller_equipment[VALUE.FLAGS] = equipFlags
 
     controller_equipment[VALUE.LIST] = [
         # What's needed? Friendly name or FLAG name?
@@ -79,7 +82,6 @@ def decode_pool_config(buff: bytes, data: dict) -> dict:
     circuit: dict = data.setdefault(DEVICE.CIRCUIT, {})
 
     for i in range(circuitCount):
-
         circuit_id, offset = getSome("i", buff, offset)
 
         circuit_indexed: dict = circuit.setdefault(circuit_id, {})

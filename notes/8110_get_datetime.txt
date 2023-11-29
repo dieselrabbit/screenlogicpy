@@ -1,3 +1,12 @@
-e7 07|01 00|04 00|1b 00|0e 00|13 00|1f 00|00 00|01 00|00 00
-year |month|dayOw|date |hour |min  |sec  |ms   |aDST |isDST?
-2023 |1    |4    |27   |14   |19   |31   |0    |1    |?
+Request:
+b""
+
+Response:
+e7 07|01 00|04 00|1b 00|0e 00|13 00|1f 00|00 00|01 00 00 00
+year |month|dayOw|date |hour |min  |sec  |ms   |autoDST    | 
+2023 |1    |4    |27   |14   |19   |31   |0    |1          |
+
+
+e7 07 03 00 06 00 0c 00 0a 00 22 00 1b 00 00 00 01 00 00 00
+year |month|dayOw|date |hour |min  |sec  |ms   |autoDST    |
+2023 |3    |6    |12   |10   |34   |27   |0    |1          |  

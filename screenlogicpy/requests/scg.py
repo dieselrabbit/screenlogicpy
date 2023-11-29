@@ -1,9 +1,9 @@
 import struct
 
-from ..const.common import STATE_TYPE, UNIT, ON_OFF
+from ..const.common import STATE_TYPE, UNIT, ON_OFF, ScreenLogicResponseError
 from ..const.msg import CODE, COM_MAX_RETRIES
 from ..const.data import ATTR, DEVICE, GROUP, VALUE
-from ..device_const.scg import LIMIT_FOR_BODY, MAX_SC_RUNTIME
+from ..device_const.scg import SCG_RANGE, STATE_FLAG, STATUS_FLAG
 from ..device_const.system import BODY_TYPE
 from .protocol import ScreenLogicProtocol
 from .request import async_make_request
@@ -30,7 +30,7 @@ def decode_scg_config(buff: bytes, data: dict) -> None:
     state, offset = getSome("I", buff, offset)  # 4
     scg_sensor[VALUE.STATE] = {
         ATTR.NAME: "Chlorinator",
-        ATTR.VALUE: ON_OFF.from_bool(state & 0x01),
+        ATTR.VALUE: ON_OFF.from_bool(state & STATUS_FLAG.SCG_ACTIVE).value,
     }
 
     scg_config: dict = scg.setdefault(GROUP.CONFIGURATION, {})
@@ -40,8 +40,8 @@ def decode_scg_config(buff: bytes, data: dict) -> None:
         ATTR.NAME: "Pool Chlorinator Setpoint",
         ATTR.VALUE: level1,
         ATTR.UNIT: UNIT.PERCENT,
-        ATTR.MIN_SETPOINT: 0,
-        ATTR.MAX_SETPOINT: LIMIT_FOR_BODY[BODY_TYPE.POOL],
+        ATTR.MIN_SETPOINT: SCG_RANGE.POOL_SETPOINT.minimum,
+        ATTR.MAX_SETPOINT: SCG_RANGE.POOL_SETPOINT.maximum,
         ATTR.STEP: 1,
         ATTR.BODY_TYPE: BODY_TYPE.POOL.value,
     }
@@ -51,8 +51,8 @@ def decode_scg_config(buff: bytes, data: dict) -> None:
         ATTR.NAME: "Spa Chlorinator Setpoint",
         ATTR.VALUE: level2,
         ATTR.UNIT: UNIT.PERCENT,
-        ATTR.MIN_SETPOINT: 0,
-        ATTR.MAX_SETPOINT: LIMIT_FOR_BODY[BODY_TYPE.SPA],
+        ATTR.MIN_SETPOINT: SCG_RANGE.SPA_SETPOINT.minimum,
+        ATTR.MAX_SETPOINT: SCG_RANGE.SPA_SETPOINT.maximum,
         ATTR.STEP: 1,
         ATTR.BODY_TYPE: BODY_TYPE.SPA.value,
     }
@@ -68,13 +68,18 @@ def decode_scg_config(buff: bytes, data: dict) -> None:
     flags, offset = getSome("I", buff, offset)  # 20
     scg[VALUE.FLAGS] = flags
 
+    scg[VALUE.SUPER_CHLORINATE] = {
+        ATTR.NAME: "Super Chlorinate",
+        ATTR.VALUE: ON_OFF.from_bool(flags & STATE_FLAG.SUPER_CHLORINATE).value,
+    }
+
     superChlorTimer, offset = getSome("I", buff, offset)  # 24
     scg_config[VALUE.SUPER_CHLOR_TIMER] = {
         ATTR.NAME: "Super Chlorination Timer",
         ATTR.VALUE: superChlorTimer,
         ATTR.UNIT: UNIT.HOUR,
-        ATTR.MIN_SETPOINT: 1,
-        ATTR.MAX_SETPOINT: MAX_SC_RUNTIME,
+        ATTR.MIN_SETPOINT: SCG_RANGE.SUPER_CHLOR_RT.minimum,
+        ATTR.MAX_SETPOINT: SCG_RANGE.SUPER_CHLOR_RT.maximum,
         ATTR.STEP: 1,
     }
 
@@ -87,12 +92,14 @@ async def async_request_set_scg_config(
     super_time: int = 0,
     max_retries: int = COM_MAX_RETRIES,
 ) -> bool:
-    return (
-        await async_make_request(
+    if (
+        response := await async_make_request(
             protocol,
             CODE.SETSCG_QUERY,
             struct.pack("<IIIII", 0, pool_output, spa_output, super_chlor, super_time),
             max_retries,
         )
-        == b""
-    )
+    ) != b"":
+        raise ScreenLogicResponseError(
+            f"Set scg config failed. Unexpected response: {response}"
+        )
