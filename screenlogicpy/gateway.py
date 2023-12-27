@@ -368,8 +368,8 @@ class ScreenLogicGateway:
                 )
 
             if super_chlorinate is None:
-                super_chlorinate = (
-                    0  # self.get_data(*SCG_CONFIG, VALUE.SUPER_CHLORINATE, strict=True)
+                super_chlorinate = self.get_value(
+                    DEVICE.SCG, VALUE.SUPER_CHLORINATE, strict=True
                 )
 
             if super_chlor_timer is None:
