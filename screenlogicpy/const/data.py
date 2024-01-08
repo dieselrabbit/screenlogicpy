@@ -37,6 +37,7 @@ class DEVICE:
     INTELLICHEM = "intellichem"
     SCG = "scg"
     PUMP = "pump"
+    USER = "user"
 
 
 class GROUP:
