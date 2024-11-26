@@ -1,21 +1,16 @@
 """Discovery for screenlogic gateways."""
+
 import asyncio
 import logging
 import socket
 import struct
 
-from .const.common import (  # pylint: disable=relative-beyond-top-level
-    SL_GATEWAY_IP,
-    SL_GATEWAY_NAME,
-    SL_GATEWAY_PORT,
-    SL_GATEWAY_SUBTYPE,
-    SL_GATEWAY_TYPE,
-    ScreenLogicError,
-)
-from .requests.utility import getSome
+from .connection import GatewayInfo
+from .exceptions import ScreenLogicError
+from .messages import Payload
 
 DISCOVERY_PAYLOAD = struct.pack("<8b", 1, 0, 0, 0, 0, 0, 0, 0)
-DISCOVERY_RESPONSE_FORMAT = "<I4BH2B"
+DISCOVERY_RESPONSE_FORMAT = "<I4BH2B28s"
 DISCOVERY_RESPONSE_SIZE = struct.calcsize(DISCOVERY_RESPONSE_FORMAT)
 DISCOVERY_ADDRESS = "255.255.255.255"
 DISCOVERY_PORT = 1444
@@ -25,7 +20,7 @@ DISCOVERY_TIMEOUT = 1
 _LOGGER = logging.getLogger(__name__)
 
 
-def create_broadcast_socket():
+def create_broadcast_socket() -> socket.socket:
     """Create a broadcast soscket for discovery."""
     addressfamily = socket.AF_INET
     udp_sock = socket.socket(addressfamily, socket.SOCK_DGRAM)
@@ -34,42 +29,41 @@ def create_broadcast_socket():
     return udp_sock
 
 
-def process_discovery_response(data):
+def process_response(data) -> GatewayInfo:
     """Process a discovery response."""
 
-    chk, offset = getSome("I", data, 0)
+    pl: Payload = Payload(data)
+
+    chk: int = pl.next_uint32()
 
     if chk != DISCOVERY_CHKSUM:
         raise ScreenLogicError(
             f"ScreenLogic Discovery: Unexpected response checksum: '{chk}'"
         )
 
-    ip1, offset = getSome("B", data, offset)
-    ip2, offset = getSome("B", data, offset)
-    ip3, offset = getSome("B", data, offset)
-    ip4, offset = getSome("B", data, offset)
+    address: str = ".".join([str(pl.next_uint8()) for _ in range(4)])
+    port: int = pl.next_uint16()
+    gtype: int = pl.next_uint8()
+    gsubtype: int = pl.next_uint8()
 
-    gateway_ip = f"{str(ip1)}.{str(ip2)}.{str(ip3)}.{str(ip4)}"
+    bname = b""
+    while (bchr := pl.next("<s")[0]) != b"\x00":
+        bname += bchr
+    name: str = bname.decode("utf-8")
 
-    gateway_port, offset = getSome("H", data, offset)
-
-    gateway_type, offset = getSome("B", data, offset)
-
-    gateway_subtype, offset = getSome("B", data, offset)
-
-    gateway_name, offset = getSome(f"{len(data) - offset}s", data, offset)
-
-    return {
-        SL_GATEWAY_IP: gateway_ip,
-        SL_GATEWAY_PORT: gateway_port,
-        SL_GATEWAY_TYPE: gateway_type,
-        SL_GATEWAY_SUBTYPE: gateway_subtype,
-        SL_GATEWAY_NAME: gateway_name.decode("utf-8").strip("\0"),
-    }
+    return GatewayInfo(
+        address,
+        port,
+        gtype,
+        gsubtype,
+        name,
+    )
 
 
 class ScreenLogicDiscoveryProtocol:
     """Implement ScreenLogic discovery protocol."""
+
+    hosts: list[GatewayInfo]
 
     def __init__(self):
         """Init protocol."""
@@ -85,10 +79,10 @@ class ScreenLogicDiscoveryProtocol:
 
     def datagram_received(self, data, _):
         """Response recieved."""
-        try:
-            self.hosts.append(process_discovery_response(data))
-        except Exception as ex:  # pylint: disable=broad-except
-            _LOGGER.warning(ex)
+        # try:
+        self.hosts.append(process_response(data))
+        # except Exception as ex:  # pylint: disable=broad-except
+        #    _LOGGER.warning(ex)
 
     def error_received(self, exc):
         """Error received."""

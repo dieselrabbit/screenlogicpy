@@ -1,217 +1,274 @@
-"""Client manager for a connection to a ScreenLogic protocol adapter."""
 import asyncio
+from dataclasses import asdict
+from datetime import timedelta, timezone
 import logging
-import random
-from typing import Any, Awaitable, Callable
+from random import randint
+from typing import Any, Callable
 
-from .const.common import COM_KEEPALIVE, ScreenLogicCommunicationError
-from .const.msg import (
-    CODE,
+from .connection import (
     COM_MAX_RETRIES,
+    COM_RETRY_WAIT,
+    COM_TIMEOUT,
+    Connection,
+    GatewayInfo,
+    Transaction,
 )
-from .requests import (
-    async_request_add_client,
-    async_request_ping,
-    async_request_remove_client,
-)
-from .requests.chemistry import decode_chemistry
-from .requests.lights import decode_color_update
-from .requests.status import decode_pool_status
-from .requests.protocol import ScreenLogicProtocol
+from .system import *
+from .devices import *
+from .messages import *
 
 _LOGGER = logging.getLogger(__name__)
 
+REDACTED = ["user_zip", "user_latitude", "user_longitude", "mac"]
 
-class ClientManager:
-    """Class to manage callback subscriptions to specific ScreenLogic messages."""
 
-    def __init__(
+def redact_dict_factory(fields: list[tuple[str, Any]]) -> dict:
+    return {
+        name: value
+        for name, value in fields
+        if name not in REDACTED and "Pentair:" not in str(value)
+    }
+
+
+class ScreenLogicClient:
+    """Defines a client of a ScreenLogic Gateway."""
+
+    _id: int
+    _loop: asyncio.AbstractEventLoop
+    _connection: Connection | None = None
+    _system: System | None = None
+    _is_client: bool = False
+    _msg_callbacks: dict[MessageCode, set[Callable[[BaseResponse], None]]]
+    _conn_lost_fut: asyncio.Future = None
+    _debug_data: dict[int, bytes] = None
+
+    timeout: int = COM_TIMEOUT
+    retry_delay: int = COM_RETRY_WAIT
+    max_attempts: int = COM_MAX_RETRIES
+
+    def __init__(self, *, client_id: int = -1, system: System = None) -> None:
+
+        self._id = client_id if (32767 < client_id < 65535) else randint(32767, 65535)
+        self._system = system
+        self._loop = asyncio.get_event_loop()
+        self._debug_data = {}
+        self._msg_callbacks = {}
+
+    @property
+    def id(self) -> int:
+        return self._id
+
+    @property
+    def connection(self) -> Connection:
+        return self._connection
+
+    @property
+    def system(self) -> System:
+        return self._system
+
+    def get_debug(self) -> dict:
+        return self._debug_data
+
+    async def connect(
         self,
-        async_request_manager: Callable[[bytes, Any], Awaitable[Any]],
-        client_id: int = None,
-    ) -> None:
-        self._async_managed_request = async_request_manager
-        self._client_id = (
-            client_id if client_id is not None else random.randint(32767, 65535)
+        gw_info: GatewayInfo,
+        *,
+        timeout: int = None,
+        retry_delay: int = None,
+        max_attempts: int = None
+    ) -> asyncio.Future:
+        """Create and open a Connection to the ScreenLogic gateway.
+
+        Required:
+         `gateway` - A GatewayInfo object with the details of the ScreenLogic gateway to connect to.
+        Keyword Arguments:
+         `timeout` - Number in seconds to wait for each transaction to complete.
+         `retry_delay` - Number in seconds to pause between attempts to complete a transaction.
+         `max_attempts` - Number of attempts to make to complete a transaction.
+        """
+        self.timeout = timeout or self.timeout
+        self.retry_delay = retry_delay or self.retry_delay
+        self.max_attempts = max_attempts or self.max_attempts
+        self._connection = Connection(
+            timeout=self.timeout,
+            retry_delay=self.retry_delay,
+            max_attempts=self.max_attempts,
+            async_message_cb=self._handle_async_message,
+            connection_lost_cb=self._handle_connection_lost,
         )
-        self._listeners = {}
-        self._is_client = False
-        self._client_sub_unsub_lock = asyncio.Lock()
-        self._protocol = None
-        self._data = None
-        self._max_retries = COM_MAX_RETRIES
+        self._system = self._system or System()
+        self._system.gateway = await self._connection.open(gw_info)
+        await self.update_config()
+        await self.update_status()
+        await self._add_client()
+        self._conn_lost_fut = self._loop.create_future()
+        return self._conn_lost_fut
 
-    @property
-    def is_client(self) -> bool:
-        """Return if connected to ScreenLogic as a client."""
-        return self._is_client and self._protocol and self._protocol.is_connected
+    async def disconnect(self) -> None:
+        await self._remove_client()
+        await self._connection.close()
+        self._connection = None
 
-    @property
-    def client_id(self) -> int:
-        return self._client_id
-
-    @property
-    def client_needed(self) -> bool:
-        """Return if desired to be a client."""
-        return self._listeners and not self._is_client
-
-    def _attached(self) -> bool:
-        return self._protocol and self._protocol.is_connected
-
-    async def attach(
-        self,
-        protocol: ScreenLogicProtocol,
-        data: dict,
-        max_retries: int = COM_MAX_RETRIES,
-    ):
-        """
-        Update protocol and data reference.
-
-        Updates this ClientManager's reference to a ScreenLogicProtocol instance
-        and a current data dict. Will attempt to re-register any existing callbacks
-        to the new protocol instance.
-        """
-        self._protocol = protocol
-        self._data = data
-        self._max_retries = max_retries
-        self._is_client = False
-        if self.client_needed:
-            self._protocol.remove_all_async_message_callbacks()
-            for code in self._listeners:
-                self._protocol.register_async_message_callback(
-                    code, self._async_common_callback, code, self._data
-                )
-            await self.async_subscribe_gateway()
-
-    def _notify_listeners(self, code: int) -> None:
-        """Notify all listeners."""
-        for callback in self._listeners.get(code):
-            callback()
-
-    def _callback_factory(self, code) -> Callable:
-        """Return decoding method for known message codes."""
-        if code == CODE.STATUS_CHANGED:
-            return decode_pool_status
-        elif code == CODE.CHEMISTRY_CHANGED:
-            return decode_chemistry
-        elif code == CODE.COLOR_UPDATE:
-            return decode_color_update
-        else:
-            return None
-
-    async def _async_common_callback(self, message, code, data):
-        """Decode known incoming messages."""
-        if decoder := self._callback_factory(code):
-            decoder(message, data)
-
-        self._notify_listeners(code)
-
-    async def async_subscribe(
-        self, callback: Callable[..., any], code: int
+    def add_message_callback(
+        self, code: MessageCode, callback: Callable[[BaseResponse], None]
     ) -> Callable:
-        """
-        Register listener callback.
+        cb_set: set[Callable[[BaseResponse], None]] = self._msg_callbacks.setdefault(
+            code, set()
+        )
+        cb_set.add(callback)
 
-        Registers a callback method to call when a message with the specified
-        message code is received. Messages with known codes will be processed
-        and applied to gateway data before callback method is called.
-        """
-        if not self._attached():
-            return None
+        def remove():
+            cb_set.remove(callback)
+            if len(cb_set) == 0:
+                self._msg_callbacks.pop(code)
 
-        _LOGGER.debug(f"Adding listener {callback}")
-        code_listeners: set = self._listeners.setdefault(code, set())
+        return remove
 
-        code_listeners.add(callback)
+    async def update_config(self) -> None:
+        """Request all configuration information and update the Controller data."""
+        await self.get_pool_config()
+        await self.get_equipment_config()
+        await self.get_user_config()
 
-        if self._attached():
-            self._protocol.register_async_message_callback(
-                code, self._async_common_callback, code, self._data
-            )
+    async def update_status(self) -> None:
+        """Request updates for all applicable pool equipment and update the Controller data."""
+        await self.get_pool_status()
+        await self.get_pool_timedate()
+        await self.update_pumps()
+        if EQUIPMENT_FLAG.INTELLICHEM in self._system.controller.equipment_flags:
+            await self.get_chemistry_status()
+        if EQUIPMENT_FLAG.CHLORINATOR in self._system.controller.equipment_flags:
+            await self.get_scg_status()
 
-        if self.client_needed:
-            _LOGGER.debug("Client needed.")
-            await self.async_subscribe_gateway()
+    async def get_pool_config(self) -> None:
+        """Request the base pool configuration and update the Controller data."""
+        response: GetPoolConfigResponse = await self.create_transaction(
+            GetPoolConfigRequest()
+        ).execute_via(self._connection.connected_send)
+        response.decode(self._system)
+        if EQUIPMENT_FLAG.INTELLICHEM in self.system.controller.equipment_flags:
+            self.system.chemistry = IntelliChem()
 
-        def remove_listener():
-            """Remove listener callback."""
-            if callback in code_listeners:
-                _LOGGER.debug(f"Removing listener {callback}")
-                code_listeners.remove(callback)
-                if not code_listeners:
-                    _LOGGER.debug(f"No more listeners for code {code}. Removing.")
-                    if code in self._listeners:
-                        self._listeners.pop(code)
-                        if self._attached():
-                            self._protocol.remove_async_message_callback(code)
-                            if not self._listeners:
-                                _LOGGER.debug(
-                                    "No more listeners for any code. Unsubscribing gateway."
-                                )
-                                asyncio.create_task(self.async_unsubscribe_gateway())
+        if EQUIPMENT_FLAG.CHLORINATOR in self.system.controller.equipment_flags:
+            self.system.chlorinator = SaltChlorineGenerator()
 
-        return remove_listener
+        self._debug_data[response.code] = response.to_bytes()
 
-    async def _async_ping(self):
-        """
-        Request a ping.
+    async def get_equipment_config(self) -> None:
+        """Requests detailed pool equipment configuration and updates the Controller data."""
+        response: GetEquipmentConfigResponse = await self.create_transaction(
+            GetEquipmentConfigRequest()
+        ).execute_via(self._connection.connected_send)
+        response.decode(self._system)
+        self._debug_data[response.code] = response.to_bytes()
 
-        This is an unmanaged request. Failure here will only be logged.
-        """
-        _LOGGER.debug("Requesting ping")
+    async def get_user_config(self) -> None:
+        """Request user configuration and update the Controller data."""
+        response: UserConfigResponse = await self.create_transaction(
+            UserConfigRequest()
+        ).execute_via(self._connection.connected_send)
+        response.decode(self._system)
+        self._debug_data[response.code] = response.to_bytes()
+
+    async def get_pool_timedate(self) -> None:
+        """Requests the pool controller's current time and date."""
+        response: GetControllerDateTimeResponse = await self.create_transaction(
+            GetControllerDateTimeRequest()
+        ).execute_via(self._connection.connected_send)
+        response.decode(
+            self._system,
+            timezone(
+                timedelta(hours=self._system.controller.config.time_config.tz_offset)
+            ),
+        )
+        self._debug_data[response.code] = response.to_bytes()
+
+    async def get_pool_status(self) -> None:
+        """Request the current pool status and update the Controller data."""
+        response: PoolStatusResponse = await self.create_transaction(
+            PoolStatusRequest()
+        ).execute_via(self._connection.connected_send)
+        response.decode(self._system)
+        self._debug_data[response.code] = response.to_bytes()
+
+    async def update_pumps(self) -> None:
+        """Requestes status for all installed pumps and update Controller data."""
+        for i, pump in self._system.pumps.items():
+            if pump:
+                pump_index = int(i)
+                await self.get_pump_status(pump_index)
+
+    async def get_pump_status(self, pump_index: int) -> None:
+        """Request pump status and update the Controller data."""
+        response: PumpStatusResponse = await self.create_transaction(
+            PumpStatusRequest(pump_index)
+        ).execute_via(self._connection.connected_send)
+        response.decode(self._system, pump_index)
+        debug_pump_stat = self._debug_data.setdefault(response.code, {})
+        debug_pump_stat[pump_index] = response.to_bytes()
+
+    async def get_chemistry_status(self) -> None:
+        """Request chemistry controller status and update the pool Controller data."""
+        response: GetChemistryStatusResponse = await self.create_transaction(
+            GetChemistryStatusRequest()
+        ).execute_via(self._connection.connected_send)
+        response.decode(self._system)
+        self._debug_data[response.code] = response.to_bytes()
+
+    async def get_scg_status(self) -> None:
+        """Request salt cell status and update the Controller data."""
+        response: GetSaltCellConfigResponse = await Transaction(
+            GetSaltCellConfigRequest()
+        ).execute_via(self._connection.connected_send)
+        response.decode(self._system)
+        self._debug_data[response.code] = response.to_bytes()
+
+    def _handle_async_message(self, response: BaseResponse) -> None:
+        if response.code in (
+            MessageCode.STATUS_CHANGED,
+            MessageCode.CHEMISTRY_CHANGED,
+        ):
+            response.decode(self._system)
+        if response.code in self._msg_callbacks:
+            for callback in self._msg_callbacks[response.code]:
+                self._loop.call_soon(callback, response)
+
+    def _handle_connection_lost(self, user_init: bool) -> None:
+        self._is_client = False
         try:
-            if await async_request_ping(self._protocol, max_retries=0):
-                _LOGGER.debug("Ping successful.")
-        except ScreenLogicCommunicationError as sle:
-            _LOGGER.warning(f"Failed to receive response to ping: {sle.msg}")
+            if user_init:
+                self._conn_lost_fut.set_result("_handle_connection_lost")
+            else:
+                self._conn_lost_fut.cancel()
+        except asyncio.exceptions.InvalidStateError as ise:
+            print(self._conn_lost_fut.result())
 
-    async def _async_add_client(self):
-        """Send a managed add client request."""
-        _LOGGER.debug("Requesting add client")
-        await self._async_managed_request(async_request_add_client, self._client_id)
+    def create_transaction(self, request: BaseRequest) -> Transaction:
+        return Transaction(
+            request,
+            timout=self.timeout,
+            retry_delay=self.retry_delay,
+            max_attempts=self.max_attempts,
+        )
 
-    async def _async_remove_client(self):
-        """Send a unmanaged remove client request."""
-        _LOGGER.debug("Requesting remove client")
+    async def _add_client(self) -> None:
         try:
-            await async_request_remove_client(
-                self._protocol, self._client_id, max_retries=0
-            )
-        except ScreenLogicCommunicationError:
-            pass
+            if not self._is_client:
+                await self.create_transaction(AddClientRequest(self._id)).execute_via(
+                    self._connection.connected_send
+                )
+                self._connection.enable_keepalive()
+                self._is_client = True
+        except:
+            raise
 
-    async def async_subscribe_gateway(self) -> bool:
-        """
-        Subscribe as ScreenLogic client.
-
-        Adds this gateway as a client on the ScreenLogic protocol adapter. This
-        tells ScreenLogic that we are interested in receiving push update messages.
-        """
-        if self._attached():
-            async with self._client_sub_unsub_lock:
-                if not self.is_client:
-                    _LOGGER.debug("Subscribing gateway.")
-                    await self._async_add_client()
-                    self._is_client = True
-                    self._protocol.enable_keepalive(self._async_ping, COM_KEEPALIVE)
-                    _LOGGER.debug(
-                        f"Gateway subscribed with client id: {self._client_id}"
-                    )
-                return True
-
-    async def async_unsubscribe_gateway(self) -> bool:
-        """
-        Unsubscribe as ScreenLogic client.
-
-        Removes this gateway as a client on the ScreenLogic protocol adapter.
-        ScreenLogic will no longer push update messages.
-        """
-        if self._attached():
-            async with self._client_sub_unsub_lock:
-                if self._is_client:
-                    self._is_client = False
-                    self._protocol.disable_keepalive()
-                    self._protocol.remove_all_async_message_callbacks()
-                    _LOGGER.debug(f"Gateway unsubscribing client id: {self._client_id}")
-                    await self._async_remove_client()
-                return True
+    async def _remove_client(self) -> None:
+        try:
+            if self._is_client:
+                await self.create_transaction(
+                    RemoveClientRequest(self._id)
+                ).execute_via(self._connection.connected_send)
+                self._connection.disable_keepalive()
+                self._is_client = False
+        except:
+            raise

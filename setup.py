@@ -5,8 +5,8 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="screenlogicpy",
-    version="0.10.1",
-    author="Kevin Worrel",
+    version="0.20.0",
+    author="Kevin Wrrel",
     author_email="kevinworrel@yahoo.com",
     description="Interface for Pentair ScreenLogic connected pool controllers over IP via Python",
     license="GPLv3",
