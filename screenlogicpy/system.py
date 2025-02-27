@@ -31,7 +31,7 @@ class SystemConfig:
 @dataclass
 class System:
 
-    gateway: Gateway | None = None
+    gateway: Gateway
     controller: Controller = field(default_factory=Controller)
     pumps: dict[str, Pump] = field(default_factory=dict)
     heaters: dict[str, Heater] = field(default_factory=dict)

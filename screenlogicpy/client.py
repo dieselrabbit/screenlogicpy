@@ -96,8 +96,10 @@ class ScreenLogicClient:
             async_message_cb=self._handle_async_message,
             connection_lost_cb=self._handle_connection_lost,
         )
-        self._system = self._system or System()
-        self._system.gateway = await self._connection.open(gw_info)
+        gateway = await self._connection.open(gw_info)
+        self._system = (
+            self._system if gateway == self._system.gateway else System(gateway)
+        )
         await self.update_config()
         await self.update_status()
         await self._add_client()
