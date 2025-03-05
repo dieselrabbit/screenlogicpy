@@ -1,6 +1,6 @@
 import struct
 
-from ..const.common import DEVICE_TYPE, STATE_TYPE, UNIT
+from ..const.common import DEVICE_TYPE, STATE_TYPE, UNIT, ScreenLogicResponseError
 from ..const.data import ATTR, DEVICE, VALUE, UNKNOWN
 from ..const.msg import CODE
 from .protocol import ScreenLogicProtocol
@@ -86,3 +86,11 @@ def decode_pump_status(buff: bytes, data: dict, pump_index: int) -> None:
         ATTR.UNIT: UNIT.GALLONS_PER_MINUTE,
         ATTR.STATE_TYPE: STATE_TYPE.MEASUREMENT,
     }
+
+async def async_request_set_pump_speed(protocol: ScreenLogicProtocol, pump_index: int, flow_index: int, flow: int, is_rpm: int, max_retries: int) -> bytes:
+    if result := await async_make_request(
+        protocol, CODE.SETPUMPFLOW_QUERY, struct.pack("<IIIII", 0, pump_index, flow_index, flow, is_rpm), max_retries
+    ) != b"":
+        raise ScreenLogicResponseError(
+            f"Set pump flow failed. Unexpected response: {result}"
+        )

@@ -10,7 +10,7 @@ from .heat import async_request_set_heat_mode, async_request_set_heat_setpoint
 from .lights import async_request_pool_lights_command
 from .login import async_connect_to_gateway
 from .ping import async_request_ping
-from .pump import async_request_pump_status
+from .pump import async_request_pump_status, async_request_set_pump_speed
 from .status import async_request_pool_status
 from .scg import async_request_scg_config, async_request_set_scg_config
 from .request import async_make_request

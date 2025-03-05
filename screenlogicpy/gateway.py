@@ -14,6 +14,7 @@ from .const.common import (
 )
 from .const.msg import COM_MAX_RETRIES
 from .device_const.chemistry import CHEM_RANGE as cr
+from .device_const.pump import FLOW_RANGE as fr
 from .device_const.system import EQUIPMENT_FLAG
 from .device_const.scg import SCG_RANGE as sr
 from .const.data import ATTR, DEVICE, GROUP, VALUE
@@ -33,6 +34,7 @@ from .requests import (
     async_request_scg_config,
     async_request_set_scg_config,
     async_request_set_chem_data,
+    async_request_set_pump_speed,
     async_make_request,
 )
 from .requests.protocol import ScreenLogicProtocol
@@ -476,6 +478,22 @@ class ScreenLogicGateway:
 
         return await self._async_connected_request(
             async_request_set_date_time, date_time, auto_dst
+        )
+    
+    async def async_set_pump_flow(
+            self,
+            pump_index: int,
+            flow_index: int,
+            value: int,
+            is_rpm: bool,
+    ):
+        if is_rpm:
+            fr.RPM.check(value)
+        else:
+            fr.GPM.check(value)
+        
+        return await self._async_connected_request(
+            async_request_set_pump_speed, pump_index, flow_index, value, is_rpm
         )
 
     async def async_synchronize_date_time(self):
