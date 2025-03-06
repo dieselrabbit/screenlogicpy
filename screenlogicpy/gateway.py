@@ -14,7 +14,7 @@ from .const.common import (
 )
 from .const.msg import COM_MAX_RETRIES
 from .device_const.chemistry import CHEM_RANGE as cr
-from .device_const.pump import FLOW_RANGE as fr
+from .device_const.pump import FLOW_RANGE as fr, INDEX_RANGE as ir
 from .device_const.system import EQUIPMENT_FLAG
 from .device_const.scg import SCG_RANGE as sr
 from .const.data import ATTR, DEVICE, GROUP, VALUE
@@ -202,16 +202,23 @@ class ScreenLogicGateway:
         ):
             self._last[DATA_REQUEST.STATUS] = last_raw
 
+    async def async_get_pump(self, pump_index):
+        if not self._data[DEVICE.PUMP][pump_index][VALUE.DATA]:
+            raise ValueError("Invalid pump id")
+        _LOGGER.debug("Requesting pump %i data", pump_index)
+        last_pumps = self._last.setdefault(DATA_REQUEST.PUMPS, {})
+        if last_raw := await self._async_connected_request(
+            async_request_pump_status, self._data, pump_index, reconnect_delay=1
+        ):
+            last_pumps[pump_index] = last_raw
+        
+
     async def async_get_pumps(self):
         """Request all pump state data."""
         for pumpID in self._data[DEVICE.PUMP]:
             if self._data[DEVICE.PUMP][pumpID][VALUE.DATA] != 0:
-                _LOGGER.debug("Requesting pump %i data", pumpID)
-                last_pumps = self._last.setdefault(DATA_REQUEST.PUMPS, {})
-                if last_raw := await self._async_connected_request(
-                    async_request_pump_status, self._data, pumpID, reconnect_delay=1
-                ):
-                    last_pumps[pumpID] = last_raw
+                await self.async_get_pump(pumpID)
+
 
     async def async_get_chemistry(self):
         """Request IntelliChem controller data."""
@@ -491,9 +498,12 @@ class ScreenLogicGateway:
             fr.RPM.check(value)
         else:
             fr.GPM.check(value)
+
+        ir.PUMP.check(pump_index)
+        ir.FLOW.check(flow_index)
         
         return await self._async_connected_request(
-            async_request_set_pump_speed, pump_index, flow_index, value, is_rpm
+            async_request_set_pump_speed, pump_index, flow_index, value, ON_OFF.from_bool(is_rpm)
         )
 
     async def async_synchronize_date_time(self):

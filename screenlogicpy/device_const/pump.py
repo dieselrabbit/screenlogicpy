@@ -11,6 +11,10 @@ class PUMP_TYPE(SLIntEnum):
     def title(self) -> str:
         return self._title().replace("Intelliflow", "IntelliFlow")
 
+class INDEX_RANGE:
+    PUMP = SLValueRange(0, 7)
+    FLOW = SLValueRange(0, 7)
+
 class FLOW_RANGE:
     GPM = SLValueRange(15, 130)
     RPM = SLValueRange(400, 3450)
