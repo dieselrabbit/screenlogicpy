@@ -368,11 +368,15 @@ async def cli(cli_args):
     # pylint: disable=unused-variable
     export_parser = subparsers.add_parser(
         "export",
-        help="Exports complete response collection to slpy[libversion]\_[adapter-firmware]\_[controller-model]\_[equipment-flags].json",
+        help="Exports complete response collection to slpy[libversion]_[adapter-firmware]_[controller-model]_[equipment-flags].json",
     )  # noqa F841
 
-    # Get options
-    get_parser = subparsers.add_parser("get", help="Gets the specified value or state")
+
+    ###########################################################################
+    # GET options
+    ###########################################################################
+
+    get_parser = subparsers.add_parser("get", help="Returns a specified value or state from the ScreenLogic gateway. Use 'get -h' for info")
     get_subparsers = get_parser.add_subparsers(dest="get_option")
     get_subparsers.required = True
 
@@ -382,6 +386,9 @@ async def cli(cli_args):
         "type": int,
         "help": "Circuit number",
     }
+
+    ###########################################################################
+    ##  GET CIRCUIT
     get_circuit_parser = get_subparsers.add_parser(
         "circuit", aliases=["c"], help="Get the state of the specified circuit"
     )
@@ -396,12 +403,17 @@ async def cli(cli_args):
         "choices": body_options,
         "help": f"Body of water. One of: {body_options}",
     }
+
+    ###########################################################################
+    ##  GET HEAT-MODE
     get_heat_mode_parser = get_subparsers.add_parser(
         "heat-mode", aliases=["hm"], help="Get the heat mode for the specified body"
     )
     get_heat_mode_parser.add_argument(**ARGUMENT_BODY)
     get_heat_mode_parser.set_defaults(async_func=async_get_heat_mode)
 
+    ###########################################################################
+    ##  GET HEAT-TEMP
     get_heat_temp_parser = get_subparsers.add_parser(
         "heat-temp",
         aliases=["ht"],
@@ -410,6 +422,8 @@ async def cli(cli_args):
     get_heat_temp_parser.add_argument(**ARGUMENT_BODY)
     get_heat_temp_parser.set_defaults(async_func=async_get_heat_temp)
 
+    ###########################################################################
+    ##  GET HEAT-STATE
     get_heat_state_parser = get_subparsers.add_parser(
         "heat-state",
         aliases=["hs"],
@@ -418,6 +432,8 @@ async def cli(cli_args):
     get_heat_state_parser.add_argument(**ARGUMENT_BODY)
     get_heat_state_parser.set_defaults(async_func=async_get_heat_state)
 
+    ###########################################################################
+    ##  GET CURRENT-TEMP
     get_current_temp_parser = get_subparsers.add_parser(
         "current-temp",
         aliases=["t"],
@@ -426,6 +442,8 @@ async def cli(cli_args):
     get_current_temp_parser.add_argument(**ARGUMENT_BODY)
     get_current_temp_parser.set_defaults(async_func=async_get_current_temp)
 
+    ###########################################################################
+    ##  GET DATE-TIME
     get_date_time_parser = get_subparsers.add_parser("date-time", aliases=["dt"])
     get_date_time_parser.add_argument(
         "-f",
@@ -436,19 +454,29 @@ async def cli(cli_args):
     )
     get_date_time_parser.set_defaults(async_func=async_get_date_time)
 
+    ###########################################################################
+    ##  GET AUTO-DST
     get_auto_dst_parser = get_subparsers.add_parser("auto-dst", aliases=["dst"])
     get_auto_dst_parser.set_defaults(async_func=async_get_auto_dst)
 
+    ###########################################################################
+    ##  GET JSON
     get_json_parser = get_subparsers.add_parser("json", aliases=["j"])
     get_json_parser.set_defaults(async_func=async_get_json)
 
-    # Set options
+
+    ###########################################################################
+    # SET options
+    ###########################################################################
+
     set_parser = subparsers.add_parser(
-        "set", help="Sets the specified option, state, or value"
+        "set", help="Sets the specified option, state, or value on the pool controller. Use 'set -h' for more info"
     )
     set_subparsers = set_parser.add_subparsers(dest="set_option")
     set_subparsers.required = True
 
+    ###########################################################################
+    ##  SET CIRCUIT
     on_off_options = ON_OFF.parsable_values()
     set_circuit_parser = set_subparsers.add_parser(
         "circuit",
@@ -464,6 +492,8 @@ async def cli(cli_args):
         help=f"State to set. One of {on_off_options}",
     )
 
+    ###########################################################################
+    ##  SET COLOR-LIGHTS
     cl_options = COLOR_MODE.parsable_values()
     set_circuit_parser.set_defaults(async_func=async_set_circuit)
     set_color_light_parser = set_subparsers.add_parser(
@@ -480,6 +510,8 @@ async def cli(cli_args):
     )
     set_color_light_parser.set_defaults(async_func=async_set_color_light)
 
+    ###########################################################################
+    ##  SET HEAT-MODE
     set_heat_mode_parser = set_subparsers.add_parser(
         "heat-mode",
         aliases=["hm"],
@@ -497,6 +529,8 @@ async def cli(cli_args):
     )
     set_heat_mode_parser.set_defaults(async_func=async_set_heat_mode)
 
+    ###########################################################################
+    ##  SET HEAT-TEMP
     set_heat_temp_parser = set_subparsers.add_parser(
         "heat-temp",
         aliases=["ht"],
@@ -511,29 +545,35 @@ async def cli(cli_args):
     )
     set_heat_temp_parser.set_defaults(async_func=async_set_heat_temp)
 
+    ###########################################################################
+    ##  SET SCG-SETPOINT
     set_scg_setpoint_parser = set_subparsers.add_parser(
         "salt-generator",
         aliases=["scg"],
         help="Set the SCG output level(s) for the pool and/or spa",
     )
+    set_scg_setpoint_parser.register("type", "pool setpoint", lambda v: SCG_RANGE.POOL_SETPOINT.parse_check(v))
     set_scg_setpoint_parser.add_argument(
         "-p",
         "--pool",
-        type=int,
+        type="pool setpoint",
         metavar="OUTPUT",
         default=None,
-        help=f"Chlorinator output for when system is in POOL mode. {SCG_RANGE.POOL_SETPOINT.minimum}-{SCG_RANGE.POOL_SETPOINT.maximum}",
+        help=f"Chlorinator output for when system is in POOL mode. [{SCG_RANGE.POOL_SETPOINT.minimum}-{SCG_RANGE.POOL_SETPOINT.maximum}]",
     )
+    set_scg_setpoint_parser.register("type", "spa setpoint", lambda v: SCG_RANGE.SPA_SETPOINT.parse_check(v))
     set_scg_setpoint_parser.add_argument(
         "-s",
         "--spa",
-        type=int,
+        type="spa setpoint",
         metavar="OUTPUT",
         default=None,
-        help=f"Chlorinator output for when system is in SPA mode. {SCG_RANGE.SPA_SETPOINT.minimum}-{SCG_RANGE.SPA_SETPOINT.maximum}",
+        help=f"Chlorinator output for when system is in SPA mode. [{SCG_RANGE.SPA_SETPOINT.minimum}-{SCG_RANGE.SPA_SETPOINT.maximum}",
     )
     set_scg_setpoint_parser.set_defaults(async_func=async_set_scg_setpoint)
 
+    ###########################################################################
+    ##  SET SUPER-CHLORINATE
     set_scg_super_parser = set_subparsers.add_parser(
         "super-chlorinate", aliases=["sc"], help="Configure super chlorination"
     )
@@ -546,37 +586,40 @@ async def cli(cli_args):
         help=f"State of super chlorination. One of {on_off_options}",
     )
 
+    set_scg_super_parser.register("type", "super chlorinate timer", lambda v: SCG_RANGE.SUPER_CHLOR_RT.parse_check(v))
     set_scg_super_parser.add_argument(
         "-t",
         "--time",
-        type=int,
+        type="super chlorinate timer",
         metavar="HOURS",
         default=None,
-        help=f"Time in hours to run super chlorination. {SCG_RANGE.SUPER_CHLOR_RT.minimum}-{SCG_RANGE.SUPER_CHLOR_RT.maximum}",
+        help=f"Time in hours to run super chlorination. [{SCG_RANGE.SUPER_CHLOR_RT.minimum}-{SCG_RANGE.SUPER_CHLOR_RT.maximum}]",
     )
     set_scg_super_parser.set_defaults(async_func=async_set_scg_super)
 
+    ###########################################################################
+    ##  SET CHEM-SETPOINT
     set_chem_setpoint_parser = set_subparsers.add_parser(
         "chemistry-setpoint",
         aliases=["cs"],
         help="Set the specified pH and/or ORP setpoint(s) for the IntelliChem system",
     )
-
+    set_chem_setpoint_parser.register("type", "ph setpoint", lambda v: CHEM_RANGE.PH_SETPOINT.parse_check(v))
     set_chem_setpoint_parser.add_argument(
         "-p",
         "--ph",
-        type=float,
+        type="ph setpoint",
         default=None,
         help=(
             "PH set point for IntelliChem. "
             f"{CHEM_RANGE.PH_SETPOINT.minimum}-{CHEM_RANGE.PH_SETPOINT.maximum}"
         ),
     )
-
+    set_chem_setpoint_parser.register("type", "orp setpoint", lambda v: CHEM_RANGE.ORP_SETPOINT.parse_check(v))
     set_chem_setpoint_parser.add_argument(
         "-o",
         "--orp",
-        type=int,
+        type="orp setpoint",
         default=None,
         help=(
             "ORP set point for IntelliChem. "
@@ -585,41 +628,49 @@ async def cli(cli_args):
     )
     set_chem_setpoint_parser.set_defaults(async_func=async_set_chem_setpoint)
 
+    ###########################################################################
+    ##  SET CHEM-DATA
     set_chem_data_parser = set_subparsers.add_parser(
         "chemistry-value",
         aliases=["cv"],
         help="Set various user-supplied chemistry values for LSI calculation in the IntelliChem system",
     )
+    set_chem_data_parser.register("type", "calcium hardness", lambda v: CHEM_RANGE.CALCIUM_HARDNESS.parse_check(v))
     set_chem_data_parser.add_argument(
         "-ch",
         "--calcium-hardness",
-        type=int,
+        type="calcium hardness",
         default=None,
         help="Calcium hardness for LSI calculations in the IntelliChem system.",
     )
+    set_chem_data_parser.register("type", "total alkalinity", lambda v: CHEM_RANGE.TOTAL_ALKALINITY.parse_check(v))
     set_chem_data_parser.add_argument(
         "-ta",
         "--total-alkalinity",
-        type=int,
+        type="total alkalinity",
         default=None,
         help="Total alkalinity for LSI calculations in the IntelliChem system.",
     )
+    set_chem_data_parser.register("type", "cyanuric acid", lambda v: CHEM_RANGE.CYANURIC_ACID.parse_check(v))
     set_chem_data_parser.add_argument(
         "-cya",
         "--cyanuric-acid",
-        type=int,
+        type="cyanuric acid",
         default=None,
         help="Cyanuric acid for LSI calculations in the IntelliChem system.",
     )
+    set_chem_data_parser.register("type", "total dissolved solids", lambda v: CHEM_RANGE.SALT_TDS.parse_check(v))
     set_chem_data_parser.add_argument(
         "-tds",
         "--total-dissolved-solids",
-        type=int,
+        type="total dissolved solids",
         default=None,
         help="Salt or total dissolved solids (if not using a SCG) for LSI calculations in the IntelliChem system.",
     )
     set_chem_data_parser.set_defaults(async_func=async_set_chem_value)
 
+    ###########################################################################
+    ##  SET DATE-TIME
     set_date_time_parser = set_subparsers.add_parser(
         "date-time",
         aliases=["dt"],
@@ -643,15 +694,14 @@ async def cli(cli_args):
     )
     set_date_time_parser.set_defaults(async_func=async_set_date_time)
 
+    ###########################################################################
+    ##  SET PUMP-FLOW
     set_pump_flow_parser = set_subparsers.add_parser(
         "pump-flow",
         aliases=["pf"],
         help="Sets the rate of RPM or GPM for the specified pump and flow",
     )
     set_pump_flow_parser.register("type", "pump index", lambda i: INDEX_RANGE.PUMP.parse_check(i))
-    set_pump_flow_parser.register("type", "flow index", lambda i: INDEX_RANGE.FLOW.parse_check(i))
-    set_pump_flow_parser.register("type", "rpm", lambda v: FLOW_RANGE.RPM.parse_check(v))
-    set_pump_flow_parser.register("type", "gpm", lambda v: FLOW_RANGE.GPM.parse_check(v))
     set_pump_flow_parser.add_argument(
         "pump",
         metavar="PUMP_NUM",
@@ -659,6 +709,7 @@ async def cli(cli_args):
         type="pump index",
         help="Pump index. Valid values are [0-7]"
     )
+    set_pump_flow_parser.register("type", "flow index", lambda i: INDEX_RANGE.FLOW.parse_check(i))
     set_pump_flow_parser.add_argument(
         "flow",
         metavar="FLOW_NUM",
@@ -667,6 +718,7 @@ async def cli(cli_args):
         help="Flow index. Valid values are [0-7]"
     )
     rate_group = set_pump_flow_parser.add_mutually_exclusive_group(required=True)
+    rate_group.register("type", "rpm", lambda v: FLOW_RANGE.RPM.parse_check(v))
     rate_group.add_argument(
         "-rpm",
         "--rev_per_minute",
@@ -675,6 +727,7 @@ async def cli(cli_args):
         type="rpm",
         help="Specify the flow as a pump speed in revolution per minute"
     )
+    rate_group.register("type", "gpm", lambda v: FLOW_RANGE.GPM.parse_check(v))
     rate_group.add_argument(
         "-gpm",
         "--gal_per_minute",
