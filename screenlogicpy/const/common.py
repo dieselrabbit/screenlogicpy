@@ -117,6 +117,15 @@ class SLValueRange:
             return value
         else:
             raise ValueError(f"{value} not in range {self.minimum}-{self.maximum}")
+        
+class SLIntValueRange(SLValueRange):
+
+    def parse_check(self, string: str) -> int:
+        value = int(string)
+        if self.minimum <= value <= self.maximum:
+            return value
+        else:
+            raise ValueError(f"{value} not in range {self.minimum}-{self.maximum}")
 
 
 class DATA_REQUEST:

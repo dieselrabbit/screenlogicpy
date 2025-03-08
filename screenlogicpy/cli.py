@@ -20,6 +20,7 @@ from screenlogicpy.data import build_response_collection, export_response_collec
 from screenlogicpy.device_const.chemistry import CHEM_RANGE
 from screenlogicpy.device_const.circuit import INTERFACE
 from screenlogicpy.device_const.heat import HEAT_MODE
+from screenlogicpy.device_const.pump import FLOW_RANGE, INDEX_RANGE
 from screenlogicpy.device_const.system import BODY_TYPE, COLOR_MODE
 from screenlogicpy.device_const.scg import SCG_RANGE
 from screenlogicpy.const.data import ATTR, DEVICE, GROUP, VALUE
@@ -296,6 +297,26 @@ async def cli(cli_args):
         )
         print(
             f"Controller time now: {datetime.fromtimestamp(timestamp, tz=timezone.utc).ctime()}"
+        )
+        return 0
+    
+    async def async_set_pump_flow():
+        pump = args.pump
+        flow = args.flow
+        rpm = args.rev_per_minute
+        gpm = args.gal_per_minute
+        
+        rate = gpm
+        is_rpm = False
+
+        if rpm:
+            is_rpm = True
+            rate = rpm
+
+        await gateway.async_set_pump_flow(pump, flow, rate, is_rpm)
+        await gateway.async_get_pump(pump)
+        print(
+            gateway.get_data(DEVICE.PUMP, pump, VALUE.PRESET, flow, ATTR.SETPOINT), "RPM" if is_rpm else "GPM"
         )
         return 0
 
@@ -621,6 +642,48 @@ async def cli(cli_args):
         help="Automatic adjustment of system time for Daylight Saving Time",
     )
     set_date_time_parser.set_defaults(async_func=async_set_date_time)
+
+    set_pump_flow_parser = set_subparsers.add_parser(
+        "pump-flow",
+        aliases=["pf"],
+        help="Sets the rate of RPM or GPM for the specified pump and flow",
+    )
+    set_pump_flow_parser.register("type", "pump index", lambda i: INDEX_RANGE.PUMP.parse_check(i))
+    set_pump_flow_parser.register("type", "flow index", lambda i: INDEX_RANGE.FLOW.parse_check(i))
+    set_pump_flow_parser.register("type", "rpm", lambda v: FLOW_RANGE.RPM.parse_check(v))
+    set_pump_flow_parser.register("type", "gpm", lambda v: FLOW_RANGE.GPM.parse_check(v))
+    set_pump_flow_parser.add_argument(
+        "pump",
+        metavar="PUMP_NUM",
+        default=0,
+        type="pump index",
+        help="Pump index. Valid values are [0-7]"
+    )
+    set_pump_flow_parser.add_argument(
+        "flow",
+        metavar="FLOW_NUM",
+        default=0,
+        type="flow index",
+        help="Flow index. Valid values are [0-7]"
+    )
+    rate_group = set_pump_flow_parser.add_mutually_exclusive_group(required=True)
+    rate_group.add_argument(
+        "-rpm",
+        "--rev_per_minute",
+        metavar=f"[{FLOW_RANGE.RPM.minimum}-{FLOW_RANGE.RPM.maximum}]",
+        default=None,
+        type="rpm",
+        help="Specify the flow as a pump speed in revolution per minute"
+    )
+    rate_group.add_argument(
+        "-gpm",
+        "--gal_per_minute",
+        metavar=f"[{FLOW_RANGE.GPM.minimum}-{FLOW_RANGE.GPM.maximum}]",
+        default=None,
+        type="gpm",
+        help="Specify the flow as a flow rate in gallons per minute"
+    )
+    set_pump_flow_parser.set_defaults(async_func=async_set_pump_flow)
 
     args = option_parser.parse_args(cli_args)
 

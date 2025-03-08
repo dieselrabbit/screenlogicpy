@@ -1,5 +1,5 @@
 from ..const import SLIntEnum
-from ..const.common import SLValueRange
+from ..const.common import SLIntValueRange
 
 class PUMP_TYPE(SLIntEnum):
     NONE = 0
@@ -12,9 +12,9 @@ class PUMP_TYPE(SLIntEnum):
         return self._title().replace("Intelliflow", "IntelliFlow")
 
 class INDEX_RANGE:
-    PUMP = SLValueRange(0, 7)
-    FLOW = SLValueRange(0, 7)
+    PUMP = SLIntValueRange(0, 7)
+    FLOW = SLIntValueRange(0, 7)
 
 class FLOW_RANGE:
-    GPM = SLValueRange(15, 130)
-    RPM = SLValueRange(400, 3450)
+    GPM = SLIntValueRange(15, 130)
+    RPM = SLIntValueRange(400, 3450)
