@@ -14,7 +14,7 @@ from .const_data import (
 
 
 @pytest.mark.asyncio()
-async def test_sub_unsub(event_loop, MockProtocolAdapter):
+async def test_sub_unsub(MockProtocolAdapter):
     async with MockProtocolAdapter:
         clientID = random.randint(32767, 65535)
         gateway = ScreenLogicGateway(clientID)
@@ -31,6 +31,7 @@ async def test_sub_unsub(event_loop, MockProtocolAdapter):
 
         sub_code = 12522
 
+        event_loop = asyncio.get_running_loop()
         result: asyncio.Future = event_loop.create_future()
         result.set_result((0, sub_code + 1, b""))
         with patch(
@@ -174,7 +175,7 @@ async def test_attach_existing(MockProtocolAdapter):
 
 
 @pytest.mark.asyncio
-async def test_keepalive(event_loop: asyncio.BaseEventLoop, MockProtocolAdapter):
+async def test_keepalive(MockProtocolAdapter):
     async with MockProtocolAdapter:
         gateway = ScreenLogicGateway()
 

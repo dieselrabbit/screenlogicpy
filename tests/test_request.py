@@ -12,9 +12,7 @@ from .const_data import FAKE_CONNECT_INFO
 
 
 @pytest.mark.asyncio
-async def test_request_connection_lost(
-    event_loop: asyncio.AbstractEventLoop, MockProtocolAdapter: asyncio.Server
-):
+async def test_request_connection_lost(MockProtocolAdapter: asyncio.Server):
     def disconnecting_ping(self: FakeTCPProtocolAdapter, msg: SLMessage):
         self.transport.abort()
 
