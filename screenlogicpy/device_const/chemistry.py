@@ -1,6 +1,6 @@
 from enum import IntFlag
 from ..const import SLIntEnum
-from ..const.common import SLValueRange
+from ..const.common import SLIntValueRange, SLValueRange
 
 
 class ALARM_FLAG(IntFlag):
@@ -81,8 +81,8 @@ class DOSE_TYPE_PH(SLIntEnum):
 # Valid ranges listed in IntelliChem documentation
 class CHEM_RANGE:
     PH_SETPOINT = SLValueRange(7.2, 7.6)
-    ORP_SETPOINT = SLValueRange(400, 800)
-    CALCIUM_HARDNESS = SLValueRange(25, 800)
-    CYANURIC_ACID = SLValueRange(0, 201)
-    TOTAL_ALKALINITY = SLValueRange(25, 800)
-    SALT_TDS = SLValueRange(500, 6500)
+    ORP_SETPOINT = SLIntValueRange(400, 800)
+    CALCIUM_HARDNESS = SLIntValueRange(25, 800)
+    CYANURIC_ACID = SLIntValueRange(0, 201)
+    TOTAL_ALKALINITY = SLIntValueRange(25, 800)
+    SALT_TDS = SLIntValueRange(500, 6500)

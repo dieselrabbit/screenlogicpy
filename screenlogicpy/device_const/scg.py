@@ -1,5 +1,5 @@
 from .system import BODY_TYPE
-from ..const.common import SLIntEnum, SLValueRange
+from ..const.common import SLIntEnum, SLIntValueRange
 
 
 class STATUS_FLAG(SLIntEnum):
@@ -20,9 +20,9 @@ class STATE_FLAG(SLIntEnum):
 
 
 class SCG_RANGE:
-    POOL_SETPOINT = SLValueRange(0, 100)
-    SPA_SETPOINT = SLValueRange(0, 100)
-    SUPER_CHLOR_RT = SLValueRange(0, 72)
+    POOL_SETPOINT = SLIntValueRange(0, 100)
+    SPA_SETPOINT = SLIntValueRange(0, 100)
+    SUPER_CHLOR_RT = SLIntValueRange(0, 72)
 
 
 RANGE_FOR_BODY = {
