@@ -338,6 +338,24 @@ class TestCLI:
     @pytest.mark.parametrize(
         "arguments, return_code, expected_output",
         [
+            ("set pf 0 0 --gal_per_minute 63", 0, "63 GPM"),
+            ("set pump-flow 1 0 -rpm 2700", 0, "2700 RPM"),
+        ],
+    )
+    async def test_set_pump_flow(
+        self,
+        capsys: pytest.CaptureFixture,
+        arguments: str,
+        return_code: int,
+        expected_output: str,
+    ):
+        assert await cli(arguments.split()) == return_code
+        assert capsys.readouterr().out.strip() == expected_output
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "arguments, return_code, expected_output",
+        [
             ("export", 0, ""),
         ],
     )
