@@ -307,6 +307,23 @@ class ScreenLogicGateway:
     def get_debug(self) -> dict:
         """Return the debug last-received data."""
         return self._last
+    
+    def get_circuit_by_device_id(self, device_id) -> dict | None:
+        circuits: dict = self._data[DEVICE.CIRCUIT]
+        for circuit in circuits.values:
+            if circuit[ATTR.DEVICE_ID] == device_id:
+                return circuit
+        return None
+    
+    def get_flows_by_device_id(self, device_id: int) -> dict:
+        flows: dict = {}
+        for pump_id, pump_data in self._data[DEVICE.PUMP].items():
+            if pump_data[VALUE.DATA]:
+                for flow_id, flow_data in pump_data[VALUE.PRESET].items():
+                    if flow_data[ATTR.DEVICE_ID] == device_id:
+                        pump = flows.setdefault(pump_id, {})
+                        pump[flow_id] = flow_data
+        return flows
 
     def set_max_retries(self, max_retries: int = COM_MAX_RETRIES) -> None:
         if 0 < max_retries < 6:
