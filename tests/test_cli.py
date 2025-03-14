@@ -1,4 +1,3 @@
-import asyncio
 import json
 import pytest
 import pytest_asyncio
@@ -20,12 +19,13 @@ from .const_data import (
 
 
 @pytest_asyncio.fixture()
-async def PatchedGateway(response_collection: ScreenLogicResponseCollection):
-    event_loop = asyncio.get_running_loop()
+async def PatchedGateway(
+    response_collection: ScreenLogicResponseCollection
+):
     with patch.multiple(
         ScreenLogicGateway,
         async_connect=lambda *args, **kwargs: stub_async_connect(
-            event_loop, response_collection, *args, **kwargs
+            response_collection, *args, **kwargs
         ),
         async_disconnect=DEFAULT,
         _async_connected_request=DEFAULT,
@@ -360,7 +360,7 @@ class TestCLI:
         ):
             assert await cli(arguments.split()) == return_code
         mo.assert_called_with(
-            "slpy-0102_pool-52-build-7380-rel_easytouch2-8_32824.json",
+            "slpy-0101_pool-52-build-7380-rel_easytouch2-8_32824.json",
             "w",
             encoding="utf-8",
         )

@@ -56,16 +56,16 @@ async def response_collection():
 async def MockProtocolAdapter(
     response_collection: ScreenLogicResponseCollection,
 ):
-    event_loop = asyncio.get_running_loop()
-    server = await event_loop.create_server(
+    server = await asyncio.get_running_loop().create_server(
         lambda: FakeTCPProtocolAdapter(response_collection),
         FAKE_GATEWAY_ADDRESS,
         FAKE_GATEWAY_PORT,
         reuse_address=True,
     )
 
-    yield server
-    server.close()
+    async with server:
+        yield server
+        server.close()
 
 
 @pytest_asyncio.fixture
@@ -82,12 +82,13 @@ async def discovery_response() -> bytes:
 
 
 @pytest_asyncio.fixture()
-async def MockDiscoveryAdapter(discovery_response: bytes):
-    event_loop = asyncio.get_running_loop()
+async def MockDiscoveryAdapter(
+    discovery_response: bytes
+):
     _udp_sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
     _udp_sock.bind(("", DISCOVERY_PORT))
 
-    transport, protocol = await event_loop.create_datagram_endpoint(
+    transport, protocol = await asyncio.get_running_loop().create_datagram_endpoint(
         lambda: FakeUDPProtocolAdapter(discovery_response),
         sock=_udp_sock,
     )
@@ -95,7 +96,6 @@ async def MockDiscoveryAdapter(discovery_response: bytes):
 
 
 async def stub_async_connect(
-    loop: asyncio.BaseEventLoop,
     resp_col: ScreenLogicResponseCollection,
     self: ScreenLogicGateway,
     ip: str = None,
@@ -116,7 +116,7 @@ async def stub_async_connect(
     self._name = name
     self._custom_connection_closed_callback = connection_closed_callback
     self._mac = FAKE_GATEWAY_MAC
-    self._protocol = ScreenLogicProtocol(loop)
+    self._protocol = ScreenLogicProtocol(asyncio.get_running_loop())
     self._protocol.connection_made(MagicMock(spec=asyncio.Transport))
     self._last, self._data = deconstruct_response_collection(resp_col)
 
@@ -124,13 +124,13 @@ async def stub_async_connect(
 
 
 @pytest_asyncio.fixture()
-async def MockConnectedGateway(response_collection: ScreenLogicResponseCollection):
-    event_loop = asyncio.get_running_loop()
-
+async def MockConnectedGateway(
+    response_collection: ScreenLogicResponseCollection
+):
     with patch.multiple(
         ScreenLogicGateway,
         async_connect=lambda *args, **kwargs: stub_async_connect(
-            event_loop, response_collection, *args, **kwargs
+            response_collection, *args, **kwargs
         ),
         async_disconnect=DEFAULT,
         # get_debug=lambda self: {},

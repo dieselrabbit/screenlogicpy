@@ -15,62 +15,63 @@ from .const_data import (
 
 @pytest.mark.asyncio()
 async def test_sub_unsub(MockProtocolAdapter):
-    event_loop = asyncio.get_running_loop()
-    clientID = random.randint(32767, 65535)
-    gateway = ScreenLogicGateway(clientID)
-    code = CODE.STATUS_CHANGED
+    async with MockProtocolAdapter:
+        clientID = random.randint(32767, 65535)
+        gateway = ScreenLogicGateway(clientID)
+        code = CODE.STATUS_CHANGED
+        event_loop = asyncio.get_running_loop()
 
-    def callback():
-        pass
+        def callback():
+            pass
 
-    bad_unsub = await gateway.async_subscribe_client(callback, code)
+        bad_unsub = await gateway.async_subscribe_client(callback, code)
 
-    assert not bad_unsub
+        assert not bad_unsub
 
-    await gateway.async_connect(**FAKE_CONNECT_INFO)
+        await gateway.async_connect(**FAKE_CONNECT_INFO)
 
-    sub_code = 12522
+        sub_code = 12522
 
-    result: asyncio.Future = event_loop.create_future()
-    result.set_result((0, sub_code + 1, b""))
-    with patch(
-        "screenlogicpy.requests.client.ScreenLogicProtocol.await_send_message",
-        return_value=result,
-    ) as mockSubRequest:
-        unsub = await gateway.async_subscribe_client(callback, code)
+        result: asyncio.Future = event_loop.create_future()
+        result.set_result((0, sub_code + 1, b""))
+        with patch(
+            "screenlogicpy.requests.client.ScreenLogicProtocol.await_send_message",
+            return_value=result,
+        ) as mockSubRequest:
+            unsub = await gateway.async_subscribe_client(callback, code)
 
-        assert callable(unsub)
-        assert gateway._client_manager._listeners == {
-            code: {
-                callback,
-            },
-        }
-        assert gateway._protocol._callbacks == {
-            code: (
-                gateway._client_manager._async_common_callback,
-                (code, gateway._data),
-            ),
-        }
-        assert mockSubRequest.call_args.args[0] == sub_code
-        assert mockSubRequest.call_args.args[1] == struct.pack("<II", 0, clientID)
+            assert callable(unsub)
+            assert gateway._client_manager._listeners == {
+                code: {
+                    callback,
+                },
+            }
+            assert gateway._protocol._callbacks == {
+                code: (
+                    gateway._client_manager._async_common_callback,
+                    (code, gateway._data),
+                ),
+            }
+            assert mockSubRequest.call_args.args[0] == sub_code
+            assert mockSubRequest.call_args.args[1] == struct.pack("<II", 0, clientID)
 
-    unsub_code = 12524
+        unsub_code = 12524
 
-    result2: asyncio.Future = event_loop.create_future()
-    result2.set_result((0, unsub_code + 1, b""))
-    with patch(
-        "screenlogicpy.requests.client.ScreenLogicProtocol.await_send_message",
-        return_value=result2,
-    ) as mockUnsubRequest:
-        unsub()
+        result2: asyncio.Future = event_loop.create_future()
+        result2.set_result((0, unsub_code + 1, b""))
+        with patch(
+            "screenlogicpy.requests.client.ScreenLogicProtocol.await_send_message",
+            return_value=result2,
+        ) as mockUnsubRequest:
+            unsub()
 
-        assert gateway._client_manager._listeners == {}
-        assert gateway._protocol._callbacks == {}
+            assert gateway._client_manager._listeners == {}
+            assert gateway._protocol._callbacks == {}
 
-        await asyncio.sleep(0)
+            await asyncio.sleep(0)
 
-        assert mockUnsubRequest.call_args.args[0] == unsub_code
-        assert mockUnsubRequest.call_args.args[1] == struct.pack("<II", 0, clientID)
+            assert mockUnsubRequest.call_args.args[0] == unsub_code
+            assert mockUnsubRequest.call_args.args[1] == struct.pack("<II", 0, clientID)
 
 
 @pytest.mark.asyncio()
@@ -158,35 +159,39 @@ async def test_attach_existing(MockProtocolAdapter):
             callback3,
         },
     }
-    await gateway.async_connect(**FAKE_CONNECT_INFO)
+    async with MockProtocolAdapter:
+        await gateway.async_connect(**FAKE_CONNECT_INFO)
 
-    assert gateway._protocol._callbacks == {
-        code1: (
-            gateway._client_manager._async_common_callback,
-            (code1, gateway._data),
-        ),
-        code2: (
-            gateway._client_manager._async_common_callback,
-            (code2, gateway._data),
-        ),
-    }
+        assert gateway._protocol._callbacks == {
+            code1: (
+                gateway._client_manager._async_common_callback,
+                (code1, gateway._data),
+            ),
+            code2: (
+                gateway._client_manager._async_common_callback,
+                (code2, gateway._data),
+            ),
+        }
 
 
 @pytest.mark.asyncio
 async def test_keepalive(MockProtocolAdapter):
-    gateway = ScreenLogicGateway()
+    async with MockProtocolAdapter:
+        gateway = ScreenLogicGateway()
 
-    def callback():
-        pass
+        def callback():
+            pass
 
-    with patch("screenlogicpy.client.COM_KEEPALIVE", new=1), patch(
-        "screenlogicpy.requests.ping.async_make_request",
-        return_value=b"",
-    ) as mockPingRequest:
-        await gateway.async_connect(**FAKE_CONNECT_INFO)
-        unsub = await gateway.async_subscribe_client(callback, CODE.STATUS_CHANGED)
-        await gateway.async_get_pumps()
-        await asyncio.sleep(2)
-        mockPingRequest.assert_awaited_once_with(gateway._protocol, 16, max_retries=0)
-        unsub()
-    await gateway.async_disconnect()
+        with patch("screenlogicpy.client.COM_KEEPALIVE", new=1), patch(
+            "screenlogicpy.requests.ping.async_make_request",
+            return_value=b"",
+        ) as mockPingRequest:
+            await gateway.async_connect(**FAKE_CONNECT_INFO)
+            unsub = await gateway.async_subscribe_client(callback, CODE.STATUS_CHANGED)
+            await gateway.async_get_pumps()
+            await asyncio.sleep(2)
+            mockPingRequest.assert_awaited_once_with(
+                gateway._protocol, 16, max_retries=0
+            )
+            unsub()
+        await gateway.async_disconnect()

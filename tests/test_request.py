@@ -12,18 +12,21 @@ from .const_data import FAKE_CONNECT_INFO
 
 
 @pytest.mark.asyncio
-async def test_request_connection_lost(MockProtocolAdapter):
+async def test_request_connection_lost(
+    MockProtocolAdapter: asyncio.Server
+):
     def disconnecting_ping(self: FakeTCPProtocolAdapter, msg: SLMessage):
         self.transport.abort()
 
     with patch.object(
         FakeTCPProtocolAdapter, "handle_ping_request", disconnecting_ping
     ):
-        gateway = ScreenLogicGateway()
-        await gateway.async_connect(**FAKE_CONNECT_INFO)
-        assert gateway.is_connected
-        with pytest.raises(
-            ScreenLogicConnectionError,
-            match="Request '16' canceled. Connection was closed",
-        ):
-            await async_request_ping(gateway._protocol, 1)
+        async with MockProtocolAdapter:
+            gateway = ScreenLogicGateway()
+            await gateway.async_connect(**FAKE_CONNECT_INFO)
+            assert gateway.is_connected
+            with pytest.raises(
+                ScreenLogicConnectionError,
+                match="Request '16' canceled. Connection was closed",
+            ):
+                await async_request_ping(gateway._protocol, 1)
