@@ -330,10 +330,15 @@ async def cli(cli_args):
     option_parser.add_argument(
         "-i",
         "--ip",
+        type=str,
         help="Bypasses discovery and specifies the ip address of the protocol adapter",
     )
     option_parser.add_argument(
-        "-p", "--port", default=80, help="Specifies the port of the protocol adapter"
+        "-p",
+        "--port",
+        type=int,
+        default=80, 
+        help="Specifies the port of the protocol adapter",
     )
 
     subparsers = option_parser.add_subparsers(dest="action")
