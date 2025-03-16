@@ -9,6 +9,7 @@ from unittest.mock import DEFAULT, MagicMock, patch
 from screenlogicpy import ScreenLogicGateway, __version__ as sl_version
 from screenlogicpy.cli import file_format
 from screenlogicpy.const.common import ScreenLogicError
+from screenlogicpy.const.data import DEVICE, GROUP, VALUE
 from screenlogicpy.data import (
     ScreenLogicResponseCollection,
     deconstruct_response_collection,
@@ -30,7 +31,7 @@ from .const_data import (
 )
 
 
-DEFAULT_RESPONSE = "slpy-0100_pool-52-build-7380-rel_easytouch2-8_32824.json"
+DEFAULT_RESPONSE = "slpy-0110_pool-52-build-7380-rel_easytouch2-8_32824.json"
 
 
 def load_response_collections(filenames: list[str] | None = None):
@@ -95,47 +96,27 @@ async def MockDiscoveryAdapter(
     return protocol
 
 
-async def stub_async_connect(
-    resp_col: ScreenLogicResponseCollection,
-    self: ScreenLogicGateway,
-    ip: str = None,
-    port: int = None,
-    gtype: int = None,
-    gsubtype: int = None,
-    name: str = FAKE_GATEWAY_NAME,
-    connection_closed_callback: Callable = None,
-) -> bool:
-    """Initialize minimum attributes needed for tests."""
-    if self.is_connected:
-        return True
-
-    self._ip = ip
-    self._port = port
-    self._type = gtype
-    self._subtype = gsubtype
-    self._name = name
-    self._custom_connection_closed_callback = connection_closed_callback
-    self._mac = FAKE_GATEWAY_MAC
-    self._protocol = ScreenLogicProtocol(asyncio.get_running_loop())
-    self._protocol.connection_made(MagicMock(spec=asyncio.Transport))
-    self._last, self._data = deconstruct_response_collection(resp_col)
-
-    return True
-
-
-@pytest_asyncio.fixture()
-async def MockConnectedGateway(
+@pytest_asyncio.fixture(name="mock_gateway")
+async def mock_connected_gateway(
     response_collection: ScreenLogicResponseCollection
 ):
-    with patch.multiple(
-        ScreenLogicGateway,
-        async_connect=lambda *args, **kwargs: stub_async_connect(
-            response_collection, *args, **kwargs
-        ),
-        async_disconnect=DEFAULT,
-        # get_debug=lambda self: {},
+    last, data = deconstruct_response_collection(response_collection)
+    data[DEVICE.ADAPTER][VALUE.CONNECTION] = {
+        "ip": "127.0.0.1",
+        "port": 6448
+    }
+    data[DEVICE.ADAPTER][GROUP.CONFIGURATION] = {
+        "type": 2,
+        "subtype": 12,
+        "name": "Fake: 00-00-00",
+        "mac": "00:00:00:00:00:00"
+    }
+    with (
+        patch.object(ScreenLogicProtocol, "_connected", return_value=True),
+        patch.object(ScreenLogicProtocol, "connection_made", spec=asyncio.Transport),
+        patch.object(ScreenLogicGateway, "_protocol", spec=ScreenLogicProtocol) as protocol,
+        patch.dict("screenlogicpy.gateway.ScreenLogicGateway._data", data),
+        patch.dict("screenlogicpy.gateway.ScreenLogicGateway._last", last),
     ):
         gateway = ScreenLogicGateway()
-        await gateway.async_connect(**FAKE_CONNECT_INFO)
-        assert gateway.is_connected
         yield gateway

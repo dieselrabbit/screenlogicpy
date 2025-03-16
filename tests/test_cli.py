@@ -7,7 +7,6 @@ from screenlogicpy import ScreenLogicGateway
 from screenlogicpy.cli import cli
 from screenlogicpy.data import ScreenLogicResponseCollection
 
-from .conftest import stub_async_connect
 from .const_data import (
     EXPECTED_DASHBOARD,
     EXPECTED_VERBOSE_PREAMBLE,
@@ -20,21 +19,18 @@ from .const_data import (
 
 @pytest_asyncio.fixture()
 async def PatchedGateway(
+    mock_gateway: ScreenLogicGateway,
     response_collection: ScreenLogicResponseCollection
 ):
     with patch.multiple(
-        ScreenLogicGateway,
-        async_connect=lambda *args, **kwargs: stub_async_connect(
-            response_collection, *args, **kwargs
-        ),
-        async_disconnect=DEFAULT,
-        _async_connected_request=DEFAULT,
+        ScreenLogicGateway, async_disconnect=DEFAULT, _async_connected_request=DEFAULT,
     ) as gateway, patch(
         "screenlogicpy.cli.async_discover", return_value=[FAKE_CONNECT_INFO]
     ):
         yield gateway
 
 
+#@patch.multiple(ScreenLogicGateway, async_disconnect=DEFAULT, _async_connected_request=DEFAULT)
 @pytest.mark.usefixtures("PatchedGateway")
 class TestCLI:
     @pytest.mark.asyncio
@@ -360,7 +356,7 @@ class TestCLI:
         ):
             assert await cli(arguments.split()) == return_code
         mo.assert_called_with(
-            "slpy-0101_pool-52-build-7380-rel_easytouch2-8_32824.json",
+            "slpy-0110_pool-52-build-7380-rel_easytouch2-8_32824.json",
             "w",
             encoding="utf-8",
         )

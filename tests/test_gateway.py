@@ -18,34 +18,33 @@ from .const_data import (
 
 @pytest.mark.asyncio
 async def test_mock_gateway(
-    MockConnectedGateway, response_collection: ScreenLogicResponseCollection
+    mock_gateway: ScreenLogicGateway, response_collection: ScreenLogicResponseCollection
 ):
-    gateway = MockConnectedGateway
 
-    assert gateway.ip == FAKE_GATEWAY_ADDRESS
-    assert gateway.port == FAKE_GATEWAY_PORT
-    assert gateway.name == FAKE_GATEWAY_NAME
-    assert gateway.mac == FAKE_GATEWAY_MAC
+    assert mock_gateway.ip == FAKE_GATEWAY_ADDRESS
+    assert mock_gateway.port == FAKE_GATEWAY_PORT
+    assert mock_gateway.name == FAKE_GATEWAY_NAME
+    assert mock_gateway.mac == FAKE_GATEWAY_MAC
     assert (
-        gateway.version
+        mock_gateway.version
         == response_collection.decoded_complete[DEVICE.ADAPTER][VALUE.FIRMWARE][
             ATTR.VALUE
         ]
     )
     assert (
-        gateway.controller_model
+        mock_gateway.controller_model
         == response_collection.decoded_complete[DEVICE.CONTROLLER][VALUE.MODEL][
             ATTR.VALUE
         ]
     )
     assert (
-        gateway.equipment_flags
+        mock_gateway.equipment_flags
         == response_collection.decoded_complete[DEVICE.CONTROLLER][GROUP.EQUIPMENT][
             VALUE.FLAGS
         ]
     )
 
-    data = gateway.get_data()
+    data = mock_gateway.get_data()
 
     assert data == response_collection.decoded_complete
 
@@ -87,30 +86,26 @@ async def test_gateway_async_connect_and_disconnect(
 
 @pytest.mark.asyncio
 async def test_gateway_get_status(
-    MockConnectedGateway: ScreenLogicGateway,
+    mock_gateway: ScreenLogicGateway,
     response_collection: ScreenLogicResponseCollection,
 ):
-    gateway = MockConnectedGateway
-
     with patch(
         "screenlogicpy.requests.status.async_make_request",
         return_value=response_collection.status.raw,
     ) as mock_request:
-        await gateway.async_get_status()
+        await mock_gateway.async_get_status()
 
         mock_request.assert_awaited_once_with(
-            gateway._protocol, 12526, b"\x00\x00\x00\x00", 1
+            mock_gateway._protocol, 12526, b"\x00\x00\x00\x00", 1
         )
-        assert gateway.get_debug()["status"] == response_collection.status.raw
+        assert mock_gateway.get_debug()["status"] == response_collection.status.raw
 
 
 @pytest.mark.asyncio
 async def test_gateway_get_pumps(
-    MockConnectedGateway: ScreenLogicGateway,
+    mock_gateway: ScreenLogicGateway,
     response_collection: ScreenLogicResponseCollection,
 ):
-    gateway = MockConnectedGateway
-
     with patch(
         "screenlogicpy.requests.pump.async_make_request",
         side_effect=[
@@ -118,54 +113,50 @@ async def test_gateway_get_pumps(
             response_collection.pumps[1].raw,
         ],
     ) as mock_request:
-        await gateway.async_get_pumps()
+        await mock_gateway.async_get_pumps()
 
         mock_request.assert_has_awaits(
             [
-                call(gateway._protocol, 12584, b"\x00\x00\x00\x00\x00\x00\x00\x00", 1),
-                call(gateway._protocol, 12584, b"\x00\x00\x00\x00\x01\x00\x00\x00", 1),
+                call(mock_gateway._protocol, 12584, b"\x00\x00\x00\x00\x00\x00\x00\x00", 1),
+                call(mock_gateway._protocol, 12584, b"\x00\x00\x00\x00\x01\x00\x00\x00", 1),
             ]
         )
-        assert gateway.get_debug()["pumps"][0] == response_collection.pumps[0].raw
-        assert gateway.get_debug()["pumps"][1] == response_collection.pumps[1].raw
+        assert mock_gateway.get_debug()["pumps"][0] == response_collection.pumps[0].raw
+        assert mock_gateway.get_debug()["pumps"][1] == response_collection.pumps[1].raw
 
 
 @pytest.mark.asyncio
 async def test_gateway_get_chemistry(
-    MockConnectedGateway: ScreenLogicGateway,
+    mock_gateway: ScreenLogicGateway,
     response_collection: ScreenLogicResponseCollection,
 ):
-    gateway = MockConnectedGateway
-
     with patch(
         "screenlogicpy.requests.chemistry.async_make_request",
         return_value=response_collection.chemistry.raw,
     ) as mock_request:
-        await gateway.async_get_chemistry()
+        await mock_gateway.async_get_chemistry()
 
         mock_request.assert_awaited_once_with(
-            gateway._protocol, 12592, b"\x00\x00\x00\x00", 1
+            mock_gateway._protocol, 12592, b"\x00\x00\x00\x00", 1
         )
-        assert gateway.get_debug()["chemistry"] == response_collection.chemistry.raw
+        assert mock_gateway.get_debug()["chemistry"] == response_collection.chemistry.raw
 
 
 @pytest.mark.asyncio
 async def test_gateway_get_scg(
-    MockConnectedGateway: ScreenLogicGateway,
+    mock_gateway: ScreenLogicGateway,
     response_collection: ScreenLogicResponseCollection,
 ):
-    gateway = MockConnectedGateway
-
     with patch(
         "screenlogicpy.requests.scg.async_make_request",
         return_value=response_collection.scg.raw,
     ) as mock_request:
-        await gateway.async_get_scg()
+        await mock_gateway.async_get_scg()
 
         mock_request.assert_awaited_once_with(
-            gateway._protocol, 12572, b"\x00\x00\x00\x00", 1
+            mock_gateway._protocol, 12572, b"\x00\x00\x00\x00", 1
         )
-        assert gateway.get_debug()["scg"] == response_collection.scg.raw
+        assert mock_gateway.get_debug()["scg"] == response_collection.scg.raw
 
 
 @pytest.mark.parametrize(
@@ -194,14 +185,12 @@ async def test_gateway_get_scg(
             },
         ),
         (
-            ("adapter",),
+            ("adapter", "firmware"),
             {
-                "firmware": {
-                    "name": "Protocol Adapter Firmware",
-                    "value": "POOL: 5.2 Build 738.0 Rel",
-                    "major": 5.2,
-                    "minor": 738.0,
-                }
+                "name": "Protocol Adapter Firmware",
+                "value": "POOL: 5.2 Build 738.0 Rel",
+                "major": 5.2,
+                "minor": 738.0,
             },
         ),
         (
@@ -214,8 +203,8 @@ async def test_gateway_get_scg(
         ),
     ],
 )
-def test_gateway_get_data(MockConnectedGateway: ScreenLogicGateway, path, expected):
-    assert MockConnectedGateway.get_data(*path) == expected
+def test_gateway_get_data(mock_gateway: ScreenLogicGateway, path, expected):
+    assert mock_gateway.get_data(*path) == expected
 
 
 @pytest.mark.parametrize(
@@ -243,8 +232,8 @@ def test_gateway_get_data(MockConnectedGateway: ScreenLogicGateway, path, expect
         ),
     ],
 )
-def test_gateway_get_value(MockConnectedGateway: ScreenLogicGateway, path, expected):
-    assert MockConnectedGateway.get_value(*path) == expected
+def test_gateway_get_value(mock_gateway: ScreenLogicGateway, path, expected):
+    assert mock_gateway.get_value(*path) == expected
 
 
 @pytest.mark.parametrize(
@@ -272,41 +261,38 @@ def test_gateway_get_value(MockConnectedGateway: ScreenLogicGateway, path, expec
         ),
     ],
 )
-def test_gateway_get_name(MockConnectedGateway: ScreenLogicGateway, path, expected):
-    assert MockConnectedGateway.get_name(*path) == expected
+def test_gateway_get_name(mock_gateway: ScreenLogicGateway, path, expected):
+    assert mock_gateway.get_name(*path) == expected
 
 
-def test_gateway_get_any_strict(MockConnectedGateway: ScreenLogicGateway):
+def test_gateway_get_any_strict(mock_gateway: ScreenLogicGateway):
     with pytest.raises(KeyError):
-        MockConnectedGateway.get_data(
+        mock_gateway.get_data(
             "intellichem", "alarm", "does_not_exist", strict=True
         )
 
     with pytest.raises(KeyError):
-        MockConnectedGateway.get_value(
+        mock_gateway.get_value(
             "controller", "configuration", "body_type", 0, strict=True
         )
 
     with pytest.raises(KeyError):
-        MockConnectedGateway.get_name(
+        mock_gateway.get_name(
             "controller", "configuration", "color", 20, strict=True
         )
 
 
 @pytest.mark.asyncio
-async def test_gateway_async_set_circuit(MockConnectedGateway: ScreenLogicGateway):
+async def test_gateway_async_set_circuit(mock_gateway: ScreenLogicGateway):
     """Test setting circuit state."""
-
-    gateway = MockConnectedGateway
-
     with patch(
         "screenlogicpy.requests.button.async_make_request",
         return_value=b"",
     ) as mockRequest:
-        await gateway.async_set_circuit(502, 1)
+        await mock_gateway.async_set_circuit(502, 1)
 
         mockRequest.assert_awaited_once_with(
-            gateway._protocol,
+            mock_gateway._protocol,
             12530,
             b"\x00\x00\x00\x00\xf6\x01\x00\x00\x01\x00\x00\x00",
             1,
@@ -314,28 +300,25 @@ async def test_gateway_async_set_circuit(MockConnectedGateway: ScreenLogicGatewa
 
 
 @pytest.mark.asyncio
-async def test_gateway_async_set_heat(MockConnectedGateway: ScreenLogicGateway):
+async def test_gateway_async_set_heat(mock_gateway: ScreenLogicGateway):
     """Test setting heat temperature and heat mode."""
-
-    gateway = MockConnectedGateway
-
     with patch(
         "screenlogicpy.requests.heat.async_make_request",
         return_value=b"",
     ) as mockRequest:
-        await gateway.async_set_heat_temp(0, 84)
-        await gateway.async_set_heat_mode(1, 3)
+        await mock_gateway.async_set_heat_temp(0, 84)
+        await mock_gateway.async_set_heat_mode(1, 3)
 
         mockRequest.assert_has_awaits(
             [
                 call(
-                    gateway._protocol,
+                    mock_gateway._protocol,
                     12528,
                     b"\x00\x00\x00\x00\x00\x00\x00\x00T\x00\x00\x00",
                     1,
                 ),
                 call(
-                    gateway._protocol,
+                    mock_gateway._protocol,
                     12538,
                     b"\x00\x00\x00\x00\x01\x00\x00\x00\x03\x00\x00\x00",
                     1,
@@ -345,17 +328,15 @@ async def test_gateway_async_set_heat(MockConnectedGateway: ScreenLogicGateway):
 
 
 @pytest.mark.asyncio
-async def test_gateway_async_set_color_lights(MockConnectedGateway: ScreenLogicGateway):
-    gateway = MockConnectedGateway
-
+async def test_gateway_async_set_color_lights(mock_gateway: ScreenLogicGateway):
     with patch(
         "screenlogicpy.requests.lights.async_make_request",
         return_value=b"",
     ) as mockRequest:
-        await gateway.async_set_color_lights(7)
+        await mock_gateway.async_set_color_lights(7)
 
         mockRequest.assert_awaited_once_with(
-            gateway._protocol,
+            mock_gateway._protocol,
             12556,
             b"\x00\x00\x00\x00\x07\x00\x00\x00",
             1,
@@ -363,17 +344,15 @@ async def test_gateway_async_set_color_lights(MockConnectedGateway: ScreenLogicG
 
 
 @pytest.mark.asyncio
-async def test_gateway_async_set_scg_config(MockConnectedGateway: ScreenLogicGateway):
-    gateway = MockConnectedGateway
-
+async def test_gateway_async_set_scg_config(mock_gateway: ScreenLogicGateway):
     with patch(
         "screenlogicpy.requests.scg.async_make_request",
         return_value=b"",
     ) as mockRequest:
-        await gateway.async_set_scg_config(pool_setpoint=50, spa_setpoint=0)
+        await mock_gateway.async_set_scg_config(pool_setpoint=50, spa_setpoint=0)
 
         mockRequest.assert_awaited_once_with(
-            gateway._protocol,
+            mock_gateway._protocol,
             12576,
             b"\x00\x00\x00\x002\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x06\x00\x00\x00",
             1,
@@ -381,14 +360,12 @@ async def test_gateway_async_set_scg_config(MockConnectedGateway: ScreenLogicGat
 
 
 @pytest.mark.asyncio
-async def test_gateway_async_set_chem_data(MockConnectedGateway: ScreenLogicGateway):
-    gateway = MockConnectedGateway
-
+async def test_gateway_async_set_chem_data(mock_gateway: ScreenLogicGateway):
     with patch(
         "screenlogicpy.requests.chemistry.async_make_request",
         return_value=b"",
     ) as mockRequest:
-        await gateway.async_set_chem_data(
+        await mock_gateway.async_set_chem_data(
             ph_setpoint=7.5,
             orp_setpoint=700,
             calcium_hardness=300,
@@ -398,7 +375,7 @@ async def test_gateway_async_set_chem_data(MockConnectedGateway: ScreenLogicGate
         )
 
         mockRequest.assert_awaited_once_with(
-            gateway._protocol,
+            mock_gateway._protocol,
             12594,
             b"\x00\x00\x00\x00\xee\x02\x00\x00\xbc\x02\x00\x00\x2c\x01\x00\x00\x50\x00\x00\x00\x2d\x00\x00\x00\xe8\x03\x00\x00",
             1,
@@ -407,15 +384,12 @@ async def test_gateway_async_set_chem_data(MockConnectedGateway: ScreenLogicGate
 
 @pytest.mark.asyncio
 async def test_gateway_register_async_message_handler(
-    MockConnectedGateway: ScreenLogicGateway,
+    mock_gateway: ScreenLogicGateway,
 ):
-    gateway = MockConnectedGateway
-
     async def callback():
         pass
 
     MSG_CODE = 16
-    gateway.register_async_message_handler(MSG_CODE, callback, 1)
+    mock_gateway.register_async_message_handler(MSG_CODE, callback, 1)
 
-    assert MSG_CODE in gateway._protocol._callbacks
-    assert gateway._protocol._callbacks[MSG_CODE] == (callback, (1,))
+    mock_gateway._protocol.register_async_message_callback.assert_called_with(MSG_CODE, callback, 1)
