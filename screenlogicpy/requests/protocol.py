@@ -15,22 +15,23 @@ _LOGGER = logging.getLogger(__name__)
 
 class ScreenLogicProtocol(asyncio.Protocol):
     """asyncio.Protocol for handling connection to a ScreenLogic protocol adapter."""
+    _loop: asyncio.BaseEventLoop
+    _callbacks: dict = {}
+    _connected: bool = False
+    _closing: bool = False
+    _closed: asyncio.Future | None = None
+    _last_request: float | None = None
+    _last_response: float | None = None
+
+    _keepalive_awaitable: Callable[[any, any], Awaitable[any]] = None
+    _keepalive_interval: int = None
+    _stop_keepalive: Callable = None
 
     def __init__(self, loop, connection_lost_callback: Callable = None) -> None:
-        self._loop: asyncio.BaseEventLoop = loop
+        self._loop = loop
         self._connection_lost_callback = connection_lost_callback
         self._futures = self.FutureManager(self._loop)
-        self._callbacks = {}
-        self._connected = False
-        self._closing = False
-        self._closed: asyncio.Future = None
-        self._last_request: float = None
-        self._last_response: float = None
         self._buff = bytearray()
-
-        self._keepalive_awaitable: Callable[[any, any], Awaitable[any]] = None
-        self._keepalive_interval: int = None
-        self._stop_keepalive: Callable = None
 
         # Adapter-initiated message IDs seem to start at 32767,
         # so we'll use only the lower half of the message ID data size.

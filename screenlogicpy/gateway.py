@@ -46,19 +46,12 @@ _LOGGER = logging.getLogger(__name__)
 class ScreenLogicGateway:
     """Class for interacting and communicating with a ScreenLogic protocol adapter."""
 
+    _transport: asyncio.Transport = None
+    _protocol: ScreenLogicProtocol = None
+    _data: dict = {}
+    _last: dict = {}
+
     def __init__(self, client_id: int = None, max_retries: int = None):
-        self._ip = None
-        self._port = 80
-        self._type = 0
-        self._subtype = 0
-        self._name = "Unnamed-Screenlogic-Gateway"
-        self._mac = ""
-        self._version = ""
-        self._transport: asyncio.Transport = None
-        self._protocol: ScreenLogicProtocol = None
-        self._is_client = False
-        self._data = {}
-        self._last = {}
         (
             self.set_max_retries(max_retries)
             if max_retries is not None
@@ -68,19 +61,22 @@ class ScreenLogicGateway:
 
     @property
     def ip(self) -> str:
-        return self._ip
+        return self.get_data(DEVICE.ADAPTER, VALUE.CONNECTION, ATTR.IP)
 
     @property
     def port(self) -> int:
-        return self._port
+        return self.get_data(DEVICE.ADAPTER, VALUE.CONNECTION, ATTR.PORT)
 
     @property
     def name(self) -> str:
-        return self._name
+        return (
+            self.get_data(DEVICE.ADAPTER, GROUP.CONFIGURATION, ATTR.NAME)
+            or "Unnamed-Screenlogic-Gateway"
+        )
 
     @property
     def mac(self) -> str:
-        return self._mac
+        return self.get_data(DEVICE.ADAPTER, GROUP.CONFIGURATION, ATTR.MAC)
 
     @property
     def version(self) -> str:
@@ -118,50 +114,63 @@ class ScreenLogicGateway:
 
     async def async_connect(
         self,
-        ip=None,
-        port=None,
-        gtype=None,
-        gsubtype=None,
-        name=None,
+        ip: str = None,
+        port: int = None,
+        gtype: int = None,
+        gsubtype: int = None,
+        name: str = None,
         connection_closed_callback: Callable = None,
     ) -> bool:
         """Connect to the ScreenLogic protocol adapter"""
         if self.is_connected:
             return True
 
-        self._ip = ip if ip is not None else self._ip
-        self._port = port if port is not None else self._port
-        self._type = gtype if gtype is not None else self._type
-        self._subtype = gsubtype if gsubtype is not None else self._subtype
-        self._name = name if name is not None else self._name
         self._custom_connection_closed_callback = connection_closed_callback
 
-        if not self._ip:
+        adapter_data: dict = self._data.setdefault(DEVICE.ADAPTER, {})
+        adapter_connection: dict = adapter_data.setdefault(VALUE.CONNECTION, {})
+
+        ip = ip or adapter_connection.get(ATTR.IP)
+        port = port or adapter_connection.get(ATTR.PORT, 80)
+
+        if not ip:
             raise ScreenLogicError(
                 "Attempted to connect when no IP address has been provided for connection."
             )
 
         _LOGGER.debug("Beginning connection and login sequence")
-        connectPkg = await async_connect_to_gateway(
-            self._ip,
-            self._port,
-            self._common_connection_closed_callback,
-            self._max_retries,
-        )
-        if connectPkg:
-            self._transport, self._protocol, self._mac = connectPkg
-            self._last[DATA_REQUEST.VERSION] = await async_request_gateway_version(
-                self._protocol, self._data, self._max_retries
+        if not (
+            connectPkg := await async_connect_to_gateway(
+                ip,
+                port,
+                self._common_connection_closed_callback,
+                self._max_retries,
             )
-            if self.version:
-                _LOGGER.debug("Login successful")
-                await self.async_get_config()
-                await self._client_manager.attach(
-                    self._protocol, self.get_data(), self._max_retries
-                )
-                return True
-        _LOGGER.debug("Login failed")
-        return False
+        ):
+            _LOGGER.debug("Login failed")
+            return False
+
+        self._transport, self._protocol, mac = connectPkg
+        adapter_data[VALUE.CONNECTION] = {
+            ATTR.IP: ip,
+            ATTR.PORT: port,
+        }
+        adapter_data[GROUP.CONFIGURATION] = {
+            ATTR.TYPE: gtype,
+            ATTR.SUBTYPE: gsubtype,
+            ATTR.NAME: name,
+            ATTR.MAC: mac,
+        }
+        self._last[DATA_REQUEST.VERSION] = await async_request_gateway_version(
+            self._protocol, self._data, self._max_retries
+        )
+        if self.version:
+            _LOGGER.debug("Login successful")
+            await self.async_get_config()
+            await self._client_manager.attach(
+                self._protocol, self.get_data(), self._max_retries
+            )
+            return True
 
     async def async_disconnect(self, force=False):
         """Shutdown the connection to the ScreenLogic protocol adapter"""
