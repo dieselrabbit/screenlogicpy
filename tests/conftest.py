@@ -4,10 +4,11 @@ from glob import glob
 import pytest_asyncio
 import socket
 import struct
-from unittest.mock import DEFAULT, MagicMock, patch
+from unittest.mock import DEFAULT, AsyncMock, MagicMock, patch
 
 from screenlogicpy import ScreenLogicGateway, __version__ as sl_version
 from screenlogicpy.cli import file_format
+from screenlogicpy.client import ClientManager
 from screenlogicpy.const.common import ScreenLogicError
 from screenlogicpy.const.data import DEVICE, GROUP, VALUE
 from screenlogicpy.data import (
@@ -83,9 +84,7 @@ async def discovery_response() -> bytes:
 
 
 @pytest_asyncio.fixture()
-async def MockDiscoveryAdapter(
-    discovery_response: bytes
-):
+async def MockDiscoveryAdapter(discovery_response: bytes):
     _udp_sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
     _udp_sock.bind(("", DISCOVERY_PORT))
 
@@ -96,27 +95,67 @@ async def MockDiscoveryAdapter(
     return protocol
 
 
+@pytest_asyncio.fixture(name="mock_transport")
+async def mock_connected_transport():
+    with patch(
+        "screenlogicpy.gateway.asyncio.Transport", spec=asyncio.Transport
+    ) as transport_mock:
+        transport_inst = transport_mock.return_value
+        return transport_inst
+
+
+@pytest_asyncio.fixture(name="mock_protocol")
+async def mock_connected_protocol():
+    with patch(
+        "screenlogicpy.requests.protocol.ScreenLogicProtocol", spec=ScreenLogicProtocol
+    ) as protocol_mock:
+        protocol_inst = protocol_mock.return_value
+
+        def mock_close_protocol(_):
+            protocol_inst._connected.return_value = False
+
+        protocol_inst._connected.return_value = True
+        protocol_inst.async_close.side_effect = mock_close_protocol
+        return protocol_inst
+
+
+@pytest_asyncio.fixture(name="mock_client")
+async def mock_attached_client():
+    with patch("screenlogicpy.client.ClientManager", spec=ClientManager) as client_mock:
+        client_inst = client_mock.return_value
+        client_inst.is_client.return_value = True
+        client_inst.async_unsubscribe_gateway.return_value = True
+        return client_inst
+
+
 @pytest_asyncio.fixture(name="mock_gateway")
 async def mock_connected_gateway(
-    response_collection: ScreenLogicResponseCollection
+    mock_transport: asyncio.Transport,
+    mock_protocol: ScreenLogicProtocol,
+    mock_client: ClientManager,
+    response_collection: ScreenLogicResponseCollection,
 ):
     last, data = deconstruct_response_collection(response_collection)
-    data[DEVICE.ADAPTER][VALUE.CONNECTION] = {
-        "ip": "127.0.0.1",
-        "port": 6448
-    }
+    data[DEVICE.ADAPTER][VALUE.CONNECTION] = {"ip": "127.0.0.1", "port": 6448}
     data[DEVICE.ADAPTER][GROUP.CONFIGURATION] = {
         "type": 2,
         "subtype": 12,
         "name": "Fake: 00-00-00",
-        "mac": "00:00:00:00:00:00"
+        "mac": "00:00:00:00:00:00",
     }
+
     with (
-        patch.object(ScreenLogicProtocol, "_connected", return_value=True),
-        patch.object(ScreenLogicProtocol, "connection_made", spec=asyncio.Transport),
-        patch.object(ScreenLogicGateway, "_protocol", spec=ScreenLogicProtocol) as protocol,
+        patch.object(ScreenLogicGateway, "_transport", mock_transport),
+        patch.object(
+            ScreenLogicGateway,
+            "_protocol",
+            mock_protocol,
+        ),
         patch.dict("screenlogicpy.gateway.ScreenLogicGateway._data", data),
         patch.dict("screenlogicpy.gateway.ScreenLogicGateway._last", last),
     ):
+        # mock_protocol_inst = mock_protocol.return_value
+        # mock_protocol_inst.async_close = AsyncMock(side_effect=mock_close_protocol)
         gateway = ScreenLogicGateway()
-        yield gateway
+        with patch.object(gateway, "_client_manager", mock_client):
+            yield gateway
