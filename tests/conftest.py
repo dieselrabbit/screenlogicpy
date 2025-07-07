@@ -48,6 +48,11 @@ def load_response_collections(filenames: list[str] | None = None):
 
 
 @pytest_asyncio.fixture()
+async def event_loop() -> asyncio.AbstractEventLoop:
+    return asyncio.get_running_loop()
+
+
+@pytest_asyncio.fixture()
 async def response_collection():
     return load_response_collections([DEFAULT_RESPONSE])[0][1]
 
