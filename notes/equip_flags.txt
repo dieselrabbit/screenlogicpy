@@ -29,3 +29,6 @@ Later firmware may read above 0x8000
 Pump Data
 pump 0  0100 0110
 pump 1  0100 0010
+
+Non-Pump Data
+pump 1  1000 0100
