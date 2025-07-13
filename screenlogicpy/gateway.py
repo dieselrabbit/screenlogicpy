@@ -1,4 +1,5 @@
 """Describes a ScreenLogicGateway class for interacting with a Pentair ScreenLogic system."""
+
 import asyncio
 from datetime import datetime
 import logging
@@ -58,9 +59,11 @@ class ScreenLogicGateway:
         self._is_client = False
         self._data = {}
         self._last = {}
-        self.set_max_retries(
-            max_retries
-        ) if max_retries is not None else self.set_max_retries()
+        (
+            self.set_max_retries(max_retries)
+            if max_retries is not None
+            else self.set_max_retries()
+        )
         self._client_manager = ClientManager(self._async_connected_request, client_id)
 
     @property
@@ -202,8 +205,8 @@ class ScreenLogicGateway:
 
     async def async_get_pumps(self):
         """Request all pump state data."""
-        for pumpID in self._data[DEVICE.PUMP]:
-            if self._data[DEVICE.PUMP][pumpID][VALUE.DATA] != 0:
+        for pumpID in range(8):
+            if EQUIPMENT_FLAG.INTELLIFLO_0 << pumpID & self.equipment_flags:
                 _LOGGER.debug("Requesting pump %i data", pumpID)
                 last_pumps = self._last.setdefault(DATA_REQUEST.PUMPS, {})
                 if last_raw := await self._async_connected_request(
