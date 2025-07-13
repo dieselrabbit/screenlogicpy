@@ -360,7 +360,7 @@ class TestCLI:
         ):
             assert await cli(arguments.split()) == return_code
         mo.assert_called_with(
-            "slpy-0101_pool-52-build-7380-rel_easytouch2-8_32824.json",
+            "slpy-0102_pool-52-build-7380-rel_easytouch2-8_32824.json",
             "w",
             encoding="utf-8",
         )
