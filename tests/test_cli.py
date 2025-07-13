@@ -1,3 +1,4 @@
+import asyncio
 import json
 import pytest
 import pytest_asyncio
@@ -19,9 +20,8 @@ from .const_data import (
 
 
 @pytest_asyncio.fixture()
-async def PatchedGateway(
-    event_loop, response_collection: ScreenLogicResponseCollection
-):
+async def PatchedGateway(response_collection: ScreenLogicResponseCollection):
+    event_loop = asyncio.get_running_loop()
     with patch.multiple(
         ScreenLogicGateway,
         async_connect=lambda *args, **kwargs: stub_async_connect(

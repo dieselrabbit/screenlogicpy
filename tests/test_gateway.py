@@ -61,29 +61,28 @@ async def test_gateway_async_connect_and_disconnect(
     MockProtocolAdapter: asyncio.Server,
     response_collection: ScreenLogicResponseCollection,
 ):
-    async with MockProtocolAdapter:
-        with patch(
-            "screenlogicpy.gateway.ClientManager",
-            spec=ClientManager,
-        ) as client_manager:
-            gateway = ScreenLogicGateway()
-            await gateway.async_connect(**FAKE_CONNECT_INFO)
+    with patch(
+        "screenlogicpy.gateway.ClientManager",
+        spec=ClientManager,
+    ) as client_manager:
+        gateway = ScreenLogicGateway()
+        await gateway.async_connect(**FAKE_CONNECT_INFO)
 
-            client_mgr_inst = client_manager.return_value
-            assert gateway.is_connected
-            assert gateway.ip == FAKE_GATEWAY_ADDRESS
-            assert gateway.port == FAKE_GATEWAY_PORT
-            assert gateway.name == FAKE_GATEWAY_NAME
-            assert gateway.mac == FAKE_GATEWAY_MAC
-            assert gateway.version == "POOL: 5.2 Build 738.0 Rel"
-            assert gateway.controller_model == "EasyTouch2 8"
-            assert gateway.equipment_flags == 32824
-            assert gateway.temperature_unit == "°F"
-            await gateway.async_disconnect()
+        client_mgr_inst = client_manager.return_value
+        assert gateway.is_connected
+        assert gateway.ip == FAKE_GATEWAY_ADDRESS
+        assert gateway.port == FAKE_GATEWAY_PORT
+        assert gateway.name == FAKE_GATEWAY_NAME
+        assert gateway.mac == FAKE_GATEWAY_MAC
+        assert gateway.version == "POOL: 5.2 Build 738.0 Rel"
+        assert gateway.controller_model == "EasyTouch2 8"
+        assert gateway.equipment_flags == 32824
+        assert gateway.temperature_unit == "°F"
+        await gateway.async_disconnect()
 
-            assert not gateway.is_connected
-            client_mgr_inst.attach.assert_awaited_once()
-            client_mgr_inst.async_unsubscribe_gateway.assert_awaited_once()
+        assert not gateway.is_connected
+        client_mgr_inst.attach.assert_awaited_once()
+        client_mgr_inst.async_unsubscribe_gateway.assert_awaited_once()
 
 
 @pytest.mark.asyncio
@@ -309,7 +308,7 @@ async def test_gateway_async_set_circuit(MockConnectedGateway: ScreenLogicGatewa
         mockRequest.assert_awaited_once_with(
             gateway._protocol,
             12530,
-            b"\x00\x00\x00\x00\xF6\x01\x00\x00\x01\x00\x00\x00",
+            b"\x00\x00\x00\x00\xf6\x01\x00\x00\x01\x00\x00\x00",
             1,
         )
 
@@ -401,7 +400,7 @@ async def test_gateway_async_set_chem_data(MockConnectedGateway: ScreenLogicGate
         mockRequest.assert_awaited_once_with(
             gateway._protocol,
             12594,
-            b"\x00\x00\x00\x00\xEE\x02\x00\x00\xBC\x02\x00\x00\x2C\x01\x00\x00\x50\x00\x00\x00\x2D\x00\x00\x00\xE8\x03\x00\x00",
+            b"\x00\x00\x00\x00\xee\x02\x00\x00\xbc\x02\x00\x00\x2c\x01\x00\x00\x50\x00\x00\x00\x2d\x00\x00\x00\xe8\x03\x00\x00",
             1,
         )
 
