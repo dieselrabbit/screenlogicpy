@@ -14,5 +14,5 @@
         "intellichem",
         "screenlogicpy"
     ],
-    "python.defaultInterpreterPath": "~\\AppData\\Local\\Programs\\Python\\Python310\\python.exe"
+    "terminal.integrated.env.windows": { "PYTHONPATH": "${workspaceFolder}" }
 }

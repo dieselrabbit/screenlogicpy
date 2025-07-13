@@ -54,9 +54,9 @@ async def response_collection():
 
 @pytest_asyncio.fixture()
 async def MockProtocolAdapter(
-    event_loop: asyncio.AbstractEventLoop,
     response_collection: ScreenLogicResponseCollection,
 ):
+    event_loop = asyncio.get_running_loop()
     server = await event_loop.create_server(
         lambda: FakeTCPProtocolAdapter(response_collection),
         FAKE_GATEWAY_ADDRESS,
@@ -64,9 +64,8 @@ async def MockProtocolAdapter(
         reuse_address=True,
     )
 
-    async with server:
-        yield server
-        server.close()
+    yield server
+    server.close()
 
 
 @pytest_asyncio.fixture
@@ -83,9 +82,8 @@ async def discovery_response() -> bytes:
 
 
 @pytest_asyncio.fixture()
-async def MockDiscoveryAdapter(
-    event_loop: asyncio.AbstractEventLoop, discovery_response: bytes
-):
+async def MockDiscoveryAdapter(discovery_response: bytes):
+    event_loop = asyncio.get_running_loop()
     _udp_sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
     _udp_sock.bind(("", DISCOVERY_PORT))
 
@@ -126,9 +124,9 @@ async def stub_async_connect(
 
 
 @pytest_asyncio.fixture()
-async def MockConnectedGateway(
-    event_loop, response_collection: ScreenLogicResponseCollection
-):
+async def MockConnectedGateway(response_collection: ScreenLogicResponseCollection):
+    event_loop = asyncio.get_running_loop()
+
     with patch.multiple(
         ScreenLogicGateway,
         async_connect=lambda *args, **kwargs: stub_async_connect(

@@ -1,0 +1,5 @@
+|xx|xx|xx|xx|xx|xx|xx|xx|xx|xx|xx|xx|xx|xx|xx|xx|xx|00|00|00|
+|ip addr    |subnet mask|gateway    |gateway?   |port       |
+| B| B| B| B| B| B| B| B| B| B| B| B| B| B| B| B| I         |
+
+8176 set_ip_config exists. Can subnet mask be set to allow access across vlans?
