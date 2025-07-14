@@ -1,6 +1,44 @@
 [build-system]
 requires = [
-    "setuptools>=42",
+    "setuptools",
     "wheel"
 ]
 build-backend = "setuptools.build_meta"
+
+[project]
+name="screenlogicpy"
+version="0.10.2"
+authors=[
+    { name="Kevin Worrel", email="kevinworrel@yahoo.com" },
+]
+description="Interface for Pentair ScreenLogic connected pool controllers over IP via Python"
+readme="README.md"
+requires-python=">=3.10"
+classifiers=[
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Operating System :: OS Independent",
+    "Development Status :: 3 - Alpha",
+]
+license = "GPL-3.0-only"
+license-files = [
+    "LICENSE",
+]
+dependencies = [
+    "async_timeout>=3.0.0",
+]
+
+[project.urls]
+github="https://github.com/dieselrabbit/screenlogicpy"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include=[
+    "screenlogicpy",
+    "screenlogicpy.*",
+]
+
+[project.scripts]
+screenlogicpy="screenlogicpy.__main__:main"
